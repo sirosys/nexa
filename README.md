@@ -6,7 +6,7 @@
 
 > **Status:** Draft Perencanaan Arsitektur (Living Document)
 
-------------------------------------------------------------------------
+---
 
 # Tujuan Project
 
@@ -15,33 +15,35 @@ NEXA bukan sekadar aplikasi billing, tetapi dirancang sebagai
 
 Tahap awal akan mencakup:
 
--   Manajemen pelanggan
--   Manajemen produk & layanan
--   Billing
--   Pembayaran melalui Xendit
--   Dashboard administrasi
+- Manajemen pelanggan
+- Manajemen produk & layanan
+- Billing
+- Pembayaran melalui Xendit
+- Dashboard administrasi
 
 Selanjutnya akan dikembangkan menjadi platform terpadu yang mencakup
 operasional ISP secara menyeluruh.
 
-------------------------------------------------------------------------
+---
 
 # Teknologi
 
-  Komponen             Teknologi
-  -------------------- ---------------------------
-  Backend              Laravel 13
-  Frontend             Blade
-  Styling              Tailwind CSS
-  UI Interaction       Alpine.js
-  Component Kompleks   Vue
-  Database             MySQL
-  Payment Gateway      Xendit
-  Development OS       Ubuntu 20.04
-  Local Server         Laravel Valet 2.3.10
-  Production           VPS (contoh: IDCloudHost)
+Komponen Teknologi
 
-------------------------------------------------------------------------
+---
+
+Backend Laravel 13
+Frontend Blade
+Styling Tailwind CSS
+UI Interaction Alpine.js
+Component Kompleks Vue
+Database MySQL
+Payment Gateway Xendit
+Development OS Ubuntu 20.04
+Local Server Laravel Valet 2.3.10
+Production VPS (contoh: IDCloudHost)
+
+---
 
 # Visi Arsitektur
 
@@ -50,67 +52,67 @@ dalam jangka panjang.
 
 Prinsip utama:
 
--   Clean Architecture
--   Modular Design
--   Separation of Concerns
--   Domain-Based Module
--   Scalability
--   Security First
--   Maintainability
--   API First untuk aplikasi pelanggan
+- Clean Architecture
+- Modular Design
+- Separation of Concerns
+- Domain-Based Module
+- Scalability
+- Security First
+- Maintainability
+- API First untuk aplikasi pelanggan
 
-------------------------------------------------------------------------
+---
 
 # Scope Tahap Awal
 
 ## Master Data
 
--   Customer
--   Product
--   Service Package
+- Customer
+- Product
+- Service Package
 
 ## Billing
 
--   Invoice
--   Tagihan
--   Pembayaran
--   Integrasi Xendit
+- Invoice
+- Tagihan
+- Pembayaran
+- Integrasi Xendit
 
 ## Customer
 
--   Data pelanggan
--   Status layanan
--   Riwayat pembayaran
+- Data pelanggan
+- Status layanan
+- Riwayat pembayaran
 
-------------------------------------------------------------------------
+---
 
 # Roadmap Modul
 
--   Authentication
--   Authorization
--   User
--   Role & Permission
--   Customer
--   Product
--   Service
--   Installation
--   Billing
--   Invoice
--   Payment
--   Xendit
--   Mikrotik Integration
--   OLT Integration (HSGQ)
--   Monitoring
--   Ticketing
--   Inventory
--   Vendor & Supplier
--   Notification
--   Automation
--   Reporting
--   Audit Log
--   System Setting
+- Authentication
+- Authorization
+- User
+- Role & Permission
+- Customer
+- Product
+- Service
+- Installation
+- Billing
+- Invoice
+- Payment
+- Xendit
+- Mikrotik Integration
+- OLT Integration (HSGQ)
+- Monitoring
+- Ticketing
+- Inventory
+- Vendor & Supplier
+- Notification
+- Automation
+- Reporting
+- Audit Log
+- System Setting
 
-------------------------------------------------------------------------
+---
 
 # Arsitektur Frontend
 
@@ -118,32 +120,32 @@ Gunakan teknologi sesuai tanggung jawabnya.
 
 ## Blade
 
--   Layout
--   Dashboard
--   CRUD
--   Form
--   Table
+- Layout
+- Dashboard
+- CRUD
+- Form
+- Table
 
 ## Alpine.js
 
--   Modal
--   Dropdown
--   Accordion
--   Toast
--   Toggle
--   Interaksi ringan
+- Modal
+- Dropdown
+- Accordion
+- Toast
+- Toggle
+- Interaksi ringan
 
 ## Vue
 
 Digunakan hanya jika diperlukan, seperti:
 
--   Dashboard realtime
--   Monitoring jaringan
--   Grafik
--   Wizard multi-step
--   Komponen kompleks
+- Dashboard realtime
+- Monitoring jaringan
+- Grafik
+- Wizard multi-step
+- Komponen kompleks
 
-------------------------------------------------------------------------
+---
 
 # API
 
@@ -162,21 +164,21 @@ Gunakan versioning sejak awal.
 
     /api/v1
 
-------------------------------------------------------------------------
+---
 
 # Integrasi Network
 
 Tahap awal:
 
--   MikroTik
--   OLT HSGQ
+- MikroTik
+- OLT HSGQ
 
 Target desain:
 
--   Driver berbasis adapter agar mudah menambah vendor baru tanpa
-    mengubah modul bisnis.
+- Driver berbasis adapter agar mudah menambah vendor baru tanpa
+  mengubah modul bisnis.
 
-------------------------------------------------------------------------
+---
 
 # Standar Pengembangan
 
@@ -184,20 +186,20 @@ Seluruh developer wajib mengikuti standar berikut:
 
 ## Coding
 
--   Gunakan Form Request untuk validasi.
--   Hindari business logic di Controller.
--   Gunakan Service Layer untuk proses bisnis.
--   Gunakan Eloquent secara konsisten.
--   Dependency Injection.
+- Gunakan Form Request untuk validasi.
+- Hindari business logic di Controller.
+- Gunakan Service Layer untuk proses bisnis.
+- Gunakan Eloquent secara konsisten.
+- Dependency Injection.
 
 ## Database
 
--   Engine InnoDB
--   utf8mb4
--   Foreign Key
--   Index yang sesuai
--   Timestamp standar Laravel
--   Soft Delete hanya bila diperlukan
+- Engine InnoDB
+- utf8mb4
+- Foreign Key
+- Index yang sesuai
+- Timestamp standar Laravel
+- Soft Delete hanya bila diperlukan
 
 ## Naming
 
@@ -210,7 +212,7 @@ Contoh:
     CustomerPolicy
     CustomerRequest
 
-------------------------------------------------------------------------
+---
 
 # Prinsip Pengembangan
 
@@ -226,22 +228,22 @@ Setiap fitur harus melewati tahapan berikut:
 
 Jangan langsung menulis kode tanpa memahami proses bisnis.
 
-------------------------------------------------------------------------
+---
 
 # Dokumentasi yang Akan Disusun
 
--   Software Architecture Document (SAD)
--   Module Blueprint
--   Entity Relationship Diagram (ERD)
--   Laravel Development Standard
--   API Standard
--   Database Standard
--   Security Standard
--   UI Design System
--   Deployment Guide
--   Backup & Recovery Guide
+- Software Architecture Document (SAD)
+- Module Blueprint
+- Entity Relationship Diagram (ERD)
+- Laravel Development Standard
+- API Standard
+- Database Standard
+- Security Standard
+- UI Design System
+- Deployment Guide
+- Backup & Recovery Guide
 
-------------------------------------------------------------------------
+---
 
 # Tujuan Jangka Panjang
 
@@ -249,7 +251,42 @@ NEXA diharapkan menjadi platform terpadu yang mampu menangani seluruh
 proses operasional XNet dalam satu aplikasi dengan arsitektur yang
 konsisten, aman, mudah dipelihara, dan siap berkembang.
 
-------------------------------------------------------------------------
+---
+
+## Update Arsitektur
+
+### Login
+
+- Login menggunakan nomor telepon.
+- OTP dikirim melalui WhatsApp.
+- WhatsApp Gateway berjalan pada server terpisah menggunakan **go-whatsapp-web-multidevice**.
+- Komunikasi dilakukan melalui REST API.
+- NEXA bertanggung jawab atas pembuatan, penyimpanan, masa berlaku, dan validasi OTP.
+
+### Payment Gateway
+
+- Menggunakan **Xendit Payment Requests API v3**.
+- Integrasi menggunakan **Raw HTTP API**.
+- Tidak menggunakan SDK resmi Xendit.
+- Seluruh request dibungkus melalui service internal agar mudah dipelihara.
+
+## Roadmap
+
+- Authentication
+- Authorization
+- Customer
+- Billing
+- Payment
+- Xendit Integration
+- WhatsApp Integration
+- OTP Management
+- MikroTik Integration
+- HSGQ OLT Integration
+- Monitoring
+- Ticketing
+- Inventory
+- Reporting
+- Audit Log
 
 > Dokumen ini merupakan **living document** dan akan diperbarui
 > mengikuti perkembangan proyek.
