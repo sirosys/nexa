@@ -13,7 +13,8 @@ Repository ini masih tahap awal. Modul domain pertama yang sudah nyata (bukan se
 ## Sebelum Mengambil Keputusan Arsitektur atau Implementasi
 
 - **Baca ulang `README.md` sebelum memulai fitur baru.** Ini adalah living document — pemiliknya meng-update-nya langsung setiap kali arah berubah (alur login, pendekatan integrasi payment, prioritas roadmap, dll), dan bisa berubah antar sesi tanpa ada perubahan kode yang mengikutinya. Jangan mengandalkan ringkasan dari percakapan sebelumnya; selalu cek file yang terkini.
-- **Cek `database/database.drawio` sebelum mendesain migration atau skema.** Ini adalah diagram ER draw.io yang menjadi draft/roadmap berjalan untuk desain database (lihat "Draft Desain Database" di bawah untuk ringkasan yang sudah di-parse). File ini terbuka untuk direvisi — jika ada yang terlihat tidak konsisten dengan apa yang sedang diimplementasikan, sampaikan ke user, jangan diam-diam menyimpang atau mengikutinya secara kaku.
+- **Cek `database/database_design.drawio` sebelum mendesain migration atau skema.** Ini adalah diagram ER draw.io yang menjadi draft/roadmap berjalan untuk desain database (lihat "Draft Desain Database" di bawah untuk ringkasan yang sudah di-parse). File ini terbuka untuk direvisi — jika ada yang terlihat tidak konsisten dengan apa yang sedang diimplementasikan, sampaikan ke user, jangan diam-diam menyimpang atau mengikutinya secara kaku.
+- **Buat dan update `database/database_actual.drawio` sesuai dengan database actual.** Tujuannya agar user bisa mengetahui database, table, dan kolom yang sudah dibuat sampai dengan saat ini.
 - **Update CLAUDE.md ini setiap kali ada keputusan arsitektur/scope/konvensi yang nyata** — baik keputusan itu muncul pertama kali di kode, di `README.md`, maupun di draft drawio. File ini adalah riwayat keputusan yang berjalan, bukan sekadar dokumen onboarding; jaga agar tetap sinkron supaya sesi berikutnya tidak kehilangan arah.
 
 ## Untuk Commit Git dan Push ke Github
@@ -91,9 +92,9 @@ Sudah **diimplementasikan sungguhan** (bukan lagi shell/stub) — login pakai no
 - Integrasi menggunakan **raw HTTP call** — SDK resmi Xendit sengaja tidak digunakan.
 - Seluruh pemanggilan Xendit wajib melalui service wrapper internal (tidak dipanggil langsung dari controller), agar integrasi raw-HTTP ini tetap mudah dipelihara dan di-test, serta penanganan webhook (verifikasi signature, idempotency) punya satu tempat yang jelas.
 
-## Draft Desain Database (`database/database.drawio`)
+## Draft Desain Database (`database/database_design.drawio`)
 
-`database/database.drawio` adalah diagram ER draw.io — sebuah **draft roadmap** untuk skema MySQL, bukan spek yang final. Terbuka untuk direvisi; begitu migration sungguhan sudah ada untuk sebuah tabel, migration itulah yang jadi acuan utama, dan diagram dianggap historis/aspirasional untuk yang belum dibangun. Berdasarkan review terakhir, diagram ini mendefinisikan:
+`database/database_design.drawio` adalah diagram ER draw.io — sebuah **draft roadmap** untuk skema MySQL, bukan spek yang final. Terbuka untuk direvisi; begitu migration sungguhan sudah ada untuk sebuah tabel, migration itulah yang jadi acuan utama, dan diagram dianggap historis/aspirasional untuk yang belum dibangun. Berdasarkan review terakhir, diagram ini mendefinisikan:
 
 - `users` — akun (customer dan/atau staff, dibedakan lewat flag `admin`), dengan phone/KTP/dob/gender, password, `last_login_at`.
 - `subdistricts` — data referensi wilayah Indonesia (kecamatan/kota/provinsi, dengan nama yang didenormalisasi).
@@ -109,7 +110,9 @@ Sudah **diimplementasikan sungguhan** (bukan lagi shell/stub) — login pakai no
 
 Relasi utama: `pops`→`coverages`→`services`; `subdistricts`→`pops`/`services`; `users`→`services`; `products`/`packages`→`package_product`→`sale_products`; `services`→`sales`→{`sale_products`, `service_activations`, `receipts`}; `service_activations`→`service_dismantles`.
 
-Gap yang sudah diselesaikan: tabel OTP (`otp_codes`) sudah dibangun dari nol (tidak ada di diagram sama sekali) — lihat "Authentication / Login" di atas. `users.phone`/`admin`/`last_login_at` juga sudah dimigrasikan (minimal, tanpa `ktp`/`dob`/`gender`/`code` yang sengaja ditunda ke modul Customer).
+Gap yang sudah diselesaikan: tabel OTP (`otp_codes`) sudah dibangun dari nol (tidak ada di diagram sama sekali) — lihat "Authentication / Login" di atas. `users.phone`/`admin`/`last_login_at` juga sudah dimigrasikan (minimal, tanpa `ktp`/`dob`/`gender`/`code` yang sengaja ditunda ke modul Customer). `subdistricts` juga sudah dibangun sesuai kolom di diagram (migration `2026_07_08_100002_create_subdistricts_table.php`, model `App\Models\Subdistrict`, seeder `database/seeders/SubdistrictSeeder.php` yang meng-eksekusi dump SQL siap-pakai `database/seeders/subdistricts.sql` — ~84 ribu baris data wilayah Kemendagri, diimpor lewat `DB::unprepared` sekali saat tabel masih kosong). Tabel ini murni data referensi read-only (lookup wilayah provinsi/kota/kecamatan/kelurahan-desa yang didenormalisasi, kolom `district_id`/`city_id`/`province_id` adalah kode wilayah pemerintah, bukan FK — tidak ada tabel `districts`/`cities`/`provinces` terpisah) — belum ada controller/route/UI untuk ini, dan belum ada FK sungguhan _ke_ tabel ini karena `pops`/`services` (yang menurut diagram terhubung ke `subdistricts`) belum dibangun.
+
+Ada file drawio kedua, `database/database_actual.drawio`, dengan tujuan berbeda dari diagram desain di atas: itu bukan draft, melainkan cermin skema yang **sungguhan** sudah dimigrasikan ke database saat ini (`users`, `otp_codes`, `subdistricts`), kolomnya diambil langsung dari migration — bukan dari diagram desain, karena keduanya bisa saja menyimpang (mis. diagram desain di atas masih menyebut kolom `code` di `users` yang sebenarnya tidak pernah dimigrasikan). Wajib di-update tiap kali ada migration baru landing, sama seperti kewajiban update CLAUDE.md ini sendiri.
 
 Gap yang masih perlu didiskusikan dengan user sebelum ditulis jadi migration: `receipts` belum punya kolom spesifik Xendit (payment_request_id/method/status/paid_at/raw response) padahal Xendit adalah fokus utama; Role & Permission (item roadmap) belum tercermin selain flag `admin` tunggal di `users`.
 
