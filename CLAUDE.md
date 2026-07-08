@@ -8,7 +8,7 @@ File ini memberikan panduan untuk Claude Code (claude.ai/code) saat bekerja deng
 
 Ini adalah **NEXA**, aplikasi internal untuk XNet (PT. XPlus Network Indonesia) yang akan menjadi tulang punggung administrasi/operasional untuk perusahaan ISP: manajemen pelanggan, katalog produk/layanan, billing, dan pembayaran via Xendit, yang selanjutnya akan berkembang ke integrasi jaringan (MikroTik, OLT) dan operasional ISP secara lebih luas.
 
-Repository saat ini masih berupa skeleton Laravel 13 standar (hasil instalasi `laravel/laravel` baru) — belum ada kode domain, migration, atau modul yang dibangun selain model/migration `User` bawaan. `README.md` adalah dokumen perencanaan arsitektur yang hidup (living document, dalam Bahasa Indonesia) yang menjelaskan arah project; jadikan itu sebagai sumber kebenaran untuk struktur dan konvensi yang dituju, sampai kode yang benar-benar berjalan menetapkan sebaliknya.
+Repository ini masih tahap awal — belum ada modul bisnis/migration domain yang dibangun selain model/migration `User` bawaan Laravel. Yang sudah ada sejauh ini hanyalah **shell tampilan** (layout, halaman login/OTP, dashboard placeholder — lihat "Referensi Desain UI" di bawah), belum ada logika bisnis, auth guard, atau data nyata di baliknya. `README.md` adalah dokumen perencanaan arsitektur yang hidup (living document, dalam Bahasa Indonesia) yang menjelaskan arah project; jadikan itu sebagai sumber kebenaran untuk struktur dan konvensi yang dituju, sampai kode yang benar-benar berjalan menetapkan sebaliknya.
 
 ## Sebelum Mengambil Keputusan Arsitektur atau Implementasi
 
@@ -96,9 +96,44 @@ Relasi utama: `pops`→`coverages`→`services`; `subdistricts`→`pops`/`servic
 
 Gap yang perlu didiskusikan dengan user sebelum ditulis jadi migration (belum terselesaikan per saat ini): belum ada tabel OTP padahal NEXA yang memegang lifecycle OTP; `receipts` belum punya kolom spesifik Xendit (payment_request_id/method/status/paid_at/raw response) padahal Xendit adalah fokus utama; Role & Permission (item roadmap) belum tercermin selain flag `admin` tunggal di `users`.
 
+## Referensi Desain UI
+
+Tampilan NEXA dibuat meniru template admin berbayar **Metronic v8.1.8 (varian "demo1")**, terletak di mesin dev pada `/var/www/html/templates/metronic_v8.1.8/html/demo1/dist/` (di luar repo — bukan aset yang di-commit). Metronic aslinya berbasis Bootstrap 5, tapi di NEXA **direproduksi ulang dengan Tailwind CSS + Alpine.js** (bukan Bootstrap asli) supaya konsisten dengan stack yang sudah diputuskan — lihat memory/percakapan sebelumnya untuk detail keputusan ini. Dua project ISP sebelumnya, `/home/anggara/Webapp/xnet/app11` dan `/home/anggara/Webapp/xnet/app12` (di luar repo ini), juga jadi rujukan branding (logo) dan pola alur login phone+OTP.
+
+- **Palet warna** (`resources/css/app.css`, blok `@theme`) diambil dari warna asli demo1 (`src/sass/components/_variables.custom.scss` di template, bukan warna default Metronic versi lama): `primary #009ef7`, `success #50cd89`, `info #7239ea`, `danger #f1416c`, `warning #ffc700` (masing-masing punya varian `-active` dan `-light`). Skala abu-abu (`--color-gray-100..900`) juga ditimpa dengan grayscale asli Metronic (`#F9F9F9` → `#181C32`), menggantikan skala gray default Tailwind.
+- **Font**: Inter (via `bunny()` di `vite.config.js`), menggantikan `Instrument Sans` bawaan starter Laravel.
+- **Alpine.js** ditambahkan sebagai dependency npm (`resources/js/app.js` meng-import & start Alpine) — dipakai untuk semua interaktivitas ringan (toggle sidebar mobile, dropdown profil), bukan JS Bootstrap milik Metronic.
+- **Konvensi komponen layout** (`resources/views/components/`):
+  - `auth-layout.blade.php` — kartu terpusat polos untuk halaman auth (meniru varian "corporate" dari 4 gaya auth Metronic — dipilih karena tanpa background image dekoratif, paling mudah direplikasi).
+  - `app-layout.blade.php` — shell utama setelah login: menggabungkan `sidebar.blade.php` (sidebar gelap `bg-gray-900`, accordion menu via Alpine), `header.blade.php` (topbar, search, notifikasi, dropdown profil), `footer.blade.php`. State buka/tutup sidebar mobile (`sidebarOpen`) di-`x-data` di `app-layout`, dipakai bareng oleh `sidebar` dan `header` karena keduanya di-render dalam scope DOM yang sama.
+  - Item menu di `sidebar.blade.php` mengikuti daftar modul roadmap README (Dashboard, Pelanggan, Produk & Paket, Layanan, Billing, Tiket, Inventaris, Vendor & Supplier, Laporan, Pengaturan) — **hanya "Dashboard" yang mengarah ke route sungguhan**, sisanya masih `href="#"` placeholder sampai modulnya dibangun.
+- **Halaman auth** (`resources/views/auth/login.blade.php`, `verify-otp.blade.php`) dan **dashboard placeholder** (`resources/views/dashboard.blade.php`) sudah dibuat, tapi **`app/Http/Controllers/Auth/LoginController.php` masih stub** — `sendOtp()`/`verifyOtp()` cuma validasi bentuk input lalu redirect, belum ada pengiriman OTP nyata, verifikasi, atau session auth guard. Route `/dashboard` juga belum diproteksi middleware auth. Ini semua menyusul saat logika OTP/WhatsApp gateway sungguhan dibangun.
+- Kartu statistik dashboard & badge warna ditulis dengan **kelas Tailwind literal** (bukan interpolasi `bg-{{ $var }}-light`) supaya tetap terdeteksi oleh content-scanner Tailwind v4 saat build — pertahankan pola ini di halaman lain yang punya warna dinamis per-item.
+- Belum ada halaman modul bisnis lain (Customer/Billing/dll) yang dibangun — replikasi Metronic baru sebatas shell navigasi (login, OTP, layout dashboard kosong), sesuai cakupan yang disepakati.
+
+### Dark mode
+
+- Dark mode ikut preferensi sistem (`prefers-color-scheme`) secara default, tapi user bisa override manual lewat tombol toggle — permintaan eksplisit user supaya tidak dipaksa satu mode saja.
+- Tailwind v4 dikonfigurasi pakai varian `dark:` berbasis **class**, bukan cuma media query: `@custom-variant dark (&:where(.dark, .dark *));` di `resources/css/app.css`. Ini wajib ada supaya toggle manual (menambah/menghapus class `dark` di `<html>`) benar-benar mengubah tampilan.
+- `resources/views/components/theme-init.blade.php` — script kecil yang **harus** dirender paling awal di `<head>` (sebelum elemen lain), tugasnya membaca `localStorage.theme` (kalau user pernah memilih manual) atau fallback ke `matchMedia('(prefers-color-scheme: dark)')`, lalu toggle class `dark` di `<html>` sebelum browser sempat menggambar (mencegah flash tema salah). Juga listen ke perubahan preferensi sistem selama user belum override manual.
+- `resources/views/components/theme-toggle.blade.php` — tombol Alpine yang toggle class `dark` + simpan pilihan ke `localStorage.theme` ('light'/'dark'). Dipasang di `header.blade.php` (untuk halaman ber-sidebar) dan pojok kanan-atas `auth-layout.blade.php` (halaman login/OTP, karena belum ada header di sana).
+- Setiap komponen/halaman baru yang punya warna latar/teks eksplisit **wajib** ditambahi pasangan `dark:` yang sepadan (pola: `bg-white` → `+ dark:bg-gray-800`, `text-gray-900` → `+ dark:text-white`, `border-gray-300` → `+ dark:border-gray-700`, dst.) — jangan biarkan halaman baru cuma punya tampilan light mode. Sidebar (`sidebar.blade.php`) terkecuali: dia memang didesain gelap permanen ("dark-sidebar" ala Metronic) terlepas dari mode terang/gelap keseluruhan app.
+
+### Logo mengikuti tema (light/dark)
+
+`public/images/logo/` berisi dua varian logo (aset sementara dari `~/Webapp/xnet/app11`), keduanya PNG transparan berisi mark "X" saja (bukan logo dengan warna latar solid, meski namanya menyiratkan begitu):
+- `logo-white-bg.png` — X berwarna **hitam**, didesain untuk dipasang di atas latar **terang**.
+- `logo-black-bg.png` — X berwarna **putih**, didesain untuk dipasang di atas latar **gelap**.
+
+Aturan pemakaian (dicontek dari pola yang sama di `~/Webapp/xnet/app/`, yang pakai trik CSS `dark:invert` pada satu logo hitam — di NEXA dipakai pendekatan dua file dengan toggle visibility karena kita sudah punya kedua varian siap pakai, bukan filter invert):
+- **Area yang latarnya ikut berubah terang/gelap** (mis. `auth-layout.blade.php`, tempat logo duduk di atas `bg-gray-100 dark:bg-gray-900`) — render **kedua** `<img>`, satu dengan class `dark:hidden` (pakai `logo-white-bg.png`, utk light mode) dan satu lagi `hidden dark:block` (pakai `logo-black-bg.png`, utk dark mode).
+- **Area yang latarnya selalu gelap terlepas dari tema app** (`sidebar.blade.php` dan header/nav gelap di `welcome.blade.php`, keduanya `bg-gray-900` permanen) — **selalu** pakai `logo-black-bg.png` (X putih) saja, tanpa toggle, karena latar belakangnya tidak pernah berubah jadi terang.
+
+Kalau menambah logo di tempat baru, cek dulu apakah latar elemen tersebut ikut berubah dengan tema app atau tetap satu warna — itu yang menentukan perlu toggle dua gambar atau cukup satu varian tetap.
+
 ## Catatan Stack
 
 - PHP ^8.3, Laravel ^13.8.
-- Frontend build via Vite + `laravel-vite-plugin`, Tailwind CSS v4 (lewat `@tailwindcss/vite`), entry point `resources/css/app.css` dan `resources/js/app.js`.
+- Frontend build via Vite + `laravel-vite-plugin`, Tailwind CSS v4 (lewat `@tailwindcss/vite`), Alpine.js (npm, di-start di `resources/js/app.js`), entry point `resources/css/app.css` dan `resources/js/app.js`.
 - `bootstrap/app.php` adalah konfigurasi app single-file gaya Laravel 13 (routing, middleware, exception handling) — tidak ada `app/Http/Kernel.php`.
 - `app/Providers/AppServiceProvider.php` saat ini adalah satu-satunya provider aplikasi yang terdaftar (lihat `bootstrap/providers.php`).
