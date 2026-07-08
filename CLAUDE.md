@@ -8,13 +8,17 @@ File ini memberikan panduan untuk Claude Code (claude.ai/code) saat bekerja deng
 
 Ini adalah **NEXA**, aplikasi internal untuk XNet (PT. XPlus Network Indonesia) yang akan menjadi tulang punggung administrasi/operasional untuk perusahaan ISP: manajemen pelanggan, katalog produk/layanan, billing, dan pembayaran via Xendit, yang selanjutnya akan berkembang ke integrasi jaringan (MikroTik, OLT) dan operasional ISP secara lebih luas.
 
-Repository ini masih tahap awal — belum ada modul bisnis/migration domain yang dibangun selain model/migration `User` bawaan Laravel. Yang sudah ada sejauh ini hanyalah **shell tampilan** (layout, halaman login/OTP, dashboard placeholder — lihat "Referensi Desain UI" di bawah), belum ada logika bisnis, auth guard, atau data nyata di baliknya. `README.md` adalah dokumen perencanaan arsitektur yang hidup (living document, dalam Bahasa Indonesia) yang menjelaskan arah project; jadikan itu sebagai sumber kebenaran untuk struktur dan konvensi yang dituju, sampai kode yang benar-benar berjalan menetapkan sebaliknya.
+Repository ini masih tahap awal. Modul domain pertama yang sudah nyata (bukan sekadar shell) adalah **Authentication** (login phone + OTP WhatsApp — lihat "Authentication / Login" di bawah untuk detail implementasi). Modul bisnis lain (Customer, Billing, Xendit, dst.) belum dibangun. `README.md` adalah dokumen perencanaan arsitektur yang hidup (living document, dalam Bahasa Indonesia) yang menjelaskan arah project; jadikan itu sebagai sumber kebenaran untuk struktur dan konvensi yang dituju, sampai kode yang benar-benar berjalan menetapkan sebaliknya.
 
 ## Sebelum Mengambil Keputusan Arsitektur atau Implementasi
 
 - **Baca ulang `README.md` sebelum memulai fitur baru.** Ini adalah living document — pemiliknya meng-update-nya langsung setiap kali arah berubah (alur login, pendekatan integrasi payment, prioritas roadmap, dll), dan bisa berubah antar sesi tanpa ada perubahan kode yang mengikutinya. Jangan mengandalkan ringkasan dari percakapan sebelumnya; selalu cek file yang terkini.
 - **Cek `database/database.drawio` sebelum mendesain migration atau skema.** Ini adalah diagram ER draw.io yang menjadi draft/roadmap berjalan untuk desain database (lihat "Draft Desain Database" di bawah untuk ringkasan yang sudah di-parse). File ini terbuka untuk direvisi — jika ada yang terlihat tidak konsisten dengan apa yang sedang diimplementasikan, sampaikan ke user, jangan diam-diam menyimpang atau mengikutinya secara kaku.
 - **Update CLAUDE.md ini setiap kali ada keputusan arsitektur/scope/konvensi yang nyata** — baik keputusan itu muncul pertama kali di kode, di `README.md`, maupun di draft drawio. File ini adalah riwayat keputusan yang berjalan, bukan sekadar dokumen onboarding; jaga agar tetap sinkron supaya sesi berikutnya tidak kehilangan arah.
+
+## Untuk Commit Git dan Push ke Github
+
+- Selalu gunakan **bahasa Indonesia** untuk mengisi commit di GIT
 
 ## Perintah yang Umum Digunakan
 
@@ -47,7 +51,7 @@ vendor/bin/pint --test   # cek saja, tanpa mengubah
 php artisan tinker
 ```
 
-Database lokal default adalah SQLite (`database/database.sqlite`), dikonfigurasi lewat `.env` (`DB_CONNECTION=sqlite`). Test berjalan di SQLite in-memory (lihat `phpunit.xml`). README menyebutkan MySQL (InnoDB, utf8mb4) sebagai target database produksi — perkirakan ini bisa berubah seiring project berkembang.
+Database lokal (dev) adalah **MySQL** (`nexa`), dikonfigurasi lewat `.env` (`DB_CONNECTION=mysql`, host `127.0.0.1:3306`) — bukan SQLite lagi. Test suite juga berjalan di MySQL, pakai database terpisah **`nexa_testing`** (lihat `phpunit.xml`, `DB_CONNECTION=mysql`/`DB_DATABASE=nexa_testing`) supaya `RefreshDatabase` tidak pernah menyentuh data dev di `nexa`. `pdo_sqlite` sengaja tidak dipasang di environment dev ini — kalau butuh sqlite di environment lain, sesuaikan lagi `phpunit.xml`. README menyebutkan MySQL (InnoDB, utf8mb4) sebagai target database produksi, jadi keputusan ini juga menyelaraskan dev/test dengan target produksi lebih awal.
 
 ## Arah Arsitektur (dari README.md)
 
@@ -57,18 +61,29 @@ Project ini bermaksud mengikuti konvensi berikut saat kode domain mulai ditambah
 - **Konvensi penamaan** per konsep domain, contoh untuk entitas `Customer`: `CustomerController`, `CustomerService`, `CustomerPolicy`, `CustomerRequest`.
 - **API**: aplikasi customer-facing (web/Android/iOS) akan mengakses lewat REST API versioned di `/api/v1`, terpisah dari admin UI berbasis Blade.
 - **Pembagian teknologi frontend** — gunakan teknologi sesuai tanggung jawabnya, jangan default pakai Vue:
-  - Blade: layout, dashboard, halaman CRUD, form, table.
-  - Alpine.js: interaksi ringan (modal, dropdown, accordion, toast, toggle).
-  - Vue: hanya untuk komponen yang benar-benar kompleks (dashboard realtime, monitoring jaringan, grafik, wizard multi-step).
+    - Blade: layout, dashboard, halaman CRUD, form, table.
+    - Alpine.js: interaksi ringan (modal, dropdown, accordion, toast, toggle).
+    - Vue: hanya untuk komponen yang benar-benar kompleks (dashboard realtime, monitoring jaringan, grafik, wizard multi-step).
 - **Integrasi jaringan**: integrasi MikroTik dan OLT (HSGQ) direncanakan di belakang pola adapter/driver supaya vendor baru bisa ditambahkan tanpa menyentuh modul bisnis.
 - Soft delete hanya jika benar-benar dibutuhkan, bukan default; timestamp standar Laravel; foreign key dan index yang sesuai diharapkan ada di semua skema.
 
 ### Authentication / Login
 
+Sudah **diimplementasikan sungguhan** (bukan lagi shell/stub) — login pakai nomor telepon + OTP WhatsApp, lengkap dengan migration, service layer, dan middleware auth.
+
 - Login menggunakan **nomor telepon**, bukan email/password — berbasis OTP, bukan login password tradisional untuk end user.
 - OTP dikirim melalui **WhatsApp**, bukan SMS.
 - WhatsApp gateway adalah **service terpisah** (`go-whatsapp-web-multidevice`), diakses lewat REST API. NEXA tidak berkomunikasi langsung dengan WhatsApp/Meta.
 - NEXA sendiri yang memegang lifecycle OTP — pembuatan, penyimpanan, masa berlaku, dan validasi semuanya terjadi di aplikasi ini, bukan di service WA gateway.
+- **Tidak ada auto-register.** Nomor yang belum ada di tabel `users` ditolak saat minta OTP (`SendOtpRequest`, rule `exists:users,phone`) — pembuatan akun customer adalah tanggung jawab modul Customer yang belum dibangun. Untuk dev lokal, `database/seeders/AdminUserSeeder.php` menyediakan satu akun admin (`phone` `6281234567890`) via `php artisan migrate:fresh --seed`.
+- **Format nomor telepon: selalu disimpan dalam format internasional (kode negara `62` + nomor, tanpa `0` di depan), kolom `phone` bertipe `unsignedBigInteger` (BIGINT UNSIGNED) — bukan string/VARCHAR.** Keputusan sadar: nomor Indonesia dianggap selalu diawali kode negara 62 begitu dinormalisasi, jadi tidak ada leading-zero bermakna yang perlu dijaga (leading `0` yang ada di input user hanyalah trunk prefix domestik yang dibuang, bukan bagian dari nomor kanonis). Field login di `resources/views/auth/login.blade.php` tetap **satu input polos** (placeholder `81234567890`, tanpa badge/prefix visual `+62`) — user cukup ketik nomor lokal tanpa `0`/`62`, backend yang menormalisasi. Normalisasi dilakukan oleh `App\Support\PhoneNumber::normalize()` (dipanggil dari `SendOtpRequest::prepareForValidation()`): input dibersihkan dari karakter non-digit, lalu kalau diawali `0` diganti jadi `62`, kalau sudah diawali `62` dibiarkan, selain itu `62` ditambahkan di depan. Pakai helper ini lagi (jangan re-implement) di modul lain yang menerima input nomor telepon (mis. nanti Customer). `User::phone` di-cast `'integer'` di model.
+- **Skema**: migration `..._add_phone_admin_last_login_at_to_users_table` menambah `phone` (unsignedBigInteger, nullable, unique — nullable supaya tidak konflik dengan baris user yang belum punya phone; "harus terdaftar" ditegakkan di Form Request, bukan di DB), `admin` (boolean), `last_login_at` ke `users`. Kolom domain customer dari draft drawio (`ktp`/`dob`/`gender`/`code`) **sengaja ditunda** ke migration terpisah saat modul Customer dikerjakan. Tabel baru `otp_codes` (`app/Models/OtpCode.php`) — `user_id` (FK, bukan kolom `phone` terpisah, karena OTP hanya bisa diminta untuk user yang sudah ada), `code_hash` (HMAC-SHA256, bukan bcrypt — OTP berumur pendek/sekali pakai dan sudah dilindungi rate limit + attempt lockout), `expires_at`, `consumed_at`, `attempts`.
+- **Service layer**: `app/Services/OtpService.php` (generate/simpan/expire/validasi kode, cooldown resend 60 detik via `Cache`, lockout setelah `OTP_MAX_ATTEMPTS` percobaan salah), dipanggil dari `LoginController` (sudah bukan stub lagi, di-inject `OtpService`).
+- **WhatsApp gateway pakai pola driver/adapter** (`app/Services/Whatsapp/`): interface `WhatsappGateway`, driver default **`log`** (`LogWhatsappGateway` — tulis OTP ke `storage/logs/laravel.log`, dipakai karena server `go-whatsapp-web-multidevice` sungguhan belum tersedia di dev), dan skeleton `HttpWhatsappGateway` (raw `Http::` facade sesuai mandat README, endpoint masih placeholder — belum dikonfirmasi ke server nyata). Pilihan driver dari `config('services.whatsapp.driver')` / env `WHATSAPP_GATEWAY_DRIVER`, di-bind di `app/Providers/WhatsappServiceProvider.php` (terdaftar di `bootstrap/providers.php`).
+- **Pengiriman OTP lewat job `app/Jobs/SendOtpWhatsappNotification.php`, tapi di-dispatch di koneksi queue `sync`** (`config('otp.queue_connection')` / env `OTP_QUEUE_CONNECTION`, default `sync`), **bukan ikut `QUEUE_CONNECTION=database` global**. Ini keputusan sadar, bukan default Laravel: percobaan pertama pakai `database` sempat menyebabkan job nyangkut di tabel `jobs` tanpa pernah diproses karena tidak ada `queue:work`/`queue:listen` yang jalan di dev — OTP jadi tidak pernah benar-benar "terkirim" (tidak ke-log), padahal baris OTP di DB sudah dibuat, bikin bingung ("kode di log kok tidak cocok" — padahal log-nya memang belum pernah ditulis, itu log basi dari percobaan sebelumnya). `sync` membuat job jalan inline saat request tanpa butuh worker terpisah. Kalau nanti `HttpWhatsappGateway` sungguhan dipakai di production dan panggilan HTTP-nya berpotensi lambat/nge-block request, pertimbangkan ubah `OTP_QUEUE_CONNECTION` kembali ke `database` (atau koneksi queue khusus) — jangan asumsikan `sync` cocok selamanya.
+- **Routing & middleware**: `/login` + `/login/otp` dalam grup `guest`; `/dashboard` + `POST /logout` (baru) dalam grup `auth`. `bootstrap/app.php` pakai `redirectGuestsTo('/login')`/`redirectUsersTo('/dashboard')` (built-in Laravel 13). Rate limiter `otp-request` (3/menit per IP+phone) dan `otp-verify` (10/menit per IP) didaftarkan di `AppServiceProvider::boot()` — karena tidak ada `RouteServiceProvider` terpisah di skeleton Laravel 13 ini.
+- Tombol "Keluar" di `header.blade.php` sudah di-wire ke `POST /logout` (form + `@csrf`), menggantikan placeholder `<a href="#">`.
+- Test: `tests/Feature/Auth/LoginFlowTest.php` — pakai fake `WhatsappGateway` (bind instance yang menangkap kode asli) untuk membaca kode OTP tanpa bergantung pada skema hash internal.
 
 ### Payment Gateway (Xendit)
 
@@ -94,7 +109,9 @@ Project ini bermaksud mengikuti konvensi berikut saat kode domain mulai ditambah
 
 Relasi utama: `pops`→`coverages`→`services`; `subdistricts`→`pops`/`services`; `users`→`services`; `products`/`packages`→`package_product`→`sale_products`; `services`→`sales`→{`sale_products`, `service_activations`, `receipts`}; `service_activations`→`service_dismantles`.
 
-Gap yang perlu didiskusikan dengan user sebelum ditulis jadi migration (belum terselesaikan per saat ini): belum ada tabel OTP padahal NEXA yang memegang lifecycle OTP; `receipts` belum punya kolom spesifik Xendit (payment_request_id/method/status/paid_at/raw response) padahal Xendit adalah fokus utama; Role & Permission (item roadmap) belum tercermin selain flag `admin` tunggal di `users`.
+Gap yang sudah diselesaikan: tabel OTP (`otp_codes`) sudah dibangun dari nol (tidak ada di diagram sama sekali) — lihat "Authentication / Login" di atas. `users.phone`/`admin`/`last_login_at` juga sudah dimigrasikan (minimal, tanpa `ktp`/`dob`/`gender`/`code` yang sengaja ditunda ke modul Customer).
+
+Gap yang masih perlu didiskusikan dengan user sebelum ditulis jadi migration: `receipts` belum punya kolom spesifik Xendit (payment_request_id/method/status/paid_at/raw response) padahal Xendit adalah fokus utama; Role & Permission (item roadmap) belum tercermin selain flag `admin` tunggal di `users`.
 
 ## Referensi Desain UI
 
@@ -104,10 +121,10 @@ Tampilan NEXA dibuat meniru template admin berbayar **Metronic v8.1.8 (varian "d
 - **Font**: Inter (via `bunny()` di `vite.config.js`), menggantikan `Instrument Sans` bawaan starter Laravel.
 - **Alpine.js** ditambahkan sebagai dependency npm (`resources/js/app.js` meng-import & start Alpine) — dipakai untuk semua interaktivitas ringan (toggle sidebar mobile, dropdown profil), bukan JS Bootstrap milik Metronic.
 - **Konvensi komponen layout** (`resources/views/components/`):
-  - `auth-layout.blade.php` — kartu terpusat polos untuk halaman auth (meniru varian "corporate" dari 4 gaya auth Metronic — dipilih karena tanpa background image dekoratif, paling mudah direplikasi).
-  - `app-layout.blade.php` — shell utama setelah login: menggabungkan `sidebar.blade.php` (sidebar gelap `bg-gray-900`, accordion menu via Alpine), `header.blade.php` (topbar, search, notifikasi, dropdown profil), `footer.blade.php`. State buka/tutup sidebar mobile (`sidebarOpen`) di-`x-data` di `app-layout`, dipakai bareng oleh `sidebar` dan `header` karena keduanya di-render dalam scope DOM yang sama.
-  - Item menu di `sidebar.blade.php` mengikuti daftar modul roadmap README (Dashboard, Pelanggan, Produk & Paket, Layanan, Billing, Tiket, Inventaris, Vendor & Supplier, Laporan, Pengaturan) — **hanya "Dashboard" yang mengarah ke route sungguhan**, sisanya masih `href="#"` placeholder sampai modulnya dibangun.
-- **Halaman auth** (`resources/views/auth/login.blade.php`, `verify-otp.blade.php`) dan **dashboard placeholder** (`resources/views/dashboard.blade.php`) sudah dibuat, tapi **`app/Http/Controllers/Auth/LoginController.php` masih stub** — `sendOtp()`/`verifyOtp()` cuma validasi bentuk input lalu redirect, belum ada pengiriman OTP nyata, verifikasi, atau session auth guard. Route `/dashboard` juga belum diproteksi middleware auth. Ini semua menyusul saat logika OTP/WhatsApp gateway sungguhan dibangun.
+    - `auth-layout.blade.php` — kartu terpusat polos untuk halaman auth (meniru varian "corporate" dari 4 gaya auth Metronic — dipilih karena tanpa background image dekoratif, paling mudah direplikasi).
+    - `app-layout.blade.php` — shell utama setelah login: menggabungkan `sidebar.blade.php` (sidebar gelap `bg-gray-900`, accordion menu via Alpine), `header.blade.php` (topbar, search, notifikasi, dropdown profil), `footer.blade.php`. State buka/tutup sidebar mobile (`sidebarOpen`) di-`x-data` di `app-layout`, dipakai bareng oleh `sidebar` dan `header` karena keduanya di-render dalam scope DOM yang sama.
+    - Item menu di `sidebar.blade.php` mengikuti daftar modul roadmap README (Dashboard, Pelanggan, Produk & Paket, Layanan, Billing, Tiket, Inventaris, Vendor & Supplier, Laporan, Pengaturan) — **hanya "Dashboard" yang mengarah ke route sungguhan**, sisanya masih `href="#"` placeholder sampai modulnya dibangun.
+- **Halaman auth** (`resources/views/auth/login.blade.php`, `verify-otp.blade.php`) dan **dashboard placeholder** (`resources/views/dashboard.blade.php`) sudah dibuat, dan **`app/Http/Controllers/Auth/LoginController.php` sudah bukan stub lagi** — lihat "Authentication / Login" di atas untuk detail implementasi nyata (OTP, WhatsApp gateway, middleware auth). Dashboard sendiri (`dashboard.blade.php`) masih placeholder statis, belum ada data nyata.
 - Kartu statistik dashboard & badge warna ditulis dengan **kelas Tailwind literal** (bukan interpolasi `bg-{{ $var }}-light`) supaya tetap terdeteksi oleh content-scanner Tailwind v4 saat build — pertahankan pola ini di halaman lain yang punya warna dinamis per-item.
 - Belum ada halaman modul bisnis lain (Customer/Billing/dll) yang dibangun — replikasi Metronic baru sebatas shell navigasi (login, OTP, layout dashboard kosong), sesuai cakupan yang disepakati.
 
@@ -122,10 +139,12 @@ Tampilan NEXA dibuat meniru template admin berbayar **Metronic v8.1.8 (varian "d
 ### Logo mengikuti tema (light/dark)
 
 `public/images/logo/` berisi dua varian logo (aset sementara dari `~/Webapp/xnet/app11`), keduanya PNG transparan berisi mark "X" saja (bukan logo dengan warna latar solid, meski namanya menyiratkan begitu):
+
 - `logo-white-bg.png` — X berwarna **hitam**, didesain untuk dipasang di atas latar **terang**.
 - `logo-black-bg.png` — X berwarna **putih**, didesain untuk dipasang di atas latar **gelap**.
 
 Aturan pemakaian (dicontek dari pola yang sama di `~/Webapp/xnet/app/`, yang pakai trik CSS `dark:invert` pada satu logo hitam — di NEXA dipakai pendekatan dua file dengan toggle visibility karena kita sudah punya kedua varian siap pakai, bukan filter invert):
+
 - **Area yang latarnya ikut berubah terang/gelap** (mis. `auth-layout.blade.php`, tempat logo duduk di atas `bg-gray-100 dark:bg-gray-900`) — render **kedua** `<img>`, satu dengan class `dark:hidden` (pakai `logo-white-bg.png`, utk light mode) dan satu lagi `hidden dark:block` (pakai `logo-black-bg.png`, utk dark mode).
 - **Area yang latarnya selalu gelap terlepas dari tema app** (`sidebar.blade.php` dan header/nav gelap di `welcome.blade.php`, keduanya `bg-gray-900` permanen) — **selalu** pakai `logo-black-bg.png` (X putih) saja, tanpa toggle, karena latar belakangnya tidak pernah berubah jadi terang.
 

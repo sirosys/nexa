@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'whatsapp' => [
+        'driver' => env('WHATSAPP_GATEWAY_DRIVER', 'log'),
+        'base_url' => env('WHATSAPP_GATEWAY_BASE_URL'),
+        'token' => env('WHATSAPP_GATEWAY_TOKEN'),
+        'sender' => env('WHATSAPP_GATEWAY_SENDER'),
+        'log_channel' => env('WHATSAPP_GATEWAY_LOG_CHANNEL', 'stack'),
+    ],
+
 ];
