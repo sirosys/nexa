@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'phone', 'admin', 'last_login_at'])]
+#[Fillable(['name', 'email', 'password', 'phone', 'code', 'admin', 'last_login_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -43,5 +44,11 @@ class User extends Authenticatable
     public function otpCodes(): HasMany
     {
         return $this->hasMany(OtpCode::class);
+    }
+
+    /** @return HasOne<UserDetail, $this> */
+    public function userDetails(): HasOne
+    {
+        return $this->hasOne(UserDetail::class, 'id', 'id');
     }
 }

@@ -1,9 +1,9 @@
 @php
-    // TODO: hanya "Dashboard" yang mengarah ke route sungguhan; sisanya placeholder
-    // sampai modul terkait dibangun (lihat roadmap modul di README.md).
+    // TODO: hanya "Dashboard" dan "Pengguna" yang mengarah ke route sungguhan;
+    // sisanya placeholder sampai modul terkait dibangun (lihat roadmap modul di README.md).
     $menu = [
         ['label' => 'Dashboard', 'route' => 'dashboard'],
-        ['label' => 'Pelanggan'],
+        ['label' => 'Pengguna', 'route' => 'users.index'],
         ['label' => 'Produk & Paket'],
         ['label' => 'Layanan'],
         ['label' => 'Billing'],
