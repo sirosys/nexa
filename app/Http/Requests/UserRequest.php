@@ -10,6 +10,8 @@ use Illuminate\Validation\Validator;
 
 class UserRequest extends FormRequest
 {
+    public const ROLES = ['superadmin', 'technician', 'finance', 'sales', 'customer'];
+
     public function authorize(): bool
     {
         return true;
@@ -19,7 +21,6 @@ class UserRequest extends FormRequest
     {
         $this->merge([
             'phone' => PhoneNumber::normalize((string) $this->input('phone')),
-            'admin' => $this->boolean('admin'),
         ]);
     }
 
@@ -30,7 +31,7 @@ class UserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'digits_between:9,15', Rule::unique('users', 'phone')->ignore($userId)],
-            'admin' => ['boolean'],
+            'role' => ['required', Rule::in(self::ROLES)],
             'nik' => ['nullable', 'digits:16', Rule::unique('user_details', 'nik')->ignore($userId, 'id')],
             'ktp_photo' => ['nullable', 'image', 'max:4096'],
         ];
@@ -50,8 +51,8 @@ class UserRequest extends FormRequest
     {
         $isSelf = $target && $target->id === $this->user()?->id;
 
-        if ($isSelf && $target->admin && ! $this->boolean('admin')) {
-            $validator->errors()->add('admin', 'Tidak bisa mencabut status admin dari akun sendiri.');
+        if ($isSelf && $target->hasRole('superadmin') && $this->input('role') !== 'superadmin') {
+            $validator->errors()->add('role', 'Tidak bisa mengubah role akun sendiri dari Superadmin.');
         }
     }
 

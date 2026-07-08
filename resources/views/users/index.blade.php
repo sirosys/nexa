@@ -1,3 +1,15 @@
+@php
+    // Kelas badge ditulis literal (bukan interpolasi) supaya terdeteksi
+    // content-scanner Tailwind v4 saat build — sama seperti dashboard.
+    $roleBadges = [
+        'superadmin' => ['label' => 'Superadmin', 'class' => 'bg-danger-light text-danger dark:bg-danger/10'],
+        'technician' => ['label' => 'Teknisi', 'class' => 'bg-warning-light text-warning dark:bg-warning/10'],
+        'finance' => ['label' => 'Finance', 'class' => 'bg-success-light text-success dark:bg-success/10'],
+        'sales' => ['label' => 'Sales', 'class' => 'bg-info-light text-info dark:bg-info/10'],
+        'customer' => ['label' => 'Pelanggan', 'class' => 'bg-primary-light text-primary dark:bg-primary/10'],
+    ];
+@endphp
+
 <x-app-layout :title="'Pengguna — ' . config('app.name', 'NEXA')">
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -52,10 +64,11 @@
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $user->phone }}</td>
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $user->userDetails->nik ?? '—' }}</td>
                             <td class="px-4 py-3">
-                                @if ($user->admin)
-                                    <span class="inline-flex items-center rounded-full bg-info-light px-2.5 py-1 text-xs font-medium text-info dark:bg-info/10">Admin</span>
+                                @php $role = $user->getRoleNames()->first(); @endphp
+                                @if ($role && isset($roleBadges[$role]))
+                                    <span class="inline-flex items-center rounded-full {{ $roleBadges[$role]['class'] }} px-2.5 py-1 text-xs font-medium">{{ $roleBadges[$role]['label'] }}</span>
                                 @else
-                                    <span class="inline-flex items-center rounded-full bg-primary-light px-2.5 py-1 text-xs font-medium text-primary dark:bg-primary/10">Pelanggan</span>
+                                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">—</span>
                                 @endif
                             </td>
                             <td class="px-4 py-3">

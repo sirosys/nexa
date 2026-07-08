@@ -19,7 +19,7 @@ class UserController extends Controller
     public function index(Request $request): View
     {
         $users = User::query()
-            ->with('userDetails')
+            ->with(['userDetails', 'roles'])
             ->when($request->string('q')->trim()->isNotEmpty(), function ($query) use ($request) {
                 $q = $request->string('q')->trim()->value();
                 $query->where(function ($query) use ($q) {
@@ -49,7 +49,7 @@ class UserController extends Controller
 
     public function edit(User $user): View
     {
-        $user->load('userDetails');
+        $user->load(['userDetails', 'roles']);
 
         return view('users.edit', ['user' => $user]);
     }

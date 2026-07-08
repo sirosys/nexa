@@ -5,6 +5,14 @@
     // cuma menerima bagian lokal (badge +62 terpisah di depannya) — sama
     // seperti pola di auth/login.blade.php.
     $phoneLocal = $user ? preg_replace('/^62/', '', (string) $user->phone) : null;
+    $roleLabels = [
+        'superadmin' => 'Superadmin',
+        'technician' => 'Teknisi',
+        'finance' => 'Finance',
+        'sales' => 'Sales',
+        'customer' => 'Pelanggan',
+    ];
+    $currentRole = $user?->getRoleNames()->first();
 @endphp
 
 <div class="space-y-4">
@@ -48,18 +56,18 @@
         @enderror
     </div>
 
-    <div class="flex items-center gap-2">
-        <input
-            type="checkbox"
-            id="admin"
-            name="admin"
-            value="1"
-            @checked(old('admin', $user?->admin))
-            class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600"
+    <div>
+        <label for="role" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Role</label>
+        <select
+            id="role"
+            name="role"
+            class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white"
         >
-        <label for="admin" class="text-sm font-medium text-gray-700 dark:text-gray-300">Admin / staff</label>
-        <span class="text-xs text-gray-400 dark:text-gray-500">(bukan pelanggan — login tetap lewat OTP, bukan role/permission granular)</span>
-        @error('admin')
+            @foreach ($roleLabels as $value => $label)
+                <option value="{{ $value }}" @selected(old('role', $currentRole) === $value)>{{ $label }}</option>
+            @endforeach
+        </select>
+        @error('role')
             <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
         @enderror
     </div>
@@ -115,7 +123,7 @@
             accept="image/*"
             class="block w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-primary-light file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary dark:text-gray-300"
         >
-        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Disimpan privat — hanya pemilik akun dan admin yang bisa melihat.</p>
+        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Disimpan privat — hanya pemilik akun dan superadmin yang bisa melihat.</p>
         @error('ktp_photo')
             <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
         @enderror

@@ -11,13 +11,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'phone', 'code', 'admin', 'last_login_at'])]
+#[Fillable(['name', 'email', 'password', 'phone', 'code', 'last_login_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -30,14 +31,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'phone' => 'integer',
-            'admin' => 'boolean',
             'last_login_at' => 'datetime',
         ];
     }
 
-    public function isAdmin(): bool
+    public function isSuperadmin(): bool
     {
-        return (bool) $this->admin;
+        return $this->hasRole('superadmin');
     }
 
     /** @return HasMany<OtpCode, $this> */

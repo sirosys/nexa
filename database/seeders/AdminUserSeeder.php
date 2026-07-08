@@ -10,15 +10,16 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::query()->updateOrCreate(
+        $user = User::query()->updateOrCreate(
             ['phone' => '6281234567890'],
             [
                 'name' => 'Admin NEXA',
                 'email' => 'admin@nexa.test',
                 'password' => Hash::make('password'),
-                'admin' => true,
                 'email_verified_at' => now(),
             ]
         );
+
+        $user->syncRoles(['superadmin']);
     }
 }

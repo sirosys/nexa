@@ -15,12 +15,9 @@ class UserService
     public function create(array $data): User
     {
         return DB::transaction(function () use ($data) {
-            $isAdmin = (bool) ($data['admin'] ?? false);
-
             $user = User::create([
                 'name' => $data['name'],
                 'phone' => $data['phone'],
-                'admin' => $isAdmin,
                 // Placeholder inert — akun non-admin di NEXA selalu login lewat
                 // OTP. Kolom password & email NOT NULL (peninggalan scaffolding
                 // default Laravel) tapi nilainya tidak pernah dipakai login.
@@ -28,9 +25,10 @@ class UserService
                 'email' => "user-{$data['phone']}@nexa.internal",
             ]);
 
-            // `code` (buat invoicing/billing) cuma relevan untuk akun customer,
-            // bukan staff/admin — dibiarkan null untuk akun admin.
-            if (! $isAdmin) {
+            $user->assignRole($data['role']);
+
+            // `code` (buat invoicing/billing) cuma relevan untuk akun customer.
+            if ($data['role'] === 'customer') {
                 $user->update([
                     'code' => 'CUS'.str_pad((string) $user->id, 6, '0', STR_PAD_LEFT),
                 ]);
@@ -60,11 +58,12 @@ class UserService
             $user->update([
                 'name' => $data['name'],
                 'phone' => $data['phone'],
-                'admin' => (bool) ($data['admin'] ?? false),
                 // Ikut disinkronkan supaya tidak bentrok unique kalau nomor
                 // telepon lama dipakai ulang oleh user lain nantinya.
                 'email' => "user-{$data['phone']}@nexa.internal",
             ]);
+
+            $user->syncRoles([$data['role']]);
 
             $userDetails = $user->userDetails;
             $updates = [];

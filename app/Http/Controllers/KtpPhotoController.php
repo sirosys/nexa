@@ -13,9 +13,10 @@ class KtpPhotoController extends Controller
     {
         $viewer = $request->user();
 
-        // Pemilik akun sendiri, atau admin/staff (belum ada tingkatan
-        // superadmin terpisah — lihat CLAUDE.md bagian "Foto KTP").
-        abort_unless($viewer->id === $user->id || $viewer->isAdmin(), 403);
+        // Pemilik akun sendiri, atau role superadmin — lihat CLAUDE.md
+        // bagian "Authorization / Role & Permission" soal kenapa masih
+        // superadmin-only (permission granular per role belum didesain).
+        abort_unless($viewer->id === $user->id || $viewer->isSuperadmin(), 403);
 
         $path = $user->userDetails?->ktp_photo;
 
