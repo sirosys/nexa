@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\KtpPhotoController;
+use App\Http\Controllers\PackageController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,4 +27,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::resource('users', UserController::class)->except('show');
     Route::get('/secure/ktp/{user}', [KtpPhotoController::class, 'show'])->name('secure.ktp');
+    Route::resource('products', ProductController::class)->except('show');
+    Route::resource('packages', PackageController::class)->except('show');
 });
