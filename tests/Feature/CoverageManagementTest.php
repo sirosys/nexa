@@ -1,0 +1,117 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Coverage;
+use App\Models\Pop;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class CoverageManagementTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private function superadmin(): User
+    {
+        $user = User::factory()->create();
+        $user->assignRole('superadmin');
+
+        return $user;
+    }
+
+    private function withRole(string $role): User
+    {
+        $user = User::factory()->create();
+        $user->assignRole($role);
+
+        return $user;
+    }
+
+    public function test_superadmin_can_create_coverage_with_auto_generated_code(): void
+    {
+        $superadmin = $this->superadmin();
+        $pop = Pop::factory()->create();
+
+        $response = $this->actingAs($superadmin)->post('/coverages', [
+            'pop_id' => $pop->id,
+            'name' => 'Cakupan Blok A',
+            'description' => 'RW 01-05.',
+        ]);
+
+        $response->assertRedirect(route('coverages.index'));
+
+        $coverage = Coverage::where('name', 'Cakupan Blok A')->firstOrFail();
+        $this->assertNotNull($coverage->code);
+        $this->assertStringStartsWith('COV', $coverage->code);
+        $this->assertSame($pop->id, $coverage->pop_id);
+    }
+
+    public function test_pop_id_must_exist(): void
+    {
+        $response = $this->actingAs($this->superadmin())->post('/coverages', [
+            'pop_id' => 999999,
+            'name' => 'Cakupan Tidak Valid',
+        ]);
+
+        $response->assertSessionHasErrors('pop_id');
+    }
+
+    public function test_superadmin_can_update_coverage(): void
+    {
+        $superadmin = $this->superadmin();
+        $coverage = Coverage::factory()->create(['name' => 'Cakupan Lama']);
+
+        $response = $this->actingAs($superadmin)->put("/coverages/{$coverage->id}", [
+            'pop_id' => $coverage->pop_id,
+            'name' => 'Cakupan Baru',
+        ]);
+
+        $response->assertRedirect(route('coverages.index'));
+        $this->assertSame('Cakupan Baru', $coverage->fresh()->name);
+    }
+
+    public function test_superadmin_can_delete_coverage(): void
+    {
+        $superadmin = $this->superadmin();
+        $coverage = Coverage::factory()->create();
+
+        $response = $this->actingAs($superadmin)->delete("/coverages/{$coverage->id}");
+
+        $response->assertRedirect(route('coverages.index'));
+        $this->assertDatabaseMissing('coverages', ['id' => $coverage->id]);
+    }
+
+    public function test_listing_shows_coverages(): void
+    {
+        $superadmin = $this->superadmin();
+        Coverage::factory()->create(['name' => 'Cakupan Blok B']);
+
+        $response = $this->actingAs($superadmin)->get('/coverages');
+
+        $response->assertOk();
+        $response->assertSee('Cakupan Blok B');
+    }
+
+    public function test_create_and_edit_pages_render(): void
+    {
+        $superadmin = $this->superadmin();
+        $coverage = Coverage::factory()->create();
+
+        $this->actingAs($superadmin)->get('/coverages/create')->assertOk();
+        $this->actingAs($superadmin)->get("/coverages/{$coverage->id}/edit")->assertOk();
+    }
+
+    /**
+     * Gate `/coverages` masih sengaja cuma untuk superadmin, konsisten dengan
+     * gate `/users` dan `/products` (lihat CLAUDE.md "Authorization").
+     */
+    public function test_non_superadmin_roles_cannot_access_coverage_routes(): void
+    {
+        foreach (['technician', 'finance', 'sales', 'customer'] as $role) {
+            $staff = $this->withRole($role);
+
+            $this->actingAs($staff)->get('/coverages')->assertForbidden();
+        }
+    }
+}

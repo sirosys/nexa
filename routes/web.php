@@ -1,9 +1,13 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\CoverageController;
 use App\Http\Controllers\KtpPhotoController;
 use App\Http\Controllers\PackageController;
+use App\Http\Controllers\PopController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\SubdistrictController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,4 +33,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/secure/ktp/{user}', [KtpPhotoController::class, 'show'])->name('secure.ktp');
     Route::resource('products', ProductController::class)->except('show');
     Route::resource('packages', PackageController::class)->except('show');
+    Route::get('/subdistricts/search', [SubdistrictController::class, 'search'])->name('subdistricts.search');
+    Route::resource('pops', PopController::class)->except('show');
+    Route::resource('coverages', CoverageController::class)->except('show');
+    Route::get('/services/customers/search', [ServiceController::class, 'searchCustomers'])->name('services.customers.search');
+    Route::resource('services', ServiceController::class)->except('show');
 });
