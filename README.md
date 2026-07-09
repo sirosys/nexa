@@ -182,7 +182,7 @@ Target desain:
 
 # Standar Pengembangan
 
-Seluruh developer wajib mengikuti standar berikut:
+Seluruh developer wajib mengikuti standar berikut, dan semua proses, penjelasan, dan dokumentasi harus selalu dalam bahasa Indonesia agar semua orang yang membacanya bisa memahami dengan jelas dan tidak salah tafsir:
 
 ## Coding
 
@@ -199,7 +199,7 @@ Seluruh developer wajib mengikuti standar berikut:
 - Foreign Key
 - Index yang sesuai
 - Timestamp standar Laravel
-- Soft Delete hanya bila diperlukan
+- Hard Delete hanya bila sangat diperlukan, sisanya adalah menggunakan soft delete untuk menghapus data
 
 ## Naming
 
