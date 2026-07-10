@@ -224,6 +224,23 @@ class ServiceManagementTest extends TestCase
     }
 
     /**
+     * Query kosong (klik pertama kali di kolom pencarian, belum mengetik
+     * apa-apa) tetap mengembalikan daftar browse — bukan array kosong —
+     * supaya picker pelanggan di form Service bisa dibuka lewat klik.
+     */
+    public function test_customer_search_endpoint_returns_browse_list_when_query_is_empty(): void
+    {
+        $superadmin = $this->superadmin();
+        $this->customer();
+        $this->customer();
+
+        $response = $this->actingAs($superadmin)->getJson('/services/customers/search');
+
+        $response->assertOk();
+        $response->assertJsonCount(2);
+    }
+
+    /**
      * Gate `/services` masih sengaja cuma untuk superadmin, konsisten dengan
      * gate `/users` dan `/products` (lihat CLAUDE.md "Authorization").
      */

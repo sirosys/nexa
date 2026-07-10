@@ -84,16 +84,18 @@ class ServiceController extends Controller
 
         $q = $request->string('q')->trim()->value();
 
-        if ($q === '') {
-            return response()->json([]);
-        }
-
         $customers = User::role('customer')
-            ->where(function ($query) use ($q) {
-                $query->where('name', 'like', "%{$q}%")
-                    ->orWhere('phone', 'like', "%{$q}%")
-                    ->orWhere('code', 'like', "%{$q}%");
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(function ($query) use ($q) {
+                    $query->where('name', 'like', "%{$q}%")
+                        ->orWhere('phone', 'like', "%{$q}%")
+                        ->orWhere('code', 'like', "%{$q}%");
+                });
             })
+            // Query kosong (klik pertama kali di kolom pencarian) tetap
+            // mengembalikan daftar browse — bukan array kosong — supaya
+            // picker bisa dibuka lewat klik, bukan cuma lewat mengetik.
+            ->orderBy('name')
             ->limit(20)
             ->get(['id', 'name', 'phone', 'code']);
 

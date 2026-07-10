@@ -18,22 +18,37 @@
         customerResults: [],
         customerOpen: false,
         customerDebounce: null,
+        fetchCustomers(q) {
+            fetch('{{ route('services.customers.search') }}?q=' + encodeURIComponent(q))
+                .then((res) => res.json())
+                .then((data) => {
+                    this.customerResults = data;
+                    this.customerOpen = true;
+                });
+        },
         searchCustomers() {
             clearTimeout(this.customerDebounce);
             this.customerId = null;
-            if (this.customerQuery.trim().length < 2) {
+            const length = this.customerQuery.trim().length;
+            if (length > 0 && length < 3) {
                 this.customerResults = [];
                 this.customerOpen = false;
                 return;
             }
-            this.customerDebounce = setTimeout(() => {
-                fetch('{{ route('services.customers.search') }}?q=' + encodeURIComponent(this.customerQuery))
-                    .then((res) => res.json())
-                    .then((data) => {
-                        this.customerResults = data;
-                        this.customerOpen = data.length > 0;
-                    });
-            }, 300);
+            this.customerDebounce = setTimeout(() => this.fetchCustomers(this.customerQuery.trim()), 300);
+        },
+        openCustomerBrowse() {
+            // Sudah ada pelanggan terpilih — jangan timpa dengan daftar
+            // browse, biarkan user mengetik ulang dulu (yang me-reset
+            // customerId lewat searchCustomers()) baru browse aktif lagi.
+            if (this.customerId) {
+                return;
+            }
+            if (this.customerResults.length > 0) {
+                this.customerOpen = true;
+                return;
+            }
+            this.fetchCustomers('');
         },
         selectCustomer(item) {
             this.customerId = item.id;
@@ -78,10 +93,10 @@
             id="customer_query"
             x-model="customerQuery"
             @input="searchCustomers()"
-            @focus="customerOpen = customerResults.length > 0"
+            @focus="openCustomerBrowse()"
             @click.outside="customerOpen = false"
             autocomplete="off"
-            placeholder="Ketik nama atau nomor telepon pelanggan..."
+            placeholder="Klik untuk lihat daftar, atau ketik nama/nomor telepon pelanggan..."
             class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
         >
         <input type="hidden" name="user_id" :value="customerId">
@@ -99,6 +114,7 @@
                     x-text="item.name + ' (' + item.phone + ')'"
                 ></button>
             </template>
+            <p x-show="customerResults.length === 0" class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">Pelanggan tidak ditemukan.</p>
         </div>
         @error('user_id')
             <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
