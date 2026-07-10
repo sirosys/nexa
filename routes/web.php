@@ -6,6 +6,7 @@ use App\Http\Controllers\KtpPhotoController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PopController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SubdistrictController;
 use App\Http\Controllers\UserController;
@@ -38,4 +39,6 @@ Route::middleware('auth')->group(function () {
     Route::resource('coverages', CoverageController::class)->except('show');
     Route::get('/services/customers/search', [ServiceController::class, 'searchCustomers'])->name('services.customers.search');
     Route::resource('services', ServiceController::class)->except('show');
+    Route::get('/sales/services/search', [SaleController::class, 'searchServices'])->name('sales.services.search');
+    Route::resource('sales', SaleController::class)->except('show');
 });

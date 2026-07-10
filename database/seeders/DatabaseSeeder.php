@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             PopCoverageSeeder::class,
             ProductPackageSeeder::class,
             ServiceSeeder::class,
+            SaleSeeder::class,
         ]);
     }
 }
