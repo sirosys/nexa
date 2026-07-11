@@ -14,9 +14,9 @@ class WhatsappServiceProvider extends ServiceProvider
         $this->app->bind(WhatsappGateway::class, function () {
             return match (config('services.whatsapp.driver', 'log')) {
                 'http' => new HttpWhatsappGateway(
-                    config('services.whatsapp.base_url'),
-                    config('services.whatsapp.token'),
-                    config('services.whatsapp.sender'),
+                    config('services.whatsapp.url'),
+                    config('services.whatsapp.username'),
+                    config('services.whatsapp.password'),
                 ),
                 default => new LogWhatsappGateway,
             };

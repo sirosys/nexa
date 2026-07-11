@@ -37,10 +37,18 @@ return [
 
     'whatsapp' => [
         'driver' => env('WHATSAPP_GATEWAY_DRIVER', 'log'),
-        'base_url' => env('WHATSAPP_GATEWAY_BASE_URL'),
-        'token' => env('WHATSAPP_GATEWAY_TOKEN'),
-        'sender' => env('WHATSAPP_GATEWAY_SENDER'),
+        // go-whatsapp-web-multidevice diautentikasi lewat HTTP Basic Auth
+        // (username/password), bukan Bearer token.
+        'url' => env('WA_GATEWAY_URL'),
+        'username' => env('WA_GATEWAY_USERNAME'),
+        'password' => env('WA_GATEWAY_PASSWORD'),
         'log_channel' => env('WHATSAPP_GATEWAY_LOG_CHANNEL', 'stack'),
+    ],
+
+    'xendit' => [
+        'secret_key' => env('XENDIT_SECRET_KEY'),
+        'webhook_token' => env('XENDIT_WEBHOOK_TOKEN'),
+        'base_url' => env('XENDIT_BASE_URL', 'https://api.xendit.co'),
     ],
 
 ];

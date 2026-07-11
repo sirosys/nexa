@@ -5,16 +5,21 @@ namespace App\Services;
 use App\Models\Package;
 use App\Models\Product;
 use App\Models\Service;
+use App\Notifications\ServiceRegisteredNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ServiceService
 {
-    public function __construct(private readonly SaleService $saleService) {}
+    public function __construct(
+        private readonly SaleService $saleService,
+        private readonly ReceiptService $receiptService,
+        private readonly NotificationService $notificationService,
+    ) {}
 
     public function create(array $data): Service
     {
-        return DB::transaction(function () use ($data) {
+        $sale = DB::transaction(function () use ($data) {
             $service = Service::create([
                 'pin' => $this->generatePin(),
                 'user_id' => $data['user_id'],
@@ -39,14 +44,26 @@ class ServiceService
             // terpisah untuk pendaftaran awal (lihat CLAUDE.md "Service").
             $package = Package::with('products')->findOrFail($data['package_id']);
 
-            $this->saleService->create([
+            $sale = $this->saleService->create([
                 'service_id' => $service->id,
                 'package_id' => $package->id,
                 'products' => $this->buildProductLines($package),
             ]);
 
-            return $service;
+            return $sale->setRelation('service', $service);
         });
+
+        $this->notificationService->send($sale->service->user, new ServiceRegisteredNotification($sale->service));
+
+        // Sengaja di luar transaksi Service+Sale di atas: ini panggilan
+        // HTTP eksternal ke Xendit (lihat CLAUDE.md "Billing / Invoice
+        // (Xendit)") — tidak boleh menahan lock DB kalau lambat/gagal.
+        // ReceiptService yang mengirim notifikasi tagihan (kalau berhasil
+        // dibuat) — bukan di sini, supaya retry manual lewat
+        // SaleController::retryReceipt() juga ikut mengirim notifikasi.
+        $this->receiptService->createForSale($sale);
+
+        return $sale->service;
     }
 
     public function update(Service $service, array $data): Service

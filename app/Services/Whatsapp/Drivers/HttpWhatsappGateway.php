@@ -8,16 +8,18 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Raw-HTTP client for go-whatsapp-web-multidevice (README mandates raw HTTP,
- * no SDK). No real gateway server is available yet to confirm the exact
- * request/response contract, so the endpoint path/payload below are a
- * best-effort placeholder — revisit once that server is actually stood up.
+ * no SDK). Server ini diautentikasi lewat HTTP Basic Auth (username/password
+ * yang dikonfigurasi di sisi server gateway), bukan Bearer token — beda dari
+ * kebanyakan REST API lain. Endpoint path/payload di bawah masih best-effort
+ * (belum ada dokumentasi resmi yang dirujuk), revisit begitu diuji end-to-end
+ * dengan kredensial gateway sungguhan.
  */
 class HttpWhatsappGateway implements WhatsappGateway
 {
     public function __construct(
         private readonly ?string $baseUrl,
-        private readonly ?string $token,
-        private readonly ?string $sender,
+        private readonly ?string $username,
+        private readonly ?string $password,
     ) {}
 
     public function sendOtp(string $phone, string $code): bool
@@ -25,12 +27,11 @@ class HttpWhatsappGateway implements WhatsappGateway
         $message = "Kode OTP NEXA Anda: {$code}. Berlaku {$this->ttlMinutes()} menit. Jangan bagikan kode ini kepada siapa pun.";
 
         $response = Http::baseUrl((string) $this->baseUrl)
-            ->withToken((string) $this->token)
+            ->withBasicAuth((string) $this->username, (string) $this->password)
             ->timeout(10)
             ->post('/send/message', [
                 'phone' => $phone,
                 'message' => $message,
-                'sender' => $this->sender,
             ]);
 
         if ($response->failed()) {
@@ -47,12 +48,11 @@ class HttpWhatsappGateway implements WhatsappGateway
     public function sendMessage(string $phone, string $message): bool
     {
         $response = Http::baseUrl((string) $this->baseUrl)
-            ->withToken((string) $this->token)
+            ->withBasicAuth((string) $this->username, (string) $this->password)
             ->timeout(10)
             ->post('/send/message', [
                 'phone' => $phone,
                 'message' => $message,
-                'sender' => $this->sender,
             ]);
 
         if ($response->failed()) {

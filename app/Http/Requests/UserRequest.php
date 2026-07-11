@@ -2,8 +2,9 @@
 
 namespace App\Http\Requests;
 
-use App\Models\UserDetail;
+use App\Rules\ValidNik;
 use App\Support\PhoneNumber;
+use App\Support\TitleCase;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -21,6 +22,7 @@ class UserRequest extends FormRequest
     {
         $this->merge([
             'phone' => PhoneNumber::normalize((string) $this->input('phone')),
+            'name' => $this->filled('name') ? TitleCase::normalize((string) $this->input('name')) : $this->input('name'),
         ]);
     }
 
@@ -31,8 +33,9 @@ class UserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'digits_between:9,15', Rule::unique('users', 'phone')->ignore($userId)],
+            'email' => ['required', 'email:rfc', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
             'role' => ['required', Rule::in(self::ROLES)],
-            'nik' => ['nullable', 'digits:16', Rule::unique('user_details', 'nik')->ignore($userId, 'id')],
+            'nik' => ['nullable', 'digits:16', new ValidNik, Rule::unique('user_details', 'nik')->ignore($userId, 'id')],
             'ktp_photo' => ['nullable', 'image', 'max:4096'],
         ];
     }
@@ -62,17 +65,11 @@ class UserRequest extends FormRequest
         $incomingNik = $this->input('nik');
 
         // NIK terkunci begitu pernah tersimpan — tidak bisa diubah lewat
-        // form manapun (termasuk admin) untuk iterasi ini.
-        if ($existingNik !== null) {
-            if ($incomingNik !== null && $incomingNik !== $existingNik) {
-                $validator->errors()->add('nik', 'NIK sudah terkunci dan tidak bisa diubah.');
-            }
-
-            return;
-        }
-
-        if ($incomingNik !== null && UserDetail::parseNik($incomingNik) === null) {
-            $validator->errors()->add('nik', 'NIK tidak valid.');
+        // form manapun (termasuk admin) untuk iterasi ini. Validitas NIK
+        // itu sendiri (bisa di-parse atau tidak) sudah ditegakkan oleh
+        // rule ValidNik di rules(), bukan di sini.
+        if ($existingNik !== null && $incomingNik !== null && $incomingNik !== $existingNik) {
+            $validator->errors()->add('nik', 'NIK sudah terkunci dan tidak bisa diubah.');
         }
     }
 }

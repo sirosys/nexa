@@ -9,12 +9,17 @@ use App\Models\Sale;
 use App\Models\Service;
 use App\Models\Subdistrict;
 use App\Models\User;
+use App\Models\UserDetail;
+use App\Notifications\ServiceRegisteredNotification;
+use App\Services\Whatsapp\WhatsappGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\CapturingWhatsappGateway;
+use Tests\Support\GeneratesValidNik;
 use Tests\TestCase;
 
 class ServiceManagementTest extends TestCase
 {
-    use RefreshDatabase;
+    use GeneratesValidNik, RefreshDatabase;
 
     private function superadmin(): User
     {
@@ -24,10 +29,23 @@ class ServiceManagementTest extends TestCase
         return $user;
     }
 
+    /**
+     * Customer "lengkap" (sudah punya NIK & foto KTP) — dipakai di hampir
+     * semua test di sini karena gate wajib NIK+KTP (lihat CLAUDE.md
+     * "Service") sekarang menolak pendaftaran Service baru untuk customer
+     * yang belum lengkap. Pakai withRole('customer') langsung kalau
+     * memang butuh customer yang SENGAJA belum lengkap.
+     */
     private function customer(): User
     {
         $user = User::factory()->create();
         $user->assignRole('customer');
+
+        $nik = $this->validNik();
+        $user->userDetails()->create(array_merge(
+            ['nik' => $nik, 'ktp_photo' => 'ktp/fake-test-photo.jpg'],
+            UserDetail::parseNik($nik)
+        ));
 
         return $user;
     }
@@ -38,6 +56,14 @@ class ServiceManagementTest extends TestCase
         $user->assignRole($role);
 
         return $user;
+    }
+
+    private function fakeGateway(): CapturingWhatsappGateway
+    {
+        $gateway = new CapturingWhatsappGateway;
+        $this->app->instance(WhatsappGateway::class, $gateway);
+
+        return $gateway;
     }
 
     public function test_superadmin_can_create_service_with_auto_generated_code_and_pin(): void
@@ -67,6 +93,61 @@ class ServiceManagementTest extends TestCase
         $this->assertSame($customer->id, $service->user_id);
         $this->assertSame($package->id, $service->package_id);
         $this->assertSame(Service::STATUS_PENDING_PAYMENT, $service->status);
+    }
+
+    public function test_address_and_residential_name_are_normalized_to_title_case(): void
+    {
+        $customer = $this->customer();
+        $subdistrict = Subdistrict::factory()->create();
+        $coverage = Coverage::factory()->create();
+        $package = Package::factory()->create(['is_starter' => true]);
+
+        $this->actingAs($this->superadmin())->post('/services', [
+            'user_id' => $customer->id,
+            'package_id' => $package->id,
+            'address' => 'jl.   contoh No 99',
+            'residential_name' => 'perumahan griya asri',
+            'subdistrict_id' => $subdistrict->id,
+            'coverage_id' => $coverage->id,
+        ]);
+
+        $service = Service::where('user_id', $customer->id)->firstOrFail();
+        $this->assertSame('Jl. Contoh No 99', $service->address);
+        $this->assertSame('Perumahan Griya Asri', $service->residential_name);
+    }
+
+    /**
+     * Pakai paket gratis (tanpa produk, grandtotal 0) supaya cuma
+     * ServiceRegisteredNotification yang terkirim lewat WhatsApp di test
+     * ini — InvoiceCreatedNotification sengaja tidak terkirim untuk Sale
+     * gratis (lihat CLAUDE.md "Billing / Invoice (Xendit)"), jadi tidak
+     * menimpa isi CapturingWhatsappGateway yang cuma menyimpan satu pesan
+     * terakhir.
+     */
+    public function test_creating_service_sends_whatsapp_registration_notification(): void
+    {
+        $gateway = $this->fakeGateway();
+        $customer = $this->customer();
+        $subdistrict = Subdistrict::factory()->create();
+        $coverage = Coverage::factory()->create();
+        $package = Package::factory()->create(['is_starter' => true]);
+
+        $this->actingAs($this->superadmin())->post('/services', [
+            'user_id' => $customer->id,
+            'package_id' => $package->id,
+            'address' => 'Jl. Contoh No. 21',
+            'subdistrict_id' => $subdistrict->id,
+            'coverage_id' => $coverage->id,
+        ]);
+
+        $service = Service::where('address', 'Jl. Contoh No. 21')->firstOrFail();
+
+        $this->assertSame((string) $customer->phone, $gateway->phone);
+        $this->assertStringContainsString($service->code, $gateway->message);
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $customer->id,
+            'type' => ServiceRegisteredNotification::class,
+        ]);
     }
 
     /**
@@ -305,5 +386,119 @@ class ServiceManagementTest extends TestCase
 
             $this->actingAs($staff)->get('/services')->assertForbidden();
         }
+    }
+
+    /**
+     * Search endpoint menyertakan has_nik/has_ktp_photo per baris — dipakai
+     * frontend form Service untuk menggerbang "lengkapi NIK & foto KTP"
+     * sebelum pelanggan bisa dipilih (lihat CLAUDE.md "Service").
+     */
+    public function test_customer_search_endpoint_reports_nik_and_ktp_completeness(): void
+    {
+        $superadmin = $this->superadmin();
+        $complete = $this->customer();
+        $incomplete = $this->withRole('customer');
+
+        $response = $this->actingAs($superadmin)->getJson('/services/customers/search');
+
+        $response->assertOk();
+        $response->assertJsonFragment(['id' => $complete->id, 'has_nik' => true, 'has_ktp_photo' => true]);
+        $response->assertJsonFragment(['id' => $incomplete->id, 'has_nik' => false, 'has_ktp_photo' => false]);
+    }
+
+    /**
+     * Gate wajib NIK & foto KTP sebelum registrasi Service baru — keputusan
+     * bisnis yang diminta eksplisit, lihat CLAUDE.md "Service". Ditegakkan
+     * di ServiceRequest sebagai pertahanan sisi server (UI form Service
+     * sendiri menggerbang ini lewat modal sebelum submit).
+     */
+    public function test_service_registration_is_blocked_for_customer_missing_nik_or_ktp(): void
+    {
+        $incomplete = $this->withRole('customer');
+        $subdistrict = Subdistrict::factory()->create();
+        $coverage = Coverage::factory()->create();
+        $package = Package::factory()->create(['is_starter' => true]);
+
+        $response = $this->actingAs($this->superadmin())->post('/services', [
+            'user_id' => $incomplete->id,
+            'package_id' => $package->id,
+            'address' => 'Jl. Contoh No. 30',
+            'subdistrict_id' => $subdistrict->id,
+            'coverage_id' => $coverage->id,
+        ]);
+
+        $response->assertSessionHasErrors('user_id');
+        $this->assertDatabaseMissing('services', ['address' => 'Jl. Contoh No. 30']);
+    }
+
+    /**
+     * Gate NIK/KTP cuma berlaku saat mendaftarkan Service BARU — Service
+     * lama yang customer-nya belum lengkap (dibuat sebelum gate ini ada)
+     * tetap harus bisa diedit, bukan terkunci total.
+     */
+    public function test_updating_existing_service_is_not_blocked_by_incomplete_customer_kyc(): void
+    {
+        $superadmin = $this->superadmin();
+        $incomplete = $this->withRole('customer');
+        $service = Service::factory()->create(['user_id' => $incomplete->id]);
+
+        $response = $this->actingAs($superadmin)->put("/services/{$service->id}", [
+            'user_id' => $service->user_id,
+            'package_id' => $service->package_id,
+            'address' => 'Alamat Baru Tanpa Data Lengkap',
+            'subdistrict_id' => $service->subdistrict_id,
+            'coverage_id' => $service->coverage_id,
+            'pin' => '333333',
+        ]);
+
+        $response->assertRedirect(route('services.index'));
+        $this->assertSame('Alamat Baru Tanpa Data Lengkap', $service->fresh()->address);
+    }
+
+    public function test_quick_create_customer_endpoint_creates_customer_and_sends_whatsapp_notification(): void
+    {
+        $gateway = $this->fakeGateway();
+        $superadmin = $this->superadmin();
+
+        $response = $this->actingAs($superadmin)->postJson('/services/customers', [
+            'name' => 'pelanggan   baru',
+            'phone' => '81234000111',
+            'email' => 'pelanggan.baru@example.com',
+        ]);
+
+        $response->assertCreated();
+        $response->assertJsonFragment(['name' => 'Pelanggan Baru', 'has_nik' => false, 'has_ktp_photo' => false]);
+
+        $customer = User::where('phone', '6281234000111')->firstOrFail();
+        $this->assertTrue($customer->hasRole('customer'));
+        $this->assertSame('pelanggan.baru@example.com', $customer->email);
+        $this->assertNotNull($customer->code);
+        $this->assertSame((string) $customer->phone, $gateway->phone);
+    }
+
+    public function test_quick_create_customer_endpoint_rejects_duplicate_phone_or_email(): void
+    {
+        $superadmin = $this->superadmin();
+        User::factory()->create(['phone' => '6281234000222', 'email' => 'sudah.ada@example.com']);
+
+        $response = $this->actingAs($superadmin)->postJson('/services/customers', [
+            'name' => 'Pelanggan Baru',
+            'phone' => '81234000222',
+            'email' => 'sudah.ada@example.com',
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors(['phone', 'email']);
+    }
+
+    public function test_quick_create_customer_endpoint_forbidden_for_non_superadmin(): void
+    {
+        $staff = $this->withRole('technician');
+
+        $this->actingAs($staff)->postJson('/services/customers', [
+            'name' => 'Pelanggan Baru',
+            'phone' => '81234000333',
+            'email' => 'pelanggan.lain@example.com',
+        ])->assertForbidden();
     }
 }

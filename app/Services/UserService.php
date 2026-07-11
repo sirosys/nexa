@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\UserDetail;
+use App\Notifications\UserRegisteredNotification;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -12,17 +13,27 @@ use Illuminate\Support\Str;
 
 class UserService
 {
+    private const ROLE_LABELS = [
+        'superadmin' => 'Superadmin',
+        'technician' => 'Teknisi',
+        'finance' => 'Finance',
+        'sales' => 'Sales',
+        'customer' => 'Pelanggan',
+    ];
+
+    public function __construct(private readonly NotificationService $notificationService) {}
+
     public function create(array $data): User
     {
-        return DB::transaction(function () use ($data) {
+        $user = DB::transaction(function () use ($data) {
             $user = User::create([
                 'name' => $data['name'],
                 'phone' => $data['phone'],
+                'email' => $data['email'],
                 // Placeholder inert — akun non-admin di NEXA selalu login lewat
-                // OTP. Kolom password & email NOT NULL (peninggalan scaffolding
-                // default Laravel) tapi nilainya tidak pernah dipakai login.
+                // OTP, password ini tidak pernah dipakai. Kolom NOT NULL
+                // (peninggalan scaffolding default Laravel).
                 'password' => Hash::make(Str::random(40)),
-                'email' => "user-{$data['phone']}@nexa.internal",
             ]);
 
             $user->assignRole($data['role']);
@@ -50,6 +61,10 @@ class UserService
 
             return $user;
         });
+
+        $this->notificationService->send($user, new UserRegisteredNotification(self::ROLE_LABELS[$data['role']] ?? $data['role']));
+
+        return $user;
     }
 
     public function update(User $user, array $data): User
@@ -58,9 +73,7 @@ class UserService
             $user->update([
                 'name' => $data['name'],
                 'phone' => $data['phone'],
-                // Ikut disinkronkan supaya tidak bentrok unique kalau nomor
-                // telepon lama dipakai ulang oleh user lain nantinya.
-                'email' => "user-{$data['phone']}@nexa.internal",
+                'email' => $data['email'],
             ]);
 
             $user->syncRoles([$data['role']]);
@@ -88,6 +101,24 @@ class UserService
             }
 
             return $user;
+        });
+    }
+
+    /**
+     * Lengkapi NIK & foto KTP untuk user yang belum punya keduanya — dipakai
+     * oleh modal "Lengkapi NIK & Foto KTP" di form Service (lihat CLAUDE.md
+     * "Service"). Beda dari update(): di sini nik & ktp_photo wajib ada
+     * berdua (sudah ditegakkan CompleteKycRequest), tidak ada kasus parsial.
+     */
+    public function completeKyc(User $user, string $nik, UploadedFile $ktpPhoto): User
+    {
+        return DB::transaction(function () use ($user, $nik, $ktpPhoto) {
+            $updates = array_merge(['nik' => $nik], UserDetail::parseNik($nik));
+            $updates['ktp_photo'] = $ktpPhoto->store('ktp', 'local');
+
+            $user->userDetails()->updateOrCreate([], $updates);
+
+            return $user->fresh('userDetails');
         });
     }
 

@@ -7,6 +7,7 @@ use App\Models\Package;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Service;
+use App\Services\ReceiptService;
 use App\Services\SaleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -16,8 +17,10 @@ use Illuminate\View\View;
 
 class SaleController extends Controller
 {
-    public function __construct(private readonly SaleService $saleService)
-    {
+    public function __construct(
+        private readonly SaleService $saleService,
+        private readonly ReceiptService $receiptService,
+    ) {
         $this->authorizeResource(Sale::class, 'sale');
     }
 
@@ -58,7 +61,7 @@ class SaleController extends Controller
 
     public function show(Sale $sale): View
     {
-        $sale->load(['service.user', 'package', 'products']);
+        $sale->load(['service.user', 'package', 'products', 'receipt']);
 
         return view('sales.show', ['sale' => $sale]);
     }
@@ -86,6 +89,25 @@ class SaleController extends Controller
         $this->saleService->delete($sale);
 
         return redirect()->route('sales.index')->with('status', 'Sale berhasil dihapus.');
+    }
+
+    /**
+     * Coba lagi membuat Payment Request Xendit untuk Sale yang belum
+     * berhasil ditagihkan (invoiced_at masih null) — kasus panggilan
+     * Xendit sebelumnya gagal (network/API down), bukan retry setelah
+     * invoice expired (itu tidak didukung, lihat CLAUDE.md).
+     */
+    public function retryReceipt(Sale $sale): RedirectResponse
+    {
+        $this->authorize('update', $sale);
+
+        if ($sale->invoiced_at || $sale->settled_at || $sale->canceled_at) {
+            return redirect()->route('sales.show', $sale)->with('status', 'Tagihan sudah pernah berhasil dibuat atau Sale sudah tidak aktif.');
+        }
+
+        $this->receiptService->createForSale($sale);
+
+        return redirect()->route('sales.show', $sale)->with('status', 'Percobaan membuat tagihan telah dijalankan.');
     }
 
     public function searchServices(Request $request): JsonResponse

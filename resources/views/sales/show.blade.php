@@ -54,6 +54,42 @@
 
     <div class="mb-6 rounded-2xl border border-gray-300 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div class="border-b border-gray-300 p-4 dark:border-gray-700">
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Status Pembayaran</h2>
+        </div>
+        @if ($sale->receipt)
+            <dl>
+                <x-detail-row label="Kode Tagihan">{{ $sale->receipt->code ?? '—' }}</x-detail-row>
+                <x-detail-row label="Status Xendit">
+                    <span class="inline-flex items-center rounded-full bg-info-light px-2.5 py-1 text-xs font-medium text-info dark:bg-info/10">{{ $sale->receipt->status }}</span>
+                </x-detail-row>
+                <x-detail-row label="Jumlah">{{ number_format((float) $sale->receipt->amount, 2) }}</x-detail-row>
+                <x-detail-row label="Link Pembayaran">
+                    @if ($sale->receipt->checkout_url)
+                        <a href="{{ $sale->receipt->checkout_url }}" target="_blank" rel="noopener" class="font-medium text-primary hover:underline">Buka halaman pembayaran &rarr;</a>
+                    @else
+                        <span class="text-gray-500 dark:text-gray-400">Belum tersedia (invoice belum berhasil dibuat di Xendit)</span>
+                    @endif
+                </x-detail-row>
+            </dl>
+        @else
+            <div class="p-4 text-sm text-gray-500 dark:text-gray-400">Belum ada tagihan Xendit untuk sale ini.</div>
+        @endif
+
+        @if (! $sale->invoiced_at && ! $sale->settled_at && ! $sale->canceled_at)
+            <div class="border-t border-gray-300 p-4 dark:border-gray-700">
+                <form action="{{ route('sales.receipt.retry', $sale) }}" method="POST">
+                    @csrf
+                    <button type="submit" class="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-active">
+                        Buat Tagihan
+                    </button>
+                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Tagihan belum berhasil dibuat di Xendit (mis. gagal koneksi). Klik untuk mencoba lagi.</p>
+                </form>
+            </div>
+        @endif
+    </div>
+
+    <div class="mb-6 rounded-2xl border border-gray-300 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div class="border-b border-gray-300 p-4 dark:border-gray-700">
             <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Produk</h2>
         </div>
         <div class="overflow-x-auto">

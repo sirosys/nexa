@@ -42,6 +42,44 @@ class LoginFlowTest extends TestCase
         $response->assertSessionHasErrors('phone');
     }
 
+    /**
+     * NEXA khusus admin/staff — aplikasi pelanggan terpisah belum dibangun
+     * (lihat CLAUDE.md "Authentication / Login"). Customer harus ditolak
+     * sebelum OTP sempat dikirim.
+     */
+    public function test_customer_phone_is_rejected_and_no_otp_is_sent(): void
+    {
+        $gateway = $this->fakeGateway();
+        $customer = User::factory()->create(['phone' => '6285555555555']);
+        $customer->assignRole('customer');
+
+        $response = $this->post('/login', ['phone' => '85555555555']);
+
+        $response->assertSessionHasErrors('phone');
+        $this->assertDatabaseMissing('otp_codes', ['user_id' => $customer->id]);
+        $this->assertNull($gateway->code);
+    }
+
+    /**
+     * Lapisan pertahanan kedua: kalaupun sesi OTP sudah terlanjur ada
+     * (mis. role berubah jadi customer setelah request OTP), verifikasi
+     * tetap menolak login.
+     */
+    public function test_customer_cannot_authenticate_even_with_valid_session_and_code(): void
+    {
+        $customer = User::factory()->create(['phone' => '6286666666666']);
+        $customer->assignRole('technician');
+        $gateway = $this->fakeGateway();
+        $this->post('/login', ['phone' => '86666666666']);
+        $customer->syncRoles(['customer']);
+
+        $response = $this->post('/login/otp', ['code' => $gateway->code]);
+
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHasErrors('phone');
+        $this->assertGuest();
+    }
+
     public function test_correct_code_authenticates_and_redirects_to_dashboard(): void
     {
         $gateway = $this->fakeGateway();

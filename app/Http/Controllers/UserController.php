@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CompleteKycRequest;
 use App\Http\Requests\UserRequest;
 use App\Models\User;
 use App\Services\UserService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -73,5 +75,31 @@ class UserController extends Controller
         $this->userService->delete($user);
 
         return redirect()->route('users.index')->with('status', 'Pengguna berhasil dihapus.');
+    }
+
+    /**
+     * Modal "Lengkapi NIK & Foto KTP" di form Service — dipanggil lewat
+     * fetch (multipart, ada file upload) begitu staff memilih/membuat
+     * pelanggan yang belum lengkap datanya. Bukan bagian dari
+     * authorizeResource() (bukan action resource standar), jadi gate
+     * otorisasi ditulis eksplisit di sini.
+     */
+    public function completeKyc(CompleteKycRequest $request, User $user): JsonResponse
+    {
+        $this->authorize('update', $user);
+
+        $updated = $this->userService->completeKyc(
+            $user,
+            $request->validated('nik'),
+            $request->file('ktp_photo'),
+        );
+
+        return response()->json([
+            'id' => $updated->id,
+            'name' => $updated->name,
+            'phone' => $updated->phone,
+            'has_nik' => true,
+            'has_ktp_photo' => true,
+        ]);
     }
 }

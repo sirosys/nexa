@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\QuickCreateCustomerRequest;
 use App\Http\Requests\ServiceRequest;
 use App\Models\Coverage;
 use App\Models\Package;
 use App\Models\Service;
 use App\Models\User;
 use App\Services\ServiceService;
+use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,8 +17,10 @@ use Illuminate\View\View;
 
 class ServiceController extends Controller
 {
-    public function __construct(private readonly ServiceService $serviceService)
-    {
+    public function __construct(
+        private readonly ServiceService $serviceService,
+        private readonly UserService $userService,
+    ) {
         $this->authorizeResource(Service::class, 'service');
     }
 
@@ -102,10 +106,47 @@ class ServiceController extends Controller
             // Query kosong (klik pertama kali di kolom pencarian) tetap
             // mengembalikan daftar browse — bukan array kosong — supaya
             // picker bisa dibuka lewat klik, bukan cuma lewat mengetik.
+            ->with('userDetails')
             ->orderBy('name')
             ->limit(20)
-            ->get(['id', 'name', 'phone', 'code']);
+            ->get(['id', 'name', 'phone', 'code'])
+            ->map(fn (User $customer) => [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'phone' => $customer->phone,
+                'code' => $customer->code,
+                // Dipakai frontend untuk gate "lengkapi NIK & foto KTP"
+                // sebelum pelanggan ini bisa dipilih untuk Service baru.
+                'has_nik' => filled($customer->userDetails?->nik),
+                'has_ktp_photo' => filled($customer->userDetails?->ktp_photo),
+            ]);
 
         return response()->json($customers);
+    }
+
+    /**
+     * Modal "Tambah Pelanggan Baru" di form Service (dipakai kalau pelanggan
+     * tidak ditemukan di typeahead) — lihat CLAUDE.md "Service". Selalu
+     * role customer, tanpa NIK/foto KTP (disusul modal "Lengkapi NIK &
+     * Foto KTP" terpisah, karena keduanya wajib diisi sebelum Service bisa
+     * didaftarkan).
+     */
+    public function storeCustomer(QuickCreateCustomerRequest $request): JsonResponse
+    {
+        $this->authorize('viewAny', Service::class);
+
+        $customer = $this->userService->create([
+            ...$request->validated(),
+            'role' => 'customer',
+        ]);
+
+        return response()->json([
+            'id' => $customer->id,
+            'name' => $customer->name,
+            'phone' => $customer->phone,
+            'code' => $customer->code,
+            'has_nik' => false,
+            'has_ktp_photo' => false,
+        ], 201);
     }
 }

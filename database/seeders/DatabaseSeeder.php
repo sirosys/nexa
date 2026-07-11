@@ -18,11 +18,8 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             AdminUserSeeder::class,
             SubdistrictSeeder::class,
-            UserSeeder::class,
             PopCoverageSeeder::class,
             ProductPackageSeeder::class,
-            ServiceSeeder::class,
-            SaleSeeder::class,
         ]);
     }
 }

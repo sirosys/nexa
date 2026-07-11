@@ -3,14 +3,24 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\Whatsapp\WhatsappGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\CapturingWhatsappGateway;
 use Tests\TestCase;
 
 class UserManagementTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function fakeGateway(): CapturingWhatsappGateway
+    {
+        $gateway = new CapturingWhatsappGateway;
+        $this->app->instance(WhatsappGateway::class, $gateway);
+
+        return $gateway;
+    }
 
     // Male, born 17 Jan 1990.
     private const NIK_MALE = '3201011701900001';
@@ -39,6 +49,7 @@ class UserManagementTest extends TestCase
         $response = $this->actingAs($this->superadmin())->post('/users', [
             'name' => 'Budi Santoso',
             'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
             'role' => 'customer',
             'nik' => self::NIK_MALE,
         ]);
@@ -61,6 +72,7 @@ class UserManagementTest extends TestCase
         $response = $this->actingAs($this->superadmin())->post('/users', [
             'name' => 'Teknisi Jaya',
             'phone' => '81355556666',
+            'email' => 'teknisi.jaya@example.com',
             'role' => 'technician',
         ]);
 
@@ -103,6 +115,7 @@ class UserManagementTest extends TestCase
         $response = $this->actingAs($superadmin)->put("/users/{$superadmin->id}", [
             'name' => $superadmin->name,
             'phone' => (string) $superadmin->phone,
+            'email' => $superadmin->email,
             'role' => 'technician',
         ]);
 
@@ -115,6 +128,7 @@ class UserManagementTest extends TestCase
         $response = $this->actingAs($this->superadmin())->post('/users', [
             'name' => 'Budi Santoso',
             'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
             'role' => 'customer',
             // Bulan 13 — tidak valid.
             'nik' => '3201011713000099',
@@ -130,6 +144,7 @@ class UserManagementTest extends TestCase
         $this->actingAs($superadmin)->post('/users', [
             'name' => 'Budi Santoso',
             'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
             'role' => 'customer',
         ]);
         $customer = User::where('phone', '6281234567890')->firstOrFail();
@@ -137,6 +152,7 @@ class UserManagementTest extends TestCase
         $response = $this->actingAs($superadmin)->put("/users/{$customer->id}", [
             'name' => 'Budi Santoso Update',
             'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
             'role' => 'customer',
             'nik' => self::NIK_MALE,
         ]);
@@ -157,6 +173,7 @@ class UserManagementTest extends TestCase
         $this->actingAs($superadmin)->post('/users', [
             'name' => 'Budi Santoso',
             'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
             'role' => 'customer',
             'nik' => self::NIK_MALE,
         ]);
@@ -165,6 +182,7 @@ class UserManagementTest extends TestCase
         $response = $this->actingAs($superadmin)->put("/users/{$customer->id}", [
             'name' => 'Budi Santoso',
             'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
             'role' => 'customer',
             'nik' => self::NIK_FEMALE,
         ]);
@@ -183,6 +201,7 @@ class UserManagementTest extends TestCase
         $this->actingAs($superadmin)->post('/users', [
             'name' => 'Budi Santoso',
             'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
             'role' => 'customer',
         ]);
         $customer = User::where('phone', '6281234567890')->firstOrFail();
@@ -202,6 +221,7 @@ class UserManagementTest extends TestCase
         $response = $this->actingAs($superadmin)->post('/users', [
             'name' => 'Budi Santoso',
             'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
             'role' => 'customer',
         ]);
 
@@ -214,6 +234,7 @@ class UserManagementTest extends TestCase
         $this->actingAs($superadmin)->post('/users', [
             'name' => 'Budi Santoso',
             'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
             'role' => 'customer',
             'nik' => self::NIK_MALE,
         ]);
@@ -221,6 +242,7 @@ class UserManagementTest extends TestCase
         $response = $this->actingAs($superadmin)->post('/users', [
             'name' => 'Lain Orang',
             'phone' => '81299999999',
+            'email' => 'lain.orang@example.com',
             'role' => 'customer',
             'nik' => self::NIK_MALE,
         ]);
@@ -236,6 +258,7 @@ class UserManagementTest extends TestCase
         $this->actingAs($customer)->post('/users', [
             'name' => 'Test',
             'phone' => '81234567890',
+            'email' => 'test@example.com',
             'role' => 'customer',
         ])->assertForbidden();
     }
@@ -261,6 +284,7 @@ class UserManagementTest extends TestCase
         $this->actingAs($superadmin)->post('/users', [
             'name' => 'Budi Santoso',
             'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
             'role' => 'customer',
             'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
         ]);
@@ -280,6 +304,7 @@ class UserManagementTest extends TestCase
         $this->actingAs($superadmin)->post('/users', [
             'name' => 'Budi Santoso',
             'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
             'role' => 'customer',
             'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
         ]);
@@ -297,11 +322,96 @@ class UserManagementTest extends TestCase
         $this->actingAs($superadmin)->post('/users', [
             'name' => 'Budi Santoso',
             'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
             'role' => 'customer',
             'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
         ]);
         $owner = User::where('phone', '6281234567890')->firstOrFail();
 
         $this->actingAs($superadmin)->get(route('secure.ktp', $owner))->assertOk();
+    }
+
+    public function test_name_is_normalized_to_title_case(): void
+    {
+        $this->actingAs($this->superadmin())->post('/users', [
+            'name' => 'budi   SANTOSO',
+            'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
+            'role' => 'customer',
+        ]);
+
+        $customer = User::where('phone', '6281234567890')->firstOrFail();
+        $this->assertSame('Budi Santoso', $customer->name);
+    }
+
+    public function test_new_user_receives_whatsapp_welcome_notification(): void
+    {
+        $gateway = $this->fakeGateway();
+
+        $this->actingAs($this->superadmin())->post('/users', [
+            'name' => 'Budi Santoso',
+            'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
+            'role' => 'customer',
+        ]);
+
+        $customer = User::where('phone', '6281234567890')->firstOrFail();
+
+        $this->assertSame((string) $customer->phone, $gateway->phone);
+        $this->assertStringContainsString('Budi Santoso', $gateway->message);
+        $this->assertDatabaseHas('notifications', ['notifiable_id' => $customer->id]);
+    }
+
+    /**
+     * Endpoint dipakai modal "Lengkapi NIK & Foto KTP" di form Service
+     * (lihat CLAUDE.md "Service") — dipanggil lewat fetch, bukan form POST
+     * biasa, jadi diuji langsung ke endpoint-nya di sini.
+     */
+    public function test_complete_kyc_endpoint_fills_nik_and_ktp_photo(): void
+    {
+        Storage::fake('local');
+        $superadmin = $this->superadmin();
+        $customer = $this->withRole('customer');
+
+        $response = $this->actingAs($superadmin)->postJson("/users/{$customer->id}/complete-kyc", [
+            'nik' => self::NIK_MALE,
+            'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonFragment(['id' => $customer->id, 'has_nik' => true, 'has_ktp_photo' => true]);
+
+        $customer->refresh();
+        $this->assertSame(self::NIK_MALE, $customer->userDetails->nik);
+        $this->assertNotNull($customer->userDetails->ktp_photo);
+        Storage::disk('local')->assertExists($customer->userDetails->ktp_photo);
+    }
+
+    public function test_complete_kyc_endpoint_rejects_when_nik_already_set(): void
+    {
+        Storage::fake('local');
+        $superadmin = $this->superadmin();
+        $customer = $this->withRole('customer');
+        $customer->userDetails()->create(['nik' => self::NIK_MALE, 'gender' => 'male', 'birth_date' => '1990-01-17']);
+
+        $response = $this->actingAs($superadmin)->postJson("/users/{$customer->id}/complete-kyc", [
+            'nik' => self::NIK_FEMALE,
+            'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors('nik');
+        $this->assertSame(self::NIK_MALE, $customer->fresh()->userDetails->nik);
+    }
+
+    public function test_complete_kyc_endpoint_forbidden_for_non_superadmin(): void
+    {
+        $staff = $this->withRole('technician');
+        $customer = $this->withRole('customer');
+
+        $this->actingAs($staff)->postJson("/users/{$customer->id}/complete-kyc", [
+            'nik' => self::NIK_MALE,
+            'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
+        ])->assertForbidden();
     }
 }

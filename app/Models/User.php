@@ -40,6 +40,16 @@ class User extends Authenticatable
         return $this->hasRole('superadmin');
     }
 
+    /**
+     * NEXA (aplikasi ini) khusus untuk admin/staff — customer akan punya
+     * aplikasi terpisah yang belum dibangun (lihat CLAUDE.md "Authentication
+     * / Login"). Dipakai untuk menolak login customer di alur OTP.
+     */
+    public function isCustomer(): bool
+    {
+        return $this->hasRole('customer');
+    }
+
     /** @return HasMany<OtpCode, $this> */
     public function otpCodes(): HasMany
     {

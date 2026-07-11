@@ -11,11 +11,18 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SubdistrictController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Webhooks\XenditWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Di luar group guest/auth sengaja — dipanggil server-ke-server oleh
+// Xendit, bukan browser pengguna, jadi tidak boleh butuh session/CSRF
+// (lihat pengecualian CSRF di bootstrap/app.php dan verifikasi
+// x-callback-token di dalam controller-nya).
+Route::post('/webhooks/xendit', [XenditWebhookController::class, 'handle'])->name('webhooks.xendit');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
@@ -33,6 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/users/{user}/complete-kyc', [UserController::class, 'completeKyc'])->name('users.complete-kyc');
     Route::resource('users', UserController::class);
     Route::get('/secure/ktp/{user}', [KtpPhotoController::class, 'show'])->name('secure.ktp');
     Route::resource('products', ProductController::class);
@@ -41,7 +49,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('pops', PopController::class);
     Route::resource('coverages', CoverageController::class);
     Route::get('/services/customers/search', [ServiceController::class, 'searchCustomers'])->name('services.customers.search');
+    Route::post('/services/customers', [ServiceController::class, 'storeCustomer'])->name('services.customers.store');
     Route::resource('services', ServiceController::class);
     Route::get('/sales/services/search', [SaleController::class, 'searchServices'])->name('sales.services.search');
+    Route::post('/sales/{sale}/receipt/retry', [SaleController::class, 'retryReceipt'])->name('sales.receipt.retry');
     Route::resource('sales', SaleController::class);
 });

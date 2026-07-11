@@ -60,6 +60,17 @@ class LoginController extends Controller
             ]);
         }
 
+        // Lapisan pertahanan kedua — SendOtpRequest sudah menolak customer
+        // duluan, ini jaga-jaga kalau role user berubah di antara request
+        // OTP dan verifikasi (lihat CLAUDE.md "Authentication / Login").
+        if ($user->isCustomer()) {
+            $request->session()->forget('otp.user_id');
+
+            return redirect()->route('login')->withErrors([
+                'phone' => 'Nomor ini terdaftar sebagai pelanggan. Aplikasi ini khusus untuk admin dan staff.',
+            ]);
+        }
+
         if (! $this->otpService->verify($user, $request->validated('code'))) {
             return back()->withErrors([
                 'code' => 'Kode OTP salah atau sudah kedaluwarsa.',
