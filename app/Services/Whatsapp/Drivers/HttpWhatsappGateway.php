@@ -44,6 +44,28 @@ class HttpWhatsappGateway implements WhatsappGateway
         return $response->successful();
     }
 
+    public function sendMessage(string $phone, string $message): bool
+    {
+        $response = Http::baseUrl((string) $this->baseUrl)
+            ->withToken((string) $this->token)
+            ->timeout(10)
+            ->post('/send/message', [
+                'phone' => $phone,
+                'message' => $message,
+                'sender' => $this->sender,
+            ]);
+
+        if ($response->failed()) {
+            Log::error('WhatsApp gateway gagal mengirim pesan', [
+                'phone' => $phone,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+        }
+
+        return $response->successful();
+    }
+
     private function ttlMinutes(): int
     {
         return (int) config('otp.ttl_minutes');

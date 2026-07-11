@@ -6,6 +6,7 @@ use App\Models\OtpCode;
 use App\Models\User;
 use App\Services\Whatsapp\WhatsappGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\CapturingWhatsappGateway;
 use Tests\TestCase;
 
 class LoginFlowTest extends TestCase
@@ -83,20 +84,5 @@ class LoginFlowTest extends TestCase
     public function test_dashboard_redirects_guests_to_login(): void
     {
         $this->get('/dashboard')->assertRedirect('/login');
-    }
-}
-
-class CapturingWhatsappGateway implements WhatsappGateway
-{
-    public ?string $phone = null;
-
-    public ?string $code = null;
-
-    public function sendOtp(string $phone, string $code): bool
-    {
-        $this->phone = $phone;
-        $this->code = $code;
-
-        return true;
     }
 }

@@ -21,4 +21,14 @@ class LogWhatsappGateway implements WhatsappGateway
 
         return true;
     }
+
+    public function sendMessage(string $phone, string $message): bool
+    {
+        Log::channel(config('services.whatsapp.log_channel', 'stack'))->info(
+            '[WhatsApp Message - LOG DRIVER] pesan tidak benar-benar terkirim',
+            ['phone' => $phone, 'message' => $message]
+        );
+
+        return true;
+    }
 }
