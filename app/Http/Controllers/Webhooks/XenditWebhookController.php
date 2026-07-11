@@ -32,21 +32,39 @@ class XenditWebhookController extends Controller
         }
 
         $payload = $request->all();
+        $event = $payload['event'] ?? null;
         $data = $payload['data'] ?? $payload;
 
         $paymentRequestId = $data['payment_request_id'] ?? $data['id'] ?? null;
         $status = $data['status'] ?? null;
 
+        // NEXA cuma berlangganan event Payment Requests API v3 (lihat
+        // CLAUDE.md "Billing / Invoice (Xendit)") - payment_request_id
+        // dari data.payment_request_id/data.id (lihat contoh payload resmi
+        // Xendit). Xendit tetap mengirim event LAIN ke webhook URL yang
+        // sama (mis. tombol "Test Webhook" untuk kategori "Payment Token"
+        // di dashboard, payload data.payment_token_id - tidak ada
+        // payment_request_id sama sekali karena memang tidak relevan untuk
+        // sistem ini). Xendit mewajibkan 2xx untuk SETIAP percobaan
+        // pengiriman webhook apa pun jenisnya - non-2xx berulang membuat
+        // Xendit menandai endpoint bermasalah. Jadi event yang tidak
+        // relevan/tidak dikenal diabaikan diam-diam (cukup di-log), bukan
+        // dianggap error request.
         if (! $paymentRequestId) {
-            return response()->json(['message' => 'Payload tidak berisi payment request id'], 422);
+            Log::info('Xendit webhook: event diabaikan (bukan payment request)', ['event' => $event]);
+
+            return response()->json(['message' => 'Event tidak relevan, diabaikan']);
         }
 
         $receipt = Receipt::where('xendit_payment_request_id', $paymentRequestId)->first();
 
         if (! $receipt) {
+            // Sama seperti di atas: payment_request_id yang tidak dikenal
+            // (mis. dummy dari tombol "Test Webhook" kategori Payment
+            // Request) tetap dijawab 200, cuma di-log, bukan diproses.
             Log::warning('Xendit webhook: receipt tidak ditemukan', ['payment_request_id' => $paymentRequestId]);
 
-            return response()->json(['message' => 'Receipt not found'], 404);
+            return response()->json(['message' => 'Receipt not found, ignored']);
         }
 
         // Idempotency: event sukses yang sama datang lagi (Xendit retry

@@ -9,12 +9,16 @@ use RuntimeException;
 
 /**
  * Raw-HTTP client untuk Xendit Payment Requests API v3 (CLAUDE.md "Payment
- * Gateway (Xendit)" mewajibkan raw HTTP, bukan SDK resmi). Bentuk pasti
- * payload `payment_method` untuk mengaktifkan beberapa channel sekaligus
- * (VA/QRIS/EWALLET/OTC) dalam satu request belum diverifikasi end-to-end
- * ke sandbox sungguhan — payload di bawah best-effort dari dokumentasi
- * publik Payment Requests API v3, revisit begitu diuji dengan kredensial
- * dev yang sungguhan.
+ * Gateway (Xendit)" mewajibkan raw HTTP, bukan SDK resmi). Setiap Payment
+ * Request wajib menyebut satu `channel_code` spesifik - API ini TIDAK
+ * punya halaman checkout hosted multi-channel (dikonfirmasi lewat
+ * percobaan langsung ke sandbox: request tanpa channel_code ditolak
+ * "Either channel_code or payment_token_id is required"), makanya
+ * pemilihan channel dipindah ke halaman /pay/{receipt} milik NEXA sendiri
+ * (lihat ReceiptService::selectChannel()). Bentuk `channel_properties`
+ * per kategori channel best-effort (Xendit mengarahkan ke "Channel Data
+ * Finder" widget interaktif yang tidak terdokumentasi statis) - revisit
+ * begitu diuji ke sandbox sungguhan.
  */
 class HttpXenditGateway implements XenditGateway
 {
@@ -23,26 +27,28 @@ class HttpXenditGateway implements XenditGateway
         private readonly ?string $secretKey,
     ) {}
 
-    public function createPaymentRequest(string $referenceId, float $amount, string $description, array $enabledMethods): array
+    public function createPaymentRequest(string $referenceId, float $amount, string $description, string $channelCode, array $channelProperties, string $type = 'PAY'): array
     {
         $response = Http::baseUrl((string) $this->baseUrl)
             ->withBasicAuth((string) $this->secretKey, '')
+            ->withHeaders(['api-version' => '2024-11-11'])
             ->timeout(15)
             ->post('/v3/payment_requests', [
                 'reference_id' => $referenceId,
+                'type' => $type,
+                'country' => 'ID',
                 'currency' => 'IDR',
-                'amount' => $amount,
+                'request_amount' => $amount,
                 'description' => $description,
                 'capture_method' => 'AUTOMATIC',
-                'payment_method' => [
-                    'reusability' => 'ONE_TIME_USE',
-                    'allowed_types' => $enabledMethods,
-                ],
+                'channel_code' => $channelCode,
+                'channel_properties' => (object) $channelProperties,
             ]);
 
         if ($response->failed()) {
             Log::error('Xendit gagal membuat payment request', [
                 'reference_id' => $referenceId,
+                'channel_code' => $channelCode,
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
@@ -51,23 +57,30 @@ class HttpXenditGateway implements XenditGateway
         }
 
         $body = $response->json() ?? [];
+        $actions = (array) ($body['actions'] ?? []);
 
         return [
-            'id' => $body['id'] ?? null,
+            // Response body Payment Requests v3 memakai field
+            // "payment_request_id" - dikonfirmasi lewat percobaan
+            // sungguhan ke sandbox (bukan "id" seperti dugaan awal, yang
+            // membuat receipts.xendit_payment_request_id selalu ter-null
+            // walau request-nya sukses).
+            'id' => $body['payment_request_id'] ?? null,
             'status' => $body['status'] ?? 'PENDING',
-            'checkout_url' => $this->extractCheckoutUrl($body),
+            'checkout_url' => $this->extractRedirectUrl($actions),
+            'actions' => $actions,
             'raw' => $body,
         ];
     }
 
     /**
-     * @param  array<string, mixed>  $body
+     * @param  array<int, array<string, mixed>>  $actions
      */
-    private function extractCheckoutUrl(array $body): ?string
+    private function extractRedirectUrl(array $actions): ?string
     {
-        foreach ((array) ($body['actions'] ?? []) as $action) {
-            if (is_array($action) && ! empty($action['url'])) {
-                return $action['url'];
+        foreach ($actions as $action) {
+            if (($action['type'] ?? null) === 'REDIRECT_CUSTOMER' && ($action['descriptor'] ?? null) === 'WEB_URL') {
+                return $action['value'] ?? null;
             }
         }
 

@@ -80,7 +80,7 @@ class ProductPackageSeeder extends Seeder
                 'is_starter' => true,
                 'items' => [
                     ['product' => 'net_prm', 'quantity' => 1, 'price' => 0],
-                    ['product' => 'install', 'quantity' => 1, 'price' => 0],
+                    ['product' => 'install', 'quantity' => 1, 'price' => 150000],
                     ['product' => 'modem_prm', 'quantity' => 1, 'price' => 0],
                 ],
             ],

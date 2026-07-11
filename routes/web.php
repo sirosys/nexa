@@ -5,6 +5,7 @@ use App\Http\Controllers\CoverageController;
 use App\Http\Controllers\KtpPhotoController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PackageController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PopController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SaleController;
@@ -23,6 +24,21 @@ Route::get('/', function () {
 // (lihat pengecualian CSRF di bootstrap/app.php dan verifikasi
 // x-callback-token di dalam controller-nya).
 Route::post('/webhooks/xendit', [XenditWebhookController::class, 'handle'])->name('webhooks.xendit');
+
+// Halaman publik pilih channel pembayaran - diakses pelanggan lewat link
+// di InvoiceCreatedNotification (WhatsApp), TANPA login (aplikasi
+// customer-facing belum dibangun, lihat CLAUDE.md "Authentication/Login").
+// Diamankan lewat Laravel signed URL (middleware `signed`), bukan sesi
+// auth, karena tidak ada akun customer yang bisa dipakai login ke NEXA.
+// POST tunggal (update()) menangani kirim-ulang OTP, verifikasi OTP, dan
+// pilih channel sekaligus - lihat docblock PaymentController kenapa tidak
+// dipecah jadi route terpisah per aksi (soal signed URL).
+Route::middleware('signed')->group(function () {
+    Route::get('/pay/{receipt}', [PaymentController::class, 'show'])->name('payment.show');
+    Route::post('/pay/{receipt}', [PaymentController::class, 'update'])
+        ->middleware('throttle:payment-action')
+        ->name('payment.update');
+});
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLogin'])->name('login');

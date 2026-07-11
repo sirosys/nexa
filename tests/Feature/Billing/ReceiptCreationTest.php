@@ -72,7 +72,15 @@ class ReceiptCreationTest extends TestCase
         ]);
     }
 
-    public function test_creating_paid_service_creates_receipt_and_calls_xendit(): void
+    /**
+     * Sejak halaman pilih channel (/pay/{receipt}) dibangun, createForSale()
+     * TIDAK lagi memanggil Xendit sama sekali — Payment Requests API v3
+     * tidak punya halaman checkout hosted multi-channel, jadi panggilan
+     * Xendit sungguhan baru terjadi di ReceiptService::selectChannel()
+     * begitu pelanggan memilih channel di halaman itu (lihat
+     * PaymentChannelSelectionTest).
+     */
+    public function test_creating_paid_service_creates_receipt_awaiting_channel_selection(): void
     {
         $fake = new FakeXenditGateway;
         $this->app->instance(XenditGateway::class, $fake);
@@ -88,9 +96,11 @@ class ReceiptCreationTest extends TestCase
         $receipt = Receipt::where('sale_id', $sale->id)->firstOrFail();
 
         $this->assertStringStartsWith('REC', $receipt->code);
-        $this->assertSame("pr-{$receipt->code}", $receipt->xendit_payment_request_id);
-        $this->assertSame('PENDING', $receipt->status);
+        $this->assertNull($receipt->xendit_payment_request_id);
+        $this->assertNull($receipt->channel_code);
+        $this->assertSame(Receipt::STATUS_AWAITING_CHANNEL_SELECTION, $receipt->status);
         $this->assertNotNull($receipt->checkout_url);
+        $this->assertStringContainsString('/pay/'.$receipt->id, $receipt->checkout_url);
         $this->assertEquals(150000, (float) $receipt->amount);
 
         $sale->refresh();
@@ -98,8 +108,8 @@ class ReceiptCreationTest extends TestCase
         $this->assertNotNull($sale->expired_at);
         $this->assertNull($sale->settled_at);
 
-        $this->assertCount(1, $fake->calls);
-        $this->assertSame($receipt->code, $fake->calls[0]['referenceId']);
+        // Xendit belum dipanggil sama sekali sampai pelanggan memilih channel.
+        $this->assertCount(0, $fake->calls);
     }
 
     public function test_creating_receipt_sends_whatsapp_invoice_notification(): void
@@ -150,11 +160,17 @@ class ReceiptCreationTest extends TestCase
         $this->assertCount(0, $fake->calls);
     }
 
-    public function test_retry_creates_receipt_after_initial_xendit_call_failed(): void
+    /**
+     * createForSale() sekarang murni operasi database (tidak ada panggilan
+     * HTTP), jadi tidak bisa gagal seperti pola lama — tombol "Buat
+     * Tagihan" (retryReceipt) sekarang murni idempotent: dipanggil lagi
+     * pada Sale yang sudah py invoiced_at tidak melakukan apa-apa, bukan
+     * "retry setelah gagal" seperti sebelumnya.
+     */
+    public function test_retry_is_idempotent_and_does_not_duplicate_receipt(): void
     {
-        $failingFake = new FakeXenditGateway;
-        $failingFake->shouldFail = true;
-        $this->app->instance(XenditGateway::class, $failingFake);
+        $fake = new FakeXenditGateway;
+        $this->app->instance(XenditGateway::class, $fake);
 
         $superadmin = $this->superadmin();
         $customer = $this->customer();
@@ -165,25 +181,15 @@ class ReceiptCreationTest extends TestCase
         $this->registerService($customer, $package);
 
         $sale = Sale::firstOrFail();
-        $sale->refresh();
-        $this->assertNull($sale->invoiced_at);
-
-        $receipt = Receipt::where('sale_id', $sale->id)->first();
-        $this->assertNotNull($receipt);
-        $this->assertNull($receipt->xendit_payment_request_id);
-
-        $workingFake = new FakeXenditGateway;
-        $this->app->instance(XenditGateway::class, $workingFake);
+        $receipt = Receipt::where('sale_id', $sale->id)->firstOrFail();
 
         $response = $this->actingAs($superadmin)->post("/sales/{$sale->id}/receipt/retry");
 
         $response->assertRedirect(route('sales.show', $sale));
+        $this->assertDatabaseCount('receipts', 1);
 
-        $sale->refresh();
         $receipt->refresh();
-
-        $this->assertNotNull($sale->invoiced_at);
-        $this->assertNotNull($receipt->xendit_payment_request_id);
-        $this->assertCount(1, $workingFake->calls);
+        $this->assertNull($receipt->xendit_payment_request_id);
+        $this->assertCount(0, $fake->calls);
     }
 }

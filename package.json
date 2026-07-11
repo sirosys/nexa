@@ -7,7 +7,8 @@
         "dev": "vite"
     },
     "dependencies": {
-        "alpinejs": "^3.14.1"
+        "alpinejs": "^3.14.1",
+        "qrcode": "^1.5.4"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

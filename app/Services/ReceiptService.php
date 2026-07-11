@@ -7,8 +7,8 @@ use App\Models\Sale;
 use App\Notifications\InvoiceCreatedNotification;
 use App\Services\Billing\XenditGateway;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Throwable;
+use Illuminate\Support\Facades\URL;
+use RuntimeException;
 
 class ReceiptService
 {
@@ -18,14 +18,22 @@ class ReceiptService
     ) {}
 
     /**
-     * Buat tagihan Xendit untuk sebuah Sale. Kalau grandtotal 0 (paket
-     * promo gratis), skip Xendit sepenuhnya dan langsung tandai lunas —
-     * tidak ada gunanya membuat Payment Request untuk Rp 0.
+     * Buat tagihan untuk sebuah Sale. Kalau grandtotal 0 (paket promo
+     * gratis), skip sepenuhnya dan langsung tandai lunas — tidak ada
+     * gunanya membuat tagihan untuk Rp 0.
      *
-     * Panggilan HTTP ke Xendit sengaja TIDAK dibungkus DB::transaction()
-     * oleh method ini (dan harus dipanggil di luar transaksi Service+Sale
-     * oleh pemanggil) supaya request eksternal yang lambat/gagal tidak
-     * menahan lock database.
+     * Payment Requests API v3 Xendit TIDAK punya halaman checkout hosted
+     * multi-channel (dikonfirmasi lewat percobaan langsung ke sandbox —
+     * request tanpa channel_code ditolak), jadi method ini TIDAK memanggil
+     * Xendit sama sekali. Yang dibuat di sini cuma Receipt berstatus
+     * Receipt::STATUS_AWAITING_CHANNEL_SELECTION beserta link publik
+     * (Laravel signed URL) ke halaman /pay/{receipt} milik NEXA sendiri,
+     * tempat pelanggan memilih channel — panggilan Xendit sungguhan baru
+     * terjadi di selectChannel() begitu pelanggan memilih.
+     *
+     * Sengaja TIDAK dibungkus DB::transaction() oleh method ini (dan harus
+     * dipanggil di luar transaksi Service+Sale oleh pemanggil) — konsisten
+     * pola lama, walau sekarang tidak ada panggilan HTTP eksternal di sini.
      */
     public function createForSale(Sale $sale): ?Receipt
     {
@@ -38,7 +46,7 @@ class ReceiptService
         $receipt = $sale->receipt ?? Receipt::create([
             'sale_id' => $sale->id,
             'amount' => $sale->grandtotal,
-            'status' => 'PENDING',
+            'status' => Receipt::STATUS_AWAITING_CHANNEL_SELECTION,
             'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
         ]);
@@ -49,38 +57,106 @@ class ReceiptService
             ]);
         }
 
-        try {
-            $result = $this->gateway->createPaymentRequest(
-                referenceId: $receipt->code,
-                amount: (float) $sale->grandtotal,
-                description: "Tagihan pendaftaran {$sale->code}",
-                enabledMethods: config('billing.payment_methods'),
-            );
-        } catch (Throwable $exception) {
-            Log::error('Gagal membuat Xendit payment request untuk Sale', [
-                'sale_id' => $sale->id,
-                'receipt_id' => $receipt->id,
-                'exception' => $exception->getMessage(),
+        if (! $receipt->checkout_url) {
+            $receipt->update([
+                'checkout_url' => URL::temporarySignedRoute(
+                    'payment.show',
+                    now()->addDays((int) config('billing.invoice_ttl_days')),
+                    ['receipt' => $receipt->id],
+                ),
             ]);
-
-            return $receipt;
         }
 
-        $receipt->update([
-            'xendit_payment_request_id' => $result['id'],
-            'status' => $result['status'],
-            'checkout_url' => $result['checkout_url'],
-            'raw_response' => $result['raw'],
-            'updated_by' => Auth::id(),
-        ]);
-
-        $sale->update([
-            'invoiced_at' => now(),
-            'expired_at' => now()->addDays((int) config('billing.invoice_ttl_days')),
-        ]);
+        if (! $sale->invoiced_at) {
+            $sale->update([
+                'invoiced_at' => now(),
+                'expired_at' => now()->addDays((int) config('billing.invoice_ttl_days')),
+            ]);
+        }
 
         $this->notificationService->send($sale->service->user, new InvoiceCreatedNotification($receipt));
 
         return $receipt;
+    }
+
+    /**
+     * Pelanggan memilih channel pembayaran di halaman /pay/{receipt} —
+     * baru di sini Payment Request Xendit sungguhan dibuat. Channel
+     * cuma boleh diganti selama xendit_payment_request_id masih null
+     * (percobaan sebelumnya belum pernah berhasil dapat id sungguhan dari
+     * Xendit) — begitu sudah ada id sungguhan, ganti channel tidak
+     * didukung di iterasi ini (staff/pelanggan tunggu channel itu
+     * kadaluarsa lalu Sale otomatis dibatalkan scheduler, konsisten pola
+     * "retry setelah expired tidak didukung").
+     */
+    public function selectChannel(Receipt $receipt, string $channelCode): Receipt
+    {
+        if ($receipt->xendit_payment_request_id) {
+            throw new RuntimeException('Channel pembayaran sudah dipilih dan tidak bisa diganti.');
+        }
+
+        $sale = $receipt->sale()->with('service.user')->first();
+
+        $result = $this->gateway->createPaymentRequest(
+            referenceId: $receipt->code,
+            amount: (float) $receipt->amount,
+            description: "Tagihan pendaftaran {$sale->code}",
+            channelCode: $channelCode,
+            channelProperties: $this->buildChannelProperties($channelCode, $sale, $receipt),
+            type: $this->resolveRequestType($channelCode),
+        );
+
+        $receipt->update([
+            'channel_code' => $channelCode,
+            'xendit_payment_request_id' => $result['id'],
+            'status' => $result['status'],
+            'raw_response' => $result['raw'],
+            'updated_by' => Auth::id(),
+        ]);
+
+        return $receipt->fresh();
+    }
+
+    /**
+     * Virtual Account (channel_code berakhiran "_VIRTUAL_ACCOUNT") wajib
+     * type=REUSABLE_PAYMENT_CODE — VA bersifat reusable/dipakai berulang
+     * sampai kadaluarsa, beda semantik dari PAY yang sekali pakai. Dugaan
+     * ini dari riset dokumentasi Xendit (bukan percobaan sandbox langsung
+     * seperti channel lain) — lihat CLAUDE.md "Billing / Invoice (Xendit)".
+     */
+    private function resolveRequestType(string $channelCode): string
+    {
+        return str_ends_with($channelCode, '_VIRTUAL_ACCOUNT') ? 'REUSABLE_PAYMENT_CODE' : 'PAY';
+    }
+
+    /**
+     * channel_properties per kategori best-effort — Xendit mengarahkan ke
+     * "Channel Data Finder" widget interaktif untuk daftar field per
+     * channel yang tidak terdokumentasi statis (lihat CLAUDE.md "Billing /
+     * Invoice (Xendit)"). Revisit begitu ada channel yang gagal validasi
+     * di sandbox.
+     *
+     * @return array<string, mixed>
+     */
+    private function buildChannelProperties(string $channelCode, Sale $sale, Receipt $receipt): array
+    {
+        $customerName = $sale->service->user->name;
+
+        return match (true) {
+            $channelCode === 'QRIS' => [],
+            str_ends_with($channelCode, '_VIRTUAL_ACCOUNT') => [
+                // display_name wajib (dikonfirmasi lewat percobaan
+                // sungguhan ke sandbox - BCA_VIRTUAL_ACCOUNT ditolak tanpa
+                // field ini) - nama yang tampil ke pelanggan saat transfer.
+                'display_name' => $customerName,
+            ],
+            in_array($channelCode, ['ALFAMART', 'INDOMARET'], true) => [
+                // payer_name wajib (dikonfirmasi lewat percobaan sungguhan
+                // ke sandbox - INDOMARET ditolak dengan field customer_name,
+                // beda dari kategori VA yang justru butuh customer_name).
+                'payer_name' => $customerName,
+            ],
+            default => [],
+        };
     }
 }
