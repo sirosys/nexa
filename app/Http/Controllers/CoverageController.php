@@ -47,6 +47,13 @@ class CoverageController extends Controller
         return redirect()->route('coverages.index')->with('status', 'Coverage berhasil ditambahkan.');
     }
 
+    public function show(Coverage $coverage): View
+    {
+        $coverage->load('pop');
+
+        return view('coverages.show', ['coverage' => $coverage]);
+    }
+
     public function edit(Coverage $coverage): View
     {
         return view('coverages.edit', ['coverage' => $coverage, 'pops' => Pop::orderBy('name')->get()]);

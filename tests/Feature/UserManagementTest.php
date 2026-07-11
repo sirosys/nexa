@@ -84,6 +84,18 @@ class UserManagementTest extends TestCase
         $response->assertSee('Pelanggan Satu');
     }
 
+    public function test_superadmin_can_view_user_detail(): void
+    {
+        $superadmin = $this->superadmin();
+        $customer = $this->withRole('customer')->fresh();
+        $customer->update(['name' => 'Pelanggan Detail']);
+
+        $response = $this->actingAs($superadmin)->get(route('users.show', $customer));
+
+        $response->assertOk();
+        $response->assertSee('Pelanggan Detail');
+    }
+
     public function test_superadmin_cannot_change_own_role_away_from_superadmin(): void
     {
         $superadmin = $this->superadmin();

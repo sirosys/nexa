@@ -70,6 +70,7 @@
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-end gap-3">
+                                    <a href="{{ route('services.show', $service) }}" class="font-medium text-gray-600 hover:underline dark:text-gray-300">Detail</a>
                                     <a href="{{ route('services.edit', $service) }}" class="font-medium text-primary hover:underline">Ubah</a>
                                     <form method="POST" action="{{ route('services.destroy', $service) }}" onsubmit="return confirm('Hapus service ini?');">
                                         @csrf

@@ -183,6 +183,20 @@ class PackageManagementTest extends TestCase
         $this->assertDatabaseMissing('packages', ['id' => $package->id]);
     }
 
+    public function test_superadmin_can_view_package_detail_with_bundled_products(): void
+    {
+        $superadmin = $this->superadmin();
+        $package = Package::factory()->create(['name' => 'Paket Detail']);
+        $product = Product::factory()->create(['name' => 'Modem Detail']);
+        $package->products()->attach($product->id, ['quantity' => 1, 'price' => 100000]);
+
+        $response = $this->actingAs($superadmin)->get(route('packages.show', $package));
+
+        $response->assertOk();
+        $response->assertSee('Paket Detail');
+        $response->assertSee('Modem Detail');
+    }
+
     /**
      * Gate `/packages` masih sengaja cuma untuk superadmin, konsisten dengan
      * gate `/users` dan `/products` (lihat CLAUDE.md "Authorization").

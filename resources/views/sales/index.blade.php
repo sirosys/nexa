@@ -55,6 +55,7 @@
                             <td class="px-4 py-3 text-right text-gray-900 dark:text-white">{{ number_format((float) $sale->grandtotal, 2) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-end gap-3">
+                                    <a href="{{ route('sales.show', $sale) }}" class="font-medium text-gray-600 hover:underline dark:text-gray-300">Detail</a>
                                     <a href="{{ route('sales.edit', $sale) }}" class="font-medium text-primary hover:underline">Ubah</a>
                                     <form method="POST" action="{{ route('sales.destroy', $sale) }}" onsubmit="return confirm('Hapus sale ini?');">
                                         @csrf

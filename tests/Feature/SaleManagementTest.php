@@ -320,6 +320,30 @@ class SaleManagementTest extends TestCase
         $this->actingAs($superadmin)->get('/sales?q='.$service->code)->assertOk()->assertSee($sale->code);
     }
 
+    public function test_superadmin_can_view_sale_detail_with_products(): void
+    {
+        $superadmin = $this->superadmin();
+        $service = Service::factory()->create();
+        $package = Package::factory()->create();
+        $product = Product::factory()->create(['name' => 'Modem Detail']);
+
+        $this->actingAs($superadmin)->post('/sales', [
+            'service_id' => $service->id,
+            'package_id' => $package->id,
+            'products' => [
+                ['product_id' => $product->id, 'quantity' => 2, 'price' => 100000, 'discount' => 0],
+            ],
+        ]);
+
+        $sale = Sale::where('service_id', $service->id)->firstOrFail();
+
+        $response = $this->actingAs($superadmin)->get(route('sales.show', $sale));
+
+        $response->assertOk();
+        $response->assertSee($sale->code);
+        $response->assertSee('Modem Detail');
+    }
+
     public function test_create_and_edit_pages_render(): void
     {
         $superadmin = $this->superadmin();

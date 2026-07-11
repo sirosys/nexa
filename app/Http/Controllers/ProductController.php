@@ -45,6 +45,11 @@ class ProductController extends Controller
         return redirect()->route('products.index')->with('status', 'Produk berhasil ditambahkan.');
     }
 
+    public function show(Product $product): View
+    {
+        return view('products.show', ['product' => $product]);
+    }
+
     public function edit(Product $product): View
     {
         return view('products.edit', ['product' => $product]);

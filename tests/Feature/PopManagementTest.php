@@ -117,6 +117,19 @@ class PopManagementTest extends TestCase
         $response->assertSee('PoP Kemang');
     }
 
+    public function test_superadmin_can_view_pop_detail_with_coverages(): void
+    {
+        $superadmin = $this->superadmin();
+        $pop = Pop::factory()->create(['name' => 'PoP Detail']);
+        Coverage::factory()->create(['pop_id' => $pop->id, 'name' => 'Coverage Detail']);
+
+        $response = $this->actingAs($superadmin)->get(route('pops.show', $pop));
+
+        $response->assertOk();
+        $response->assertSee('PoP Detail');
+        $response->assertSee('Coverage Detail');
+    }
+
     public function test_create_and_edit_pages_render(): void
     {
         $superadmin = $this->superadmin();

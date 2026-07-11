@@ -241,6 +241,18 @@ class ServiceManagementTest extends TestCase
         $response->assertSee('Jl. Kemang Raya No. 5');
     }
 
+    public function test_superadmin_can_view_service_detail(): void
+    {
+        $superadmin = $this->superadmin();
+        $service = Service::factory()->create(['address' => 'Jl. Detail No. 1']);
+
+        $response = $this->actingAs($superadmin)->get(route('services.show', $service));
+
+        $response->assertOk();
+        $response->assertSee('Jl. Detail No. 1');
+        $response->assertSee($service->code);
+    }
+
     public function test_create_and_edit_pages_render(): void
     {
         $superadmin = $this->superadmin();

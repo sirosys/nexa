@@ -52,6 +52,7 @@
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $pop->model ?? '—' }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-end gap-3">
+                                    <a href="{{ route('pops.show', $pop) }}" class="font-medium text-gray-600 hover:underline dark:text-gray-300">Detail</a>
                                     <a href="{{ route('pops.edit', $pop) }}" class="font-medium text-primary hover:underline">Ubah</a>
                                     <form method="POST" action="{{ route('pops.destroy', $pop) }}" onsubmit="return confirm('Hapus PoP ini?');">
                                         @csrf

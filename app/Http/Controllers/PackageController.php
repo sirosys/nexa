@@ -46,6 +46,13 @@ class PackageController extends Controller
         return redirect()->route('packages.index')->with('status', 'Paket berhasil ditambahkan.');
     }
 
+    public function show(Package $package): View
+    {
+        $package->load('products');
+
+        return view('packages.show', ['package' => $package]);
+    }
+
     public function edit(Package $package): View
     {
         $package->load('products');

@@ -46,6 +46,13 @@ class PopController extends Controller
         return redirect()->route('pops.index')->with('status', 'PoP berhasil ditambahkan.');
     }
 
+    public function show(Pop $pop): View
+    {
+        $pop->load(['subdistrict', 'coverages']);
+
+        return view('pops.show', ['pop' => $pop]);
+    }
+
     public function edit(Pop $pop): View
     {
         $pop->load('subdistrict');

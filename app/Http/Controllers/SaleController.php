@@ -56,6 +56,13 @@ class SaleController extends Controller
         return redirect()->route('sales.index')->with('status', "Sale berhasil ditambahkan. Grandtotal: {$sale->grandtotal}");
     }
 
+    public function show(Sale $sale): View
+    {
+        $sale->load(['service.user', 'package', 'products']);
+
+        return view('sales.show', ['sale' => $sale]);
+    }
+
     public function edit(Sale $sale): View
     {
         $sale->load(['service.user', 'package', 'products']);

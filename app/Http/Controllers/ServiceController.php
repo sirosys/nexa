@@ -53,6 +53,13 @@ class ServiceController extends Controller
         return redirect()->route('services.index')->with('status', "Service berhasil ditambahkan. PIN PPPoE: {$service->pin}");
     }
 
+    public function show(Service $service): View
+    {
+        $service->load(['user', 'subdistrict', 'coverage', 'package']);
+
+        return view('services.show', ['service' => $service]);
+    }
+
     public function edit(Service $service): View
     {
         $service->load(['user', 'subdistrict', 'coverage', 'package']);

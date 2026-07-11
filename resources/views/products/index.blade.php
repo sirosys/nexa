@@ -73,6 +73,7 @@
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $product->unit ?? '—' }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-end gap-3">
+                                    <a href="{{ route('products.show', $product) }}" class="font-medium text-gray-600 hover:underline dark:text-gray-300">Detail</a>
                                     <a href="{{ route('products.edit', $product) }}" class="font-medium text-primary hover:underline">Ubah</a>
                                     <form method="POST" action="{{ route('products.destroy', $product) }}" onsubmit="return confirm('Hapus produk ini?');">
                                         @csrf

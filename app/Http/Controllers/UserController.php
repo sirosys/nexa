@@ -47,6 +47,13 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('status', 'Pengguna berhasil ditambahkan.');
     }
 
+    public function show(User $user): View
+    {
+        $user->load(['userDetails', 'roles']);
+
+        return view('users.show', ['user' => $user]);
+    }
+
     public function edit(User $user): View
     {
         $user->load(['userDetails', 'roles']);

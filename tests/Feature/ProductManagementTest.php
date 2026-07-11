@@ -105,6 +105,17 @@ class ProductManagementTest extends TestCase
         $response->assertSee('Router Wifi 6');
     }
 
+    public function test_superadmin_can_view_product_detail(): void
+    {
+        $superadmin = $this->superadmin();
+        $product = Product::factory()->create(['name' => 'Router Wifi 6']);
+
+        $response = $this->actingAs($superadmin)->get(route('products.show', $product));
+
+        $response->assertOk();
+        $response->assertSee('Router Wifi 6');
+    }
+
     /**
      * Gate `/products` masih sengaja cuma untuk superadmin, konsisten dengan
      * gate `/users` (lihat CLAUDE.md "Authorization").

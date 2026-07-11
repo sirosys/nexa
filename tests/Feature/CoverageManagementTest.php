@@ -93,6 +93,19 @@ class CoverageManagementTest extends TestCase
         $response->assertSee('Cakupan Blok B');
     }
 
+    public function test_superadmin_can_view_coverage_detail(): void
+    {
+        $superadmin = $this->superadmin();
+        $pop = Pop::factory()->create(['name' => 'PoP Induk']);
+        $coverage = Coverage::factory()->create(['pop_id' => $pop->id, 'name' => 'Cakupan Detail']);
+
+        $response = $this->actingAs($superadmin)->get(route('coverages.show', $coverage));
+
+        $response->assertOk();
+        $response->assertSee('Cakupan Detail');
+        $response->assertSee('PoP Induk');
+    }
+
     public function test_create_and_edit_pages_render(): void
     {
         $superadmin = $this->superadmin();
