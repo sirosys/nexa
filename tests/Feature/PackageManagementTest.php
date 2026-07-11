@@ -57,6 +57,69 @@ class PackageManagementTest extends TestCase
             'product_id' => $modem->id,
             'quantity' => 1,
         ]);
+        // Tidak ada produk bertipe langganan sama sekali di paket ini —
+        // duration_months fallback ke default 1 bulan.
+        $this->assertSame(1, $package->duration_months);
+    }
+
+    public function test_duration_months_derived_from_subscription_product_quantity(): void
+    {
+        $superadmin = $this->superadmin();
+        $internet = Product::factory()->create(['type' => 'langganan', 'price' => 150000]);
+        $modem = Product::factory()->create(['type' => 'perangkat', 'price' => 350000]);
+
+        $response = $this->actingAs($superadmin)->post('/packages', [
+            'name' => 'Paket Internet 6 Bulan',
+            'price' => 900000,
+            'products' => [
+                ['product_id' => $internet->id, 'quantity' => 6, 'price' => 150000],
+                ['product_id' => $modem->id, 'quantity' => 1, 'price' => 350000],
+            ],
+        ]);
+
+        $response->assertRedirect(route('packages.index'));
+
+        $package = Package::where('name', 'Paket Internet 6 Bulan')->firstOrFail();
+        $this->assertSame(6, $package->duration_months);
+    }
+
+    public function test_uneven_subscription_product_quantities_are_rejected(): void
+    {
+        $superadmin = $this->superadmin();
+        $internetA = Product::factory()->create(['type' => 'langganan']);
+        $internetB = Product::factory()->create(['type' => 'langganan']);
+
+        $response = $this->actingAs($superadmin)->post('/packages', [
+            'name' => 'Paket Campur Aduk',
+            'price' => 500000,
+            'products' => [
+                ['product_id' => $internetA->id, 'quantity' => 3, 'price' => 100000],
+                ['product_id' => $internetB->id, 'quantity' => 6, 'price' => 100000],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors('products');
+    }
+
+    public function test_duration_months_recalculated_on_update(): void
+    {
+        $superadmin = $this->superadmin();
+        $package = Package::factory()->create();
+        $originalProduct = Product::factory()->create(['type' => 'perangkat']);
+        $package->products()->attach($originalProduct->id, ['quantity' => 1, 'price' => 100000]);
+
+        $internet = Product::factory()->create(['type' => 'langganan']);
+
+        $response = $this->actingAs($superadmin)->put("/packages/{$package->id}", [
+            'name' => $package->name,
+            'price' => $package->price,
+            'products' => [
+                ['product_id' => $internet->id, 'quantity' => 12, 'price' => 130000],
+            ],
+        ]);
+
+        $response->assertRedirect(route('packages.index'));
+        $this->assertSame(12, $package->fresh()->duration_months);
     }
 
     public function test_package_requires_at_least_one_product(): void

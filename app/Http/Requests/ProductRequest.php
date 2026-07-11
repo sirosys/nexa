@@ -7,7 +7,7 @@ use Illuminate\Validation\Rule;
 
 class ProductRequest extends FormRequest
 {
-    public const TYPES = ['perangkat', 'jasa', 'biaya', 'lainnya'];
+    public const TYPES = ['perangkat', 'jasa', 'biaya', 'langganan', 'lainnya'];
 
     public function authorize(): bool
     {

@@ -2,12 +2,16 @@
 
 namespace App\Services;
 
+use App\Models\Package;
+use App\Models\Product;
 use App\Models\Service;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ServiceService
 {
+    public function __construct(private readonly SaleService $saleService) {}
+
     public function create(array $data): Service
     {
         return DB::transaction(function () use ($data) {
@@ -21,12 +25,24 @@ class ServiceService
                 'rt' => $data['rt'] ?? null,
                 'coverage_id' => $data['coverage_id'],
                 'package_id' => $data['package_id'],
+                'status' => Service::STATUS_PENDING_PAYMENT,
                 'created_by' => Auth::id(),
                 'updated_by' => Auth::id(),
             ]);
 
             $service->update([
                 'code' => 'SRV'.str_pad((string) $service->id, 6, '0', STR_PAD_LEFT),
+            ]);
+
+            // Sale (tagihan pendaftaran) untuk paket starter yang dipilih
+            // dibuat otomatis di sini — staff tidak input manual ke /sales
+            // terpisah untuk pendaftaran awal (lihat CLAUDE.md "Service").
+            $package = Package::with('products')->findOrFail($data['package_id']);
+
+            $this->saleService->create([
+                'service_id' => $service->id,
+                'package_id' => $package->id,
+                'products' => $this->buildProductLines($package),
             ]);
 
             return $service;
@@ -59,5 +75,22 @@ class ServiceService
     private function generatePin(): string
     {
         return str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Baris produk untuk Sale pendaftaran awal, disalin dari snapshot
+     * package_product paket starter yang dipilih (quantity/price sama
+     * seperti yang tersimpan di paket, bukan harga produk terkini).
+     *
+     * @return array<int, array{product_id: int, price: float, quantity: int, unit: ?string}>
+     */
+    private function buildProductLines(Package $package): array
+    {
+        return $package->products->map(fn (Product $product) => [
+            'product_id' => $product->id,
+            'price' => (float) $product->pivot->price,
+            'quantity' => (int) $product->pivot->quantity,
+            'unit' => $product->unit,
+        ])->values()->all();
     }
 }

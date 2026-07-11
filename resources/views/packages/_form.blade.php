@@ -108,6 +108,7 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Produk dalam Paket</label>
             <button type="button" @click="addRow()" class="text-sm font-medium text-primary hover:underline">+ Tambah Produk</button>
         </div>
+        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Kalau ada produk bertipe "Langganan", quantity-nya menentukan durasi masa aktif paket (1 = 1 bulan) — kalau lebih dari satu produk langganan ditambahkan, quantity-nya harus sama.</p>
 
         @error('products')
             <p class="mb-2 text-sm text-danger">{{ $message }}</p>

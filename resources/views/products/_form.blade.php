@@ -4,6 +4,7 @@
         'perangkat' => 'Perangkat',
         'jasa' => 'Jasa',
         'biaya' => 'Biaya',
+        'langganan' => 'Langganan',
         'lainnya' => 'Lainnya',
     ];
 @endphp

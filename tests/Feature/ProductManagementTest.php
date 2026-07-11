@@ -44,6 +44,19 @@ class ProductManagementTest extends TestCase
         $this->assertStringStartsWith('PRD', $product->code);
     }
 
+    public function test_langganan_is_an_accepted_product_type(): void
+    {
+        $response = $this->actingAs($this->superadmin())->post('/products', [
+            'type' => 'langganan',
+            'name' => 'Internet 10 Mbps',
+            'price' => 150000,
+            'unit' => 'bulan',
+        ]);
+
+        $response->assertRedirect(route('products.index'));
+        $this->assertDatabaseHas('products', ['name' => 'Internet 10 Mbps', 'type' => 'langganan']);
+    }
+
     public function test_product_type_must_be_one_of_the_fixed_list(): void
     {
         $response = $this->actingAs($this->superadmin())->post('/products', [

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['code', 'is_starter', 'name', 'description', 'price', 'created_by', 'updated_by'])]
+#[Fillable(['code', 'is_starter', 'duration_months', 'name', 'description', 'price', 'created_by', 'updated_by'])]
 class Package extends Model
 {
     /** @use HasFactory<PackageFactory> */

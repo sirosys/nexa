@@ -39,6 +39,7 @@
                         <th class="px-4 py-3">Kode</th>
                         <th class="px-4 py-3">Nama</th>
                         <th class="px-4 py-3">Starter</th>
+                        <th class="px-4 py-3">Durasi</th>
                         <th class="px-4 py-3">Harga</th>
                         <th class="px-4 py-3 text-right">Aksi</th>
                     </tr>
@@ -55,6 +56,7 @@
                                     <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">Tidak</span>
                                 @endif
                             </td>
+                            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $package->duration_months }} bulan</td>
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">Rp{{ number_format((float) $package->price, 0, ',', '.') }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-end gap-3">
@@ -69,7 +71,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Belum ada paket.</td>
+                            <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Belum ada paket.</td>
                         </tr>
                     @endforelse
                 </tbody>

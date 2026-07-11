@@ -9,11 +9,35 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['code', 'pin', 'user_id', 'address', 'residential_name', 'subdistrict_id', 'rw', 'rt', 'coverage_id', 'package_id', 'activated_at', 'expired_at', 'dismantled_at', 'canceled_at', 'created_by', 'updated_by'])]
+#[Fillable(['code', 'pin', 'user_id', 'address', 'residential_name', 'subdistrict_id', 'rw', 'rt', 'coverage_id', 'package_id', 'status', 'activated_at', 'expired_at', 'dismantled_at', 'canceled_at', 'created_by', 'updated_by'])]
 class Service extends Model
 {
     /** @use HasFactory<ServiceFactory> */
     use HasFactory, SoftDeletes;
+
+    // Belum ada UI/aksi transisi state machine (activate/suspend/dismantle/cancel)
+    // di iterasi ini — kolom disiapkan duluan, logic-nya menyusul begitu
+    // modul Installation/Billing dibangun. Lihat CLAUDE.md "Service".
+    public const STATUS_PENDING_PAYMENT = 'pending_payment';
+
+    public const STATUS_PENDING_INSTALLATION = 'pending_installation';
+
+    public const STATUS_ACTIVE = 'active';
+
+    public const STATUS_SUSPENDED = 'suspended';
+
+    public const STATUS_CANCELED = 'canceled';
+
+    public const STATUS_DISMANTLED = 'dismantled';
+
+    public const STATUSES = [
+        self::STATUS_PENDING_PAYMENT,
+        self::STATUS_PENDING_INSTALLATION,
+        self::STATUS_ACTIVE,
+        self::STATUS_SUSPENDED,
+        self::STATUS_CANCELED,
+        self::STATUS_DISMANTLED,
+    ];
 
     /**
      * Get the attributes that should be cast.

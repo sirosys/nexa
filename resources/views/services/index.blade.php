@@ -1,3 +1,16 @@
+@php
+    // Kelas badge ditulis literal (bukan interpolasi) supaya terdeteksi
+    // content-scanner Tailwind v4 saat build — sama seperti products/index.
+    $statusBadges = [
+        'pending_payment' => ['label' => 'Menunggu Pembayaran', 'class' => 'bg-warning-light text-warning dark:bg-warning/10'],
+        'pending_installation' => ['label' => 'Menunggu Instalasi', 'class' => 'bg-info-light text-info dark:bg-info/10'],
+        'active' => ['label' => 'Aktif', 'class' => 'bg-success-light text-success dark:bg-success/10'],
+        'suspended' => ['label' => 'Suspend', 'class' => 'bg-danger-light text-danger dark:bg-danger/10'],
+        'canceled' => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'],
+        'dismantled' => ['label' => 'Dismantle', 'class' => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'],
+    ];
+@endphp
+
 <x-app-layout :title="'Layanan — ' . config('app.name', 'NEXA')">
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -40,6 +53,7 @@
                         <th class="px-4 py-3">Pelanggan</th>
                         <th class="px-4 py-3">Alamat</th>
                         <th class="px-4 py-3">Coverage</th>
+                        <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -50,6 +64,10 @@
                             <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $service->user?->name }}</td>
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ \Illuminate\Support\Str::limit($service->address, 40) }}</td>
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $service->coverage?->name }}</td>
+                            <td class="px-4 py-3">
+                                @php($badge = $statusBadges[$service->status] ?? ['label' => $service->status, 'class' => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'])
+                                <span class="inline-flex items-center rounded-full {{ $badge['class'] }} px-2.5 py-1 text-xs font-medium">{{ $badge['label'] }}</span>
+                            </td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-end gap-3">
                                     <a href="{{ route('services.edit', $service) }}" class="font-medium text-primary hover:underline">Ubah</a>
@@ -63,7 +81,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Belum ada service.</td>
+                            <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Belum ada service.</td>
                         </tr>
                     @endforelse
                 </tbody>
