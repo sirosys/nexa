@@ -2,6 +2,7 @@
     $statusBadges = [
         'pending_payment' => ['label' => 'Menunggu Pembayaran', 'class' => 'bg-warning-light text-warning dark:bg-warning/10'],
         'pending_installation' => ['label' => 'Menunggu Instalasi', 'class' => 'bg-info-light text-info dark:bg-info/10'],
+        'installing' => ['label' => 'Sedang Instalasi', 'class' => 'bg-info-light text-info dark:bg-info/10'],
         'active' => ['label' => 'Aktif', 'class' => 'bg-success-light text-success dark:bg-success/10'],
         'suspended' => ['label' => 'Suspend', 'class' => 'bg-danger-light text-danger dark:bg-danger/10'],
         'canceled' => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'],
@@ -71,6 +72,11 @@
                 @endif
             </x-detail-row>
             <x-detail-row label="PIN PPPoE">{{ $service->pin }}</x-detail-row>
+            @if (in_array($service->status, [\App\Models\Service::STATUS_PENDING_INSTALLATION, \App\Models\Service::STATUS_INSTALLING], true) || $service->activation)
+                <x-detail-row label="Instalasi">
+                    <a href="{{ route('installations.show', $service) }}" class="font-medium text-primary hover:underline">Lihat detail instalasi</a>
+                </x-detail-row>
+            @endif
             <x-detail-row label="Diaktifkan">{{ $service->activated_at?->locale('id')->translatedFormat('d F Y, H:i') ?? '—' }}</x-detail-row>
             <x-detail-row label="Berlaku Sampai">{{ $service->expired_at?->locale('id')->translatedFormat('d F Y, H:i') ?? '—' }}</x-detail-row>
             <x-detail-row label="Dibongkar">{{ $service->dismantled_at?->locale('id')->translatedFormat('d F Y, H:i') ?? '—' }}</x-detail-row>

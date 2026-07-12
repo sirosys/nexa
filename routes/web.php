@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CoverageController;
+use App\Http\Controllers\InstallationController;
+use App\Http\Controllers\InstallationPhotoController;
 use App\Http\Controllers\KtpPhotoController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PackageController;
@@ -70,4 +72,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/sales/services/search', [SaleController::class, 'searchServices'])->name('sales.services.search');
     Route::post('/sales/{sale}/receipt/retry', [SaleController::class, 'retryReceipt'])->name('sales.receipt.retry');
     Route::resource('sales', SaleController::class);
+
+    // Modul Installation — bukan CRUD resource standar, route-model-binding
+    // di atas Service (bukan model ServiceActivation), lihat CLAUDE.md
+    // "Installation".
+    Route::get('/installations', [InstallationController::class, 'index'])->name('installations.index');
+    Route::get('/installations/{service}', [InstallationController::class, 'show'])->name('installations.show');
+    Route::post('/installations/{service}/assign', [InstallationController::class, 'assign'])->name('installations.assign');
+    Route::post('/installations/{service}/claim', [InstallationController::class, 'claim'])->name('installations.claim');
+    Route::post('/installations/{service}/complete', [InstallationController::class, 'complete'])->name('installations.complete');
+    Route::get('/secure/installation-photo/{service}', [InstallationPhotoController::class, 'show'])->name('secure.installation-photo');
 });

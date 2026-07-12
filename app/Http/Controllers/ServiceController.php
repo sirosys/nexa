@@ -59,7 +59,7 @@ class ServiceController extends Controller
 
     public function show(Service $service): View
     {
-        $service->load(['user', 'subdistrict', 'coverage', 'package']);
+        $service->load(['user', 'subdistrict', 'coverage', 'package', 'activation']);
 
         return view('services.show', ['service' => $service]);
     }

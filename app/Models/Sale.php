@@ -64,4 +64,10 @@ class Sale extends Model
     {
         return $this->hasOne(Receipt::class);
     }
+
+    /** @return HasOne<ServiceActivation, $this> */
+    public function activation(): HasOne
+    {
+        return $this->hasOne(ServiceActivation::class);
+    }
 }

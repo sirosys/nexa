@@ -50,6 +50,11 @@ class User extends Authenticatable
         return $this->hasRole('customer');
     }
 
+    public function isTechnician(): bool
+    {
+        return $this->hasRole('technician');
+    }
+
     /** @return HasMany<OtpCode, $this> */
     public function otpCodes(): HasMany
     {

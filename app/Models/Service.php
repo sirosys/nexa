@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['code', 'pin', 'user_id', 'address', 'residential_name', 'subdistrict_id', 'rw', 'rt', 'coverage_id', 'package_id', 'status', 'activated_at', 'expired_at', 'dismantled_at', 'canceled_at', 'created_by', 'updated_by'])]
@@ -15,12 +17,15 @@ class Service extends Model
     /** @use HasFactory<ServiceFactory> */
     use HasFactory, SoftDeletes;
 
-    // Belum ada UI/aksi transisi state machine (activate/suspend/dismantle/cancel)
+    // Belum ada UI/aksi transisi state machine (suspend/dismantle/cancel)
     // di iterasi ini — kolom disiapkan duluan, logic-nya menyusul begitu
-    // modul Installation/Billing dibangun. Lihat CLAUDE.md "Service".
+    // modul Renewal/Dismantle dibangun. Alur activate sudah diimplementasikan
+    // lewat modul Installation, lihat CLAUDE.md "Installation".
     public const STATUS_PENDING_PAYMENT = 'pending_payment';
 
     public const STATUS_PENDING_INSTALLATION = 'pending_installation';
+
+    public const STATUS_INSTALLING = 'installing';
 
     public const STATUS_ACTIVE = 'active';
 
@@ -33,6 +38,7 @@ class Service extends Model
     public const STATUSES = [
         self::STATUS_PENDING_PAYMENT,
         self::STATUS_PENDING_INSTALLATION,
+        self::STATUS_INSTALLING,
         self::STATUS_ACTIVE,
         self::STATUS_SUSPENDED,
         self::STATUS_CANCELED,
@@ -76,5 +82,17 @@ class Service extends Model
     public function package(): BelongsTo
     {
         return $this->belongsTo(Package::class);
+    }
+
+    /** @return HasMany<Sale, $this> */
+    public function sales(): HasMany
+    {
+        return $this->hasMany(Sale::class);
+    }
+
+    /** @return HasOne<ServiceActivation, $this> */
+    public function activation(): HasOne
+    {
+        return $this->hasOne(ServiceActivation::class);
     }
 }
