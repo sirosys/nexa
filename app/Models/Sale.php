@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['code', 'service_id', 'package_id', 'is_starter', 'total', 'discount', 'subtotal', 'tax', 'admin_fee', 'grandtotal', 'notes', 'invoiced_at', 'expired_at', 'settled_at', 'canceled_at', 'created_by', 'updated_by'])]
+#[Fillable(['code', 'service_id', 'package_id', 'is_starter', 'is_renewal', 'total', 'discount', 'subtotal', 'tax', 'admin_fee', 'grandtotal', 'notes', 'invoiced_at', 'expired_at', 'settled_at', 'canceled_at', 'renewal_reminder_h3_sent_at', 'renewal_reminder_h1_sent_at', 'created_by', 'updated_by'])]
 class Sale extends Model
 {
     /** @use HasFactory<SaleFactory> */
@@ -26,6 +26,7 @@ class Sale extends Model
     {
         return [
             'is_starter' => 'boolean',
+            'is_renewal' => 'boolean',
             'total' => 'decimal:2',
             'discount' => 'decimal:2',
             'subtotal' => 'decimal:2',
@@ -36,6 +37,8 @@ class Sale extends Model
             'expired_at' => 'datetime',
             'settled_at' => 'datetime',
             'canceled_at' => 'datetime',
+            'renewal_reminder_h3_sent_at' => 'datetime',
+            'renewal_reminder_h1_sent_at' => 'datetime',
         ];
     }
 

@@ -34,9 +34,23 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
         // Granularitas jatuh tempo invoice 3 hari — hourly lebih dari
         // cukup, tidak perlu lebih sering. Ini scheduler pertama di
-        // project ini (lihat CLAUDE.md "Billing / Invoice (Xendit)");
-        // modul Renewal/reminder nanti tinggal menambah command baru di
-        // sini, bukan membangun infrastruktur scheduler dari nol lagi.
+        // project ini (lihat CLAUDE.md "Billing / Invoice (Xendit)").
         $schedule->command('billing:cancel-expired-invoices')->hourly();
+
+        // Modul Renewal (lihat CLAUDE.md "Renewal") — granularitas harian,
+        // reminder/suspend adalah konsep per-hari bukan per-jam. Urutan
+        // create → remind → suspend sengaja dijalankan berurutan (staggered
+        // beberapa menit) walau masing-masing independen, supaya log cron
+        // lebih mudah dibaca.
+        $schedule->command('renewal:create-invoices')->dailyAt('06:00');
+        $schedule->command('renewal:send-reminders')->dailyAt('06:05');
+        $schedule->command('renewal:suspend-overdue')->dailyAt('06:10');
+
+        // Modul Dismantle (lihat CLAUDE.md "Dismantle") — menutup siklus
+        // hidup Service, dijalankan setelah renewal:suspend-overdue supaya
+        // Service yang baru saja disuspend hari ini tidak langsung
+        // terantre di run yang sama (mereka baru eligible setelah ambang
+        // config(dismantle.suspended_months_threshold) lewat).
+        $schedule->command('dismantle:queue-overdue-suspensions')->dailyAt('06:15');
     })
     ->create();

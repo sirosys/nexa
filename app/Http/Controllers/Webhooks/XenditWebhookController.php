@@ -7,6 +7,7 @@ use App\Models\Receipt;
 use App\Models\Service;
 use App\Notifications\PaymentReceivedNotification;
 use App\Services\NotificationService;
+use App\Services\RenewalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -19,7 +20,10 @@ use Illuminate\Support\Facades\Log;
  */
 class XenditWebhookController extends Controller
 {
-    public function __construct(private readonly NotificationService $notificationService) {}
+    public function __construct(
+        private readonly NotificationService $notificationService,
+        private readonly RenewalService $renewalService,
+    ) {}
 
     public function handle(Request $request): JsonResponse
     {
@@ -94,6 +98,15 @@ class XenditWebhookController extends Controller
         }
 
         $sale->update(['settled_at' => now()]);
+
+        // Sale renewal (lihat CLAUDE.md "Renewal") lewat jalur reaktivasi,
+        // bukan jalur registrasi pending_installation — RenewalService yang
+        // kirim notifikasinya sendiri (ServiceReactivatedNotification).
+        if ($sale->is_renewal) {
+            $this->renewalService->reactivate($sale);
+
+            return;
+        }
 
         $service = $sale->service;
 

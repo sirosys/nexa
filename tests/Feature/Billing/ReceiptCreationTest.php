@@ -7,11 +7,13 @@ use App\Models\Package;
 use App\Models\Product;
 use App\Models\Receipt;
 use App\Models\Sale;
+use App\Models\Service;
 use App\Models\Subdistrict;
 use App\Models\User;
 use App\Models\UserDetail;
 use App\Notifications\InvoiceCreatedNotification;
 use App\Services\Billing\XenditGateway;
+use App\Services\ReceiptService;
 use App\Services\Whatsapp\WhatsappGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\CapturingWhatsappGateway;
@@ -167,6 +169,31 @@ class ReceiptCreationTest extends TestCase
      * pada Sale yang sudah py invoiced_at tidak melakukan apa-apa, bukan
      * "retry setelah gagal" seperti sebelumnya.
      */
+    /**
+     * Modul Renewal (lihat CLAUDE.md "Renewal") memanggil createForSale()
+     * dengan parameter kedua eksplisit — path registrasi (tanpa parameter)
+     * harus byte-identik dengan perilaku sebelumnya, path renewal harus
+     * meninggalkan sale.expired_at null dan pakai TTL custom untuk signed URL.
+     */
+    public function test_create_for_sale_leaves_expired_at_null_for_renewal_with_custom_signed_url_ttl(): void
+    {
+        $this->app->instance(XenditGateway::class, new FakeXenditGateway);
+
+        $service = Service::factory()->create(['expired_at' => now()->addDays(5)]);
+        $sale = Sale::factory()->create([
+            'service_id' => $service->id,
+            'is_renewal' => true,
+            'grandtotal' => 100000,
+        ]);
+
+        $receiptService = app(ReceiptService::class);
+        $receiptService->createForSale($sale, $service->expired_at);
+
+        $sale->refresh();
+        $this->assertNotNull($sale->invoiced_at);
+        $this->assertNull($sale->expired_at);
+    }
+
     public function test_retry_is_idempotent_and_does_not_duplicate_receipt(): void
     {
         $fake = new FakeXenditGateway;

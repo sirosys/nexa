@@ -44,6 +44,13 @@
                     <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">Tidak</span>
                 @endif
             </x-detail-row>
+            <x-detail-row label="Perpanjangan">
+                @if ($sale->is_renewal)
+                    <span class="inline-flex items-center rounded-full bg-info-light px-2.5 py-1 text-xs font-medium text-info dark:bg-info/10">Ya</span>
+                @else
+                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">Tidak</span>
+                @endif
+            </x-detail-row>
             <x-detail-row label="Catatan">{{ $sale->notes ?? '—' }}</x-detail-row>
             <x-detail-row label="Ditagihkan">{{ $sale->invoiced_at?->locale('id')->translatedFormat('d F Y, H:i') ?? '—' }}</x-detail-row>
             <x-detail-row label="Jatuh Tempo">{{ $sale->expired_at?->locale('id')->translatedFormat('d F Y, H:i') ?? '—' }}</x-detail-row>

@@ -11,16 +11,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['code', 'pin', 'user_id', 'address', 'residential_name', 'subdistrict_id', 'rw', 'rt', 'coverage_id', 'package_id', 'status', 'activated_at', 'expired_at', 'dismantled_at', 'canceled_at', 'created_by', 'updated_by'])]
+#[Fillable(['code', 'pin', 'user_id', 'address', 'residential_name', 'subdistrict_id', 'rw', 'rt', 'coverage_id', 'package_id', 'status', 'activated_at', 'expired_at', 'suspended_at', 'dismantled_at', 'canceled_at', 'created_by', 'updated_by'])]
 class Service extends Model
 {
     /** @use HasFactory<ServiceFactory> */
     use HasFactory, SoftDeletes;
 
-    // Belum ada UI/aksi transisi state machine (suspend/dismantle/cancel)
-    // di iterasi ini — kolom disiapkan duluan, logic-nya menyusul begitu
-    // modul Renewal/Dismantle dibangun. Alur activate sudah diimplementasikan
-    // lewat modul Installation, lihat CLAUDE.md "Installation".
     public const STATUS_PENDING_PAYMENT = 'pending_payment';
 
     public const STATUS_PENDING_INSTALLATION = 'pending_installation';
@@ -33,6 +29,11 @@ class Service extends Model
 
     public const STATUS_CANCELED = 'canceled';
 
+    // Modul Dismantle — lihat CLAUDE.md "Dismantle".
+    public const STATUS_PENDING_DISMANTLE = 'pending_dismantle';
+
+    public const STATUS_DISMANTLING = 'dismantling';
+
     public const STATUS_DISMANTLED = 'dismantled';
 
     public const STATUSES = [
@@ -42,6 +43,8 @@ class Service extends Model
         self::STATUS_ACTIVE,
         self::STATUS_SUSPENDED,
         self::STATUS_CANCELED,
+        self::STATUS_PENDING_DISMANTLE,
+        self::STATUS_DISMANTLING,
         self::STATUS_DISMANTLED,
     ];
 
@@ -55,6 +58,7 @@ class Service extends Model
         return [
             'activated_at' => 'datetime',
             'expired_at' => 'datetime',
+            'suspended_at' => 'datetime',
             'dismantled_at' => 'datetime',
             'canceled_at' => 'datetime',
         ];
@@ -94,5 +98,11 @@ class Service extends Model
     public function activation(): HasOne
     {
         return $this->hasOne(ServiceActivation::class);
+    }
+
+    /** @return HasOne<ServiceDismantle, $this> */
+    public function dismantle(): HasOne
+    {
+        return $this->hasOne(ServiceDismantle::class);
     }
 }

@@ -85,4 +85,35 @@ class CancelExpiredInvoicesTest extends TestCase
         $this->assertNull($sale->canceled_at);
         $this->assertSame(Service::STATUS_ACTIVE, $service->status);
     }
+
+    /**
+     * Regression kunci modul Renewal (lihat CLAUDE.md "Renewal"): Sale
+     * renewal sengaja tidak pernah diberi expired_at oleh
+     * ReceiptService::createForSale() — jadi command ini (yang cuma untuk
+     * tagihan pendaftaran) tidak boleh pernah menyentuhnya, walau
+     * service.expired_at sudah lama lewat dan Sale-nya belum dibayar.
+     * Kalau ini gagal, berarti konflik desain "renewal Sale ke-cancel salah
+     * jadi canceled, bukan suspended" sudah kembali muncul.
+     */
+    public function test_command_never_touches_unpaid_renewal_sale(): void
+    {
+        $service = Service::factory()->create([
+            'status' => Service::STATUS_ACTIVE,
+            'expired_at' => now()->subDays(10),
+        ]);
+        $sale = Sale::factory()->create([
+            'service_id' => $service->id,
+            'is_renewal' => true,
+            'invoiced_at' => now()->subDays(10),
+            'expired_at' => null,
+        ]);
+
+        Artisan::call('billing:cancel-expired-invoices');
+
+        $sale->refresh();
+        $service->refresh();
+
+        $this->assertNull($sale->canceled_at);
+        $this->assertSame(Service::STATUS_ACTIVE, $service->status);
+    }
 }

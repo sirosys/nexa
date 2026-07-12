@@ -6,6 +6,7 @@ use App\Models\Receipt;
 use App\Models\Sale;
 use App\Notifications\InvoiceCreatedNotification;
 use App\Services\Billing\XenditGateway;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
 use RuntimeException;
@@ -34,8 +35,14 @@ class ReceiptService
      * Sengaja TIDAK dibungkus DB::transaction() oleh method ini (dan harus
      * dipanggil di luar transaksi Service+Sale oleh pemanggil) — konsisten
      * pola lama, walau sekarang tidak ada panggilan HTTP eksternal di sini.
+     *
+     * $signedUrlExpiresAt dipakai modul Renewal (lihat RenewalService) untuk
+     * memberi TTL signed URL yang lebih panjang dari invoice_ttl_days biasa
+     * (link pembayaran perpanjangan harus tetap valid sampai service.expired_at,
+     * bisa sampai 5 hari) — default null berarti perilaku registrasi biasa
+     * (invoice_ttl_days) tidak berubah sama sekali.
      */
-    public function createForSale(Sale $sale): ?Receipt
+    public function createForSale(Sale $sale, ?CarbonInterface $signedUrlExpiresAt = null): ?Receipt
     {
         if ((float) $sale->grandtotal <= 0) {
             $sale->update(['settled_at' => now()]);
@@ -61,16 +68,22 @@ class ReceiptService
             $receipt->update([
                 'checkout_url' => URL::temporarySignedRoute(
                     'payment.show',
-                    now()->addDays((int) config('billing.invoice_ttl_days')),
+                    $signedUrlExpiresAt ?? now()->addDays((int) config('billing.invoice_ttl_days')),
                     ['receipt' => $receipt->id],
                 ),
             ]);
         }
 
         if (! $sale->invoiced_at) {
+            // Sale renewal sengaja TIDAK diberi expired_at (tidak ada konsep
+            // "jatuh tempo invoice 3 hari" untuknya — invoice renewal harus
+            // tetap terbuka/bisa dibayar selama masa suspend, cuma
+            // service.expired_at yang relevan). Ini yang membuat
+            // CancelExpiredInvoices otomatis skip Sale renewal, lihat
+            // CLAUDE.md "Renewal".
             $sale->update([
                 'invoiced_at' => now(),
-                'expired_at' => now()->addDays((int) config('billing.invoice_ttl_days')),
+                'expired_at' => $sale->is_renewal ? null : now()->addDays((int) config('billing.invoice_ttl_days')),
             ]);
         }
 

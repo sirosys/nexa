@@ -9,11 +9,16 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
 /**
- * Dikirim ke customer begitu tagihan pendaftaran (Sale + Payment Request
- * Xendit) berhasil dibuat — lihat CLAUDE.md "Billing / Invoice (Xendit)".
- * Dipicu dari ReceiptService::createForSale() (bukan ServiceService)
- * supaya retry manual (SaleController::retryReceipt()) juga ikut memicu
- * notifikasi ini, bukan cuma percobaan pertama.
+ * Dikirim ke customer begitu tagihan (Sale + Payment Request Xendit)
+ * berhasil dibuat — lihat CLAUDE.md "Billing / Invoice (Xendit)". Dipicu
+ * dari ReceiptService::createForSale() (bukan ServiceService) supaya retry
+ * manual (SaleController::retryReceipt()) juga ikut memicu notifikasi ini,
+ * bukan cuma percobaan pertama.
+ *
+ * Dipakai juga oleh modul Renewal untuk tagihan perpanjangan yang dibuat
+ * otomatis di H-5 — notifikasi ini SEKALIGUS jadi reminder H-5 (tidak ada
+ * notifikasi H-5 terpisah, lihat CLAUDE.md "Renewal"). Wording "pendaftaran"
+ * vs "perpanjangan" dibedakan lewat $receipt->sale->is_renewal.
  */
 class InvoiceCreatedNotification extends Notification implements ShouldQueue
 {
@@ -30,13 +35,18 @@ class InvoiceCreatedNotification extends Notification implements ShouldQueue
     {
         return [
             'title' => 'Tagihan Baru',
-            'message' => "Tagihan pendaftaran {$this->receipt->sale->code} sebesar {$this->formattedAmount()} sudah dibuat.",
+            'message' => "Tagihan {$this->label()} {$this->receipt->sale->code} sebesar {$this->formattedAmount()} sudah dibuat.",
         ];
     }
 
     public function toWhatsapp(object $notifiable): string
     {
-        return "[NEXA] Halo {$notifiable->name}, tagihan pendaftaran Anda ({$this->receipt->sale->code}) sebesar {$this->formattedAmount()} sudah dibuat. Silakan bayar melalui link berikut: {$this->receipt->checkout_url}";
+        return "[NEXA] Halo {$notifiable->name}, tagihan {$this->label()} Anda ({$this->receipt->sale->code}) sebesar {$this->formattedAmount()} sudah dibuat. Silakan bayar melalui link berikut: {$this->receipt->checkout_url}";
+    }
+
+    private function label(): string
+    {
+        return $this->receipt->sale->is_renewal ? 'perpanjangan' : 'pendaftaran';
     }
 
     private function formattedAmount(): string

@@ -18,6 +18,7 @@ class SaleService
                 'service_id' => $data['service_id'],
                 'package_id' => $data['package_id'],
                 'is_starter' => $package->is_starter,
+                'is_renewal' => $data['is_renewal'] ?? false,
                 'notes' => $data['notes'] ?? null,
                 'tax' => $data['tax'] ?? 0,
                 'admin_fee' => $data['admin_fee'] ?? 0,

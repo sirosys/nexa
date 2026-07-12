@@ -6,7 +6,9 @@
         'active' => ['label' => 'Aktif', 'class' => 'bg-success-light text-success dark:bg-success/10'],
         'suspended' => ['label' => 'Suspend', 'class' => 'bg-danger-light text-danger dark:bg-danger/10'],
         'canceled' => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'],
-        'dismantled' => ['label' => 'Dismantle', 'class' => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'],
+        'pending_dismantle' => ['label' => 'Antre Dismantle', 'class' => 'bg-info-light text-info dark:bg-info/10'],
+        'dismantling' => ['label' => 'Sedang Dismantle', 'class' => 'bg-info-light text-info dark:bg-info/10'],
+        'dismantled' => ['label' => 'Dibongkar', 'class' => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'],
     ];
     $badge = $statusBadges[$service->status] ?? ['label' => $service->status, 'class' => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'];
 @endphp
@@ -19,13 +21,32 @@
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $service->user?->name }}</p>
         </div>
 
-        <a
-            href="{{ route('services.edit', $service) }}"
-            class="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-active"
-        >
-            Ubah
-        </a>
+        <div class="flex items-center gap-3">
+            @can('queueDismantle', $service)
+                @if (in_array($service->status, [\App\Models\Service::STATUS_ACTIVE, \App\Models\Service::STATUS_SUSPENDED], true))
+                    <form method="POST" action="{{ route('dismantles.queue', $service) }}" onsubmit="return confirm('Antrekan layanan ini untuk dismantle?');">
+                        @csrf
+                        <button type="submit" class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">
+                            Antrekan untuk Dismantle
+                        </button>
+                    </form>
+                @endif
+            @endcan
+
+            <a
+                href="{{ route('services.edit', $service) }}"
+                class="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-active"
+            >
+                Ubah
+            </a>
+        </div>
     </div>
+
+    @if (session('error'))
+        <div class="mb-4 rounded-lg border border-danger/20 bg-danger-light px-4 py-3 text-sm text-danger dark:border-danger/30 dark:bg-danger/10">
+            {{ session('error') }}
+        </div>
+    @endif
 
     @if (session('status'))
         <div class="mb-4 rounded-lg border border-success/20 bg-success-light px-4 py-3 text-sm text-success dark:border-success/30 dark:bg-success/10">
@@ -77,8 +98,16 @@
                     <a href="{{ route('installations.show', $service) }}" class="font-medium text-primary hover:underline">Lihat detail instalasi</a>
                 </x-detail-row>
             @endif
+            @if (in_array($service->status, [\App\Models\Service::STATUS_PENDING_DISMANTLE, \App\Models\Service::STATUS_DISMANTLING], true) || $service->dismantle)
+                <x-detail-row label="Dismantle">
+                    <a href="{{ route('dismantles.show', $service) }}" class="font-medium text-primary hover:underline">Lihat detail dismantle</a>
+                </x-detail-row>
+            @endif
             <x-detail-row label="Diaktifkan">{{ $service->activated_at?->locale('id')->translatedFormat('d F Y, H:i') ?? '—' }}</x-detail-row>
             <x-detail-row label="Berlaku Sampai">{{ $service->expired_at?->locale('id')->translatedFormat('d F Y, H:i') ?? '—' }}</x-detail-row>
+            @if ($service->suspended_at)
+                <x-detail-row label="Disuspend Sejak">{{ $service->suspended_at->locale('id')->translatedFormat('d F Y, H:i') }}</x-detail-row>
+            @endif
             <x-detail-row label="Dibongkar">{{ $service->dismantled_at?->locale('id')->translatedFormat('d F Y, H:i') ?? '—' }}</x-detail-row>
             <x-detail-row label="Dibatalkan">{{ $service->canceled_at?->locale('id')->translatedFormat('d F Y, H:i') ?? '—' }}</x-detail-row>
             <x-detail-row label="Ditambahkan">{{ $service->created_at?->locale('id')->translatedFormat('d F Y, H:i') }}</x-detail-row>

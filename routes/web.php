@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CoverageController;
+use App\Http\Controllers\DismantleController;
+use App\Http\Controllers\DismantlePhotoController;
 use App\Http\Controllers\InstallationController;
 use App\Http\Controllers\InstallationPhotoController;
 use App\Http\Controllers\KtpPhotoController;
@@ -82,4 +84,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/installations/{service}/claim', [InstallationController::class, 'claim'])->name('installations.claim');
     Route::post('/installations/{service}/complete', [InstallationController::class, 'complete'])->name('installations.complete');
     Route::get('/secure/installation-photo/{service}', [InstallationPhotoController::class, 'show'])->name('secure.installation-photo');
+
+    // Modul Dismantle — bukan CRUD resource standar, route-model-binding
+    // di atas Service (bukan model ServiceDismantle), lihat CLAUDE.md
+    // "Dismantle".
+    Route::get('/dismantles', [DismantleController::class, 'index'])->name('dismantles.index');
+    Route::get('/dismantles/{service}', [DismantleController::class, 'show'])->name('dismantles.show');
+    Route::post('/dismantles/{service}/queue', [DismantleController::class, 'queue'])->name('dismantles.queue');
+    Route::post('/dismantles/{service}/assign', [DismantleController::class, 'assign'])->name('dismantles.assign');
+    Route::post('/dismantles/{service}/claim', [DismantleController::class, 'claim'])->name('dismantles.claim');
+    Route::post('/dismantles/{service}/complete', [DismantleController::class, 'complete'])->name('dismantles.complete');
+    Route::get('/secure/dismantle-photo/{service}', [DismantlePhotoController::class, 'show'])->name('secure.dismantle-photo');
 });

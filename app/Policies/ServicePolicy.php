@@ -60,4 +60,35 @@ class ServicePolicy
     {
         return $user->isTechnician() && $service->activation?->installer_id === $user->id;
     }
+
+    // Method di bawah ini untuk modul Dismantle (CLAUDE.md "Dismantle") —
+    // mirror 4 method Installation di atas, plus queueDismantle untuk
+    // trigger manual staff (Installation tidak butuh ini karena jalur
+    // masuk antreannya tunggal, dari webhook Billing).
+    public function viewDismantleQueue(User $user): bool
+    {
+        return $user->isSuperadmin() || $user->isTechnician();
+    }
+
+    public function queueDismantle(User $user, Service $service): bool
+    {
+        return $user->isSuperadmin();
+    }
+
+    public function assignDismantle(User $user, Service $service): bool
+    {
+        return $user->isSuperadmin();
+    }
+
+    public function claimDismantle(User $user, Service $service): bool
+    {
+        return $user->isTechnician();
+    }
+
+    // Ownership-only, TIDAK ada override superadmin — konsisten
+    // completeInstallation (gap yang sama, lihat CLAUDE.md "Dismantle").
+    public function completeDismantle(User $user, Service $service): bool
+    {
+        return $user->isTechnician() && $service->dismantle?->technician_id === $user->id;
+    }
 }
