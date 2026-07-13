@@ -101,7 +101,6 @@ Prinsip utama:
 - Payment
 - Xendit
 - Mikrotik Integration
-- OLT Integration (HSGQ)
 - Monitoring
 - Ticketing
 - Inventory
@@ -171,7 +170,6 @@ Gunakan versioning sejak awal.
 Tahap awal:
 
 - MikroTik
-- OLT HSGQ
 
 Target desain:
 
@@ -281,7 +279,6 @@ konsisten, aman, mudah dipelihara, dan siap berkembang.
 - WhatsApp Integration
 - OTP Management
 - MikroTik Integration
-- HSGQ OLT Integration
 - Monitoring
 - Ticketing
 - Inventory
