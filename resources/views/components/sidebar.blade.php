@@ -1,9 +1,9 @@
 @php
     // TODO: hanya "Dashboard", "Pengguna", "Produk", "Paket", "PoP",
     // "Coverage", "Layanan", "Penjualan", "Instalasi", "Dismantle",
-    // "Tiket", "Inventaris", "Vendor", dan "Purchase Order" yang mengarah
-    // ke route sungguhan; sisanya placeholder sampai modul terkait
-    // dibangun (lihat roadmap modul di README.md).
+    // "Tiket", "Inventaris", "Vendor", "Purchase Order", dan "Pengaturan"
+    // yang mengarah ke route sungguhan; sisanya placeholder sampai modul
+    // terkait dibangun (lihat roadmap modul di README.md).
     $menu = [
         ['label' => 'Dashboard', 'route' => 'dashboard'],
         ['label' => 'Pengguna', 'route' => 'users.index'],
@@ -24,7 +24,7 @@
         ['label' => 'Vendor', 'route' => 'vendors.index'],
         ['label' => 'Purchase Order', 'route' => 'purchase-orders.index'],
         ['label' => 'Laporan'],
-        ['label' => 'Pengaturan'],
+        ['label' => 'Pengaturan', 'route' => 'settings.index'],
     ];
 @endphp
 

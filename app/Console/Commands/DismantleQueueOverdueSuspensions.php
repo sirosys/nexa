@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Service;
+use App\Models\Setting;
 use App\Services\DismantleService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -14,7 +15,7 @@ class DismantleQueueOverdueSuspensions extends Command
 {
     public function handle(DismantleService $dismantleService): int
     {
-        $threshold = now()->subMonths((int) config('dismantle.suspended_months_threshold'));
+        $threshold = now()->subMonths((int) Setting::get('dismantle.suspended_months_threshold', config('dismantle.suspended_months_threshold')));
 
         $overdue = Service::query()
             ->where('status', Service::STATUS_SUSPENDED)

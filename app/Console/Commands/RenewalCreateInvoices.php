@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Service;
+use App\Models\Setting;
 use App\Services\RenewalService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -17,7 +18,7 @@ class RenewalCreateInvoices extends Command
         $due = Service::query()
             ->where('status', Service::STATUS_ACTIVE)
             ->whereNotNull('expired_at')
-            ->where('expired_at', '<=', now()->addDays((int) config('renewal.remind_days_before.invoice')))
+            ->where('expired_at', '<=', now()->addDays((int) Setting::get('renewal.remind_days_before.invoice', config('renewal.remind_days_before.invoice'))))
             ->get();
 
         $created = 0;

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Sale;
+use App\Models\Setting;
 use App\Services\RenewalService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -45,7 +46,7 @@ class RenewalSendReminders extends Command
             ->whereHas('service', fn ($query) => $query->where(
                 'expired_at',
                 '<=',
-                now()->addDays((int) config("renewal.remind_days_before.{$configKey}")),
+                now()->addDays((int) Setting::get("renewal.remind_days_before.{$configKey}", config("renewal.remind_days_before.{$configKey}"))),
             ))
             ->with('service.user', 'receipt')
             ->get();

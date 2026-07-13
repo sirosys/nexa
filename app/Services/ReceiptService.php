@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Receipt;
 use App\Models\Sale;
+use App\Models\Setting;
 use App\Notifications\InvoiceCreatedNotification;
 use App\Services\Billing\XenditGateway;
 use Carbon\CarbonInterface;
@@ -68,7 +69,7 @@ class ReceiptService
             $receipt->update([
                 'checkout_url' => URL::temporarySignedRoute(
                     'payment.show',
-                    $signedUrlExpiresAt ?? now()->addDays((int) config('billing.invoice_ttl_days')),
+                    $signedUrlExpiresAt ?? now()->addDays((int) Setting::get('billing.invoice_ttl_days', config('billing.invoice_ttl_days'))),
                     ['receipt' => $receipt->id],
                 ),
             ]);
@@ -83,7 +84,7 @@ class ReceiptService
             // CLAUDE.md "Renewal".
             $sale->update([
                 'invoiced_at' => now(),
-                'expired_at' => $sale->is_renewal ? null : now()->addDays((int) config('billing.invoice_ttl_days')),
+                'expired_at' => $sale->is_renewal ? null : now()->addDays((int) Setting::get('billing.invoice_ttl_days', config('billing.invoice_ttl_days'))),
             ]);
         }
 

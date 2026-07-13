@@ -18,6 +18,7 @@ use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceTicketController;
+use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SubdistrictController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VendorController;
@@ -129,4 +130,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/purchase-orders/{purchase_order}/receive', [PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive');
     Route::post('/purchase-orders/{purchase_order}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
     Route::resource('purchase-orders', PurchaseOrderController::class);
+
+    // Modul System Setting — lihat CLAUDE.md "System Setting". Bukan CRUD
+    // resource (tidak ada create/delete, katalog key tetap dari seeder),
+    // cuma satu halaman view + satu action update untuk seluruh setting
+    // sekaligus.
+    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+    Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
 });
