@@ -23,6 +23,7 @@ class RenewalService
         private readonly SaleService $saleService,
         private readonly ReceiptService $receiptService,
         private readonly NotificationService $notificationService,
+        private readonly MikrotikService $mikrotikService,
     ) {}
 
     /**
@@ -98,6 +99,7 @@ class RenewalService
             ]);
         });
 
+        $this->mikrotikService->disable($service);
         $this->notificationService->send($service->user, new ServiceSuspendedNotification($service));
     }
 
@@ -126,6 +128,7 @@ class RenewalService
             return $service;
         });
 
+        $this->mikrotikService->enable($service);
         $this->notificationService->send($service->user, new ServiceReactivatedNotification($service));
 
         return $service;

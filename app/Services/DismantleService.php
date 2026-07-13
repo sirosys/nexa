@@ -16,6 +16,7 @@ class DismantleService
 {
     public function __construct(
         private readonly NotificationService $notificationService,
+        private readonly MikrotikService $mikrotikService,
     ) {}
 
     /**
@@ -127,6 +128,7 @@ class DismantleService
             return $service;
         });
 
+        $this->mikrotikService->remove($service);
         $this->notificationService->send($service->user, new ServiceDismantledNotification($service));
 
         return $service;

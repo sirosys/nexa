@@ -51,4 +51,13 @@ return [
         'base_url' => env('XENDIT_BASE_URL', 'https://api.xendit.co'),
     ],
 
+    // Driver 'log' saja untuk sekarang (belum ada perangkat MikroTik
+    // sungguhan yang bisa diakses dari dev — lihat CLAUDE.md "Integrasi
+    // MikroTik"). Driver sungguhan (REST v7+/API klasik/SSH — protokol
+    // belum diputuskan) menyusul begitu perangkat & keputusan protokol ada.
+    'mikrotik' => [
+        'driver' => env('MIKROTIK_GATEWAY_DRIVER', 'log'),
+        'log_channel' => env('MIKROTIK_GATEWAY_LOG_CHANNEL', 'stack'),
+    ],
+
 ];

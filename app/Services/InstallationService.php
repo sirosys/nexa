@@ -16,6 +16,7 @@ class InstallationService
 {
     public function __construct(
         private readonly NotificationService $notificationService,
+        private readonly MikrotikService $mikrotikService,
     ) {}
 
     public function assign(Service $service, User $installer, User $assignedBy): ServiceActivation
@@ -99,6 +100,7 @@ class InstallationService
             return $service;
         });
 
+        $this->mikrotikService->provision($service);
         $this->notificationService->send($service->user, new ServiceActivatedNotification($service));
 
         return $service;
