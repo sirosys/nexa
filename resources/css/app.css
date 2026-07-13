@@ -51,4 +51,21 @@
     .dark {
         color-scheme: dark;
     }
+
+    /* Root font-size dinaikkan dari default 16px browser — Tailwind v4 pakai
+       rem untuk hampir semua utility (font size, padding, sizing), jadi satu
+       baris ini menaikkan skala keseluruhan app (termasuk file yang belum
+       sempat disentuh satu-satu) tanpa perlu mengganti tiap kelas text-*/p-*
+       secara manual. Keluhan user: "font kurang besar, tampilan kurang tegas". */
+    html {
+        font-size: 17px;
+    }
+
+    /* Fallback bold+tegas untuk heading polos (tanpa kelas font-weight
+       eksplisit) — kelas utility Tailwind di masing-masing file tetap menang
+       kalau ada (mis. font-bold/tracking-tight), ini cuma jaring pengaman. */
+    h1, h2, h3 {
+        font-weight: 700;
+        letter-spacing: -0.01em;
+    }
 }

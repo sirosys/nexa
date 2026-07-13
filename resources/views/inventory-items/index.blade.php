@@ -1,16 +1,17 @@
 <x-app-layout :title="'Inventaris — ' . config('app.name', 'NEXA')">
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-            <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Inventaris</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Inventaris</h1>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Stok perangkat di gudang pusat.</p>
         </div>
 
         @can('create', App\Models\InventoryItem::class)
             <a
                 href="{{ route('inventory-items.create') }}"
-                class="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-active"
+                class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98] inline-flex items-center gap-2"
             >
-                Tambah Item
+            <x-icon name="plus" size="4" />
+            Tambah Item
             </a>
         @endcan
     </div>
@@ -21,10 +22,10 @@
         </div>
     @endif
 
-    <div class="rounded-2xl border border-gray-300 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm">
-                <thead class="border-b border-gray-300 text-xs uppercase text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                <thead class="border-b border-gray-200 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:text-gray-400">
                     <tr>
                         <th class="px-4 py-3">Kode</th>
                         <th class="px-4 py-3">Produk</th>
@@ -40,21 +41,21 @@
                             <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $item->product?->name }}</td>
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">
                                 @if ($item->is_serialized)
-                                    <span class="inline-flex items-center rounded-full bg-info-light px-2.5 py-1 text-xs font-medium text-info dark:bg-info/10">Per Serial</span>
+                                    <span class="inline-flex items-center rounded-full bg-info-light px-3 py-1 text-[13px] font-semibold text-info dark:bg-info/10">Per Serial</span>
                                 @else
-                                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">Kuantitas</span>
+                                    <span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-[13px] font-semibold text-gray-500 dark:bg-gray-700 dark:text-gray-400">Kuantitas</span>
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-right text-gray-900 dark:text-white">{{ $item->quantity }}</td>
                             <td class="px-4 py-3">
-                                <div class="flex items-center justify-end gap-3">
-                                    <a href="{{ route('inventory-items.show', $item) }}" class="font-medium text-gray-600 hover:underline dark:text-gray-300">Detail</a>
+                                <div class="flex items-center justify-end gap-1">
+                                    <x-row-action :href="route('inventory-items.show', $item)" icon="eye" label="Detail" />
                                     @can('delete', $item)
                                         <form method="POST" action="{{ route('inventory-items.destroy', $item) }}" onsubmit="return confirm('Hapus item inventaris ini?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="font-medium text-danger hover:underline">Hapus</button>
-                                        </form>
+                                        @csrf
+                                        @method('DELETE')
+                                        <x-row-action icon="trash" label="Hapus" variant="danger" />
+                                    </form>
                                     @endcan
                                 </div>
                             </td>

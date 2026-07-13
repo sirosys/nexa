@@ -8,7 +8,7 @@
 
 <x-app-layout :title="'Pengaturan — ' . config('app.name', 'NEXA')">
     <div class="mb-6">
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Pengaturan</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Pengaturan</h1>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Aturan bisnis yang bisa diubah tanpa perlu deploy ulang aplikasi.</p>
     </div>
 
@@ -23,7 +23,7 @@
         @method('PUT')
 
         @foreach ($groups as $group => $settings)
-            <div class="rounded-2xl border border-gray-300 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
                 <div class="border-b border-gray-300 p-4 dark:border-gray-700">
                     <h2 class="text-sm font-semibold text-gray-900 dark:text-white">{{ $groupLabels[$group] ?? ucfirst($group) }}</h2>
                 </div>
@@ -63,7 +63,7 @@
         <div>
             <button
                 type="submit"
-                class="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-active"
+                class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98]"
             >
                 Simpan Pengaturan
             </button>

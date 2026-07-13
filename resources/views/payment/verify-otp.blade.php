@@ -5,7 +5,7 @@
 
 <x-auth-layout :title="'Verifikasi Pembayaran — ' . config('app.name', 'NEXA')">
     <div class="mb-8 text-center">
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Verifikasi Pembayaran</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Verifikasi Pembayaran</h1>
         <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Masukkan 6 digit kode yang dikirim ke WhatsApp {{ $maskedPhone }} untuk melanjutkan ke tagihan {{ $receipt->sale->code }}.</p>
     </div>
 
@@ -62,7 +62,7 @@
 
         <button
             type="submit"
-            class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-active"
+            class="w-full rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98]"
         >
             Verifikasi
         </button>

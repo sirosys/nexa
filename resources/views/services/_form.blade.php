@@ -438,7 +438,7 @@
                     type="button"
                     @click="submitNewCustomer()"
                     :disabled="newCustomerSubmitting"
-                    class="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-active disabled:opacity-60"
+                    class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98] disabled:opacity-60"
                 >
                     <span x-show="! newCustomerSubmitting">Simpan &amp; Lanjutkan</span>
                     <span x-show="newCustomerSubmitting">Menyimpan...</span>
@@ -497,7 +497,7 @@
                     type="button"
                     @click="submitKyc()"
                     :disabled="kycSubmitting"
-                    class="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-active disabled:opacity-60"
+                    class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98] disabled:opacity-60"
                 >
                     <span x-show="! kycSubmitting">Simpan</span>
                     <span x-show="kycSubmitting">Menyimpan...</span>

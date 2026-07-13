@@ -14,17 +14,18 @@
 <x-app-layout :title="'Detail Tiket — ' . config('app.name', 'NEXA')">
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-            <a href="{{ route('tickets.index') }}" class="text-sm font-medium text-primary hover:underline">&larr; Kembali ke Tiket</a>
-            <h1 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ $ticket->code }}</h1>
+            <a href="{{ route('tickets.index') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"><x-icon name="arrow-left" size="4" />Kembali ke Tiket</a>
+            <h1 class="mt-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ $ticket->code }}</h1>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $ticket->subject }}</p>
         </div>
 
         @can('update', $ticket)
             <a
                 href="{{ route('tickets.edit', $ticket) }}"
-                class="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-active"
+                class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98] inline-flex items-center gap-2"
             >
-                Ubah
+            <x-icon name="pencil-square" size="4" />
+            Ubah
             </a>
         @endcan
     </div>
@@ -42,10 +43,10 @@
     @endif
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div class="rounded-2xl border border-gray-300 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
+        <div class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02] lg:col-span-2">
             <dl>
                 <x-detail-row label="Status">
-                    <span class="inline-flex items-center rounded-full {{ $statusClasses[$ticket->status] ?? 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' }} px-2.5 py-1 text-xs font-medium">
+                    <span class="inline-flex items-center rounded-full {{ $statusClasses[$ticket->status] ?? 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' }} px-3 py-1 text-[13px] font-semibold">
                         {{ $statusBadges[$ticket->status] ?? $ticket->status }}
                     </span>
                 </x-detail-row>
@@ -79,7 +80,7 @@
         <div class="space-y-6">
             @if ($requiresTechnician && $ticket->status === \App\Models\ServiceTicket::STATUS_OPEN && $ticket->assigned_technician_id === null)
                 @can('assignTicket', $ticket)
-                    <div class="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <div class="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
                         <h2 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Tugaskan Teknisi</h2>
                         <form method="POST" action="{{ route('tickets.assign', $ticket) }}" class="space-y-3">
                             @csrf
@@ -92,17 +93,17 @@
                             @error('technician_id')
                                 <p class="text-xs text-danger">{{ $message }}</p>
                             @enderror
-                            <button type="submit" class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-active">Tugaskan</button>
+                            <button type="submit" class="w-full rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98]">Tugaskan</button>
                         </form>
                     </div>
                 @endcan
 
                 @can('claimTicket', $ticket)
-                    <div class="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <div class="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
                         <h2 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Klaim Tiket</h2>
                         <form method="POST" action="{{ route('tickets.claim', $ticket) }}">
                             @csrf
-                            <button type="submit" class="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-active">Klaim Tiket Ini</button>
+                            <button type="submit" class="w-full rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98]">Klaim Tiket Ini</button>
                         </form>
                     </div>
                 @endcan
@@ -110,7 +111,7 @@
 
             @if ($canBeResolvedNow)
                 @can('resolveTicket', $ticket)
-                    <div class="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <div class="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
                         <h2 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Selesaikan Tiket</h2>
                         <form method="POST" action="{{ route('tickets.resolve', $ticket) }}" class="space-y-3">
                             @csrf
@@ -118,7 +119,7 @@
                             @error('resolution_notes')
                                 <p class="text-xs text-danger">{{ $message }}</p>
                             @enderror
-                            <button type="submit" class="w-full rounded-lg bg-success px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-success-active">Tandai Selesai</button>
+                            <button type="submit" class="w-full rounded-xl bg-success px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-success/25 transition hover:bg-success-active hover:shadow-md active:scale-[0.98]">Tandai Selesai</button>
                         </form>
                     </div>
                 @endcan

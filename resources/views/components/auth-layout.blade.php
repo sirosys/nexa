@@ -29,7 +29,7 @@
                 >
             </a>
 
-            <div class="w-full max-w-md rounded-2xl border border-gray-300 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div class="w-full max-w-md rounded-2xl border border-gray-300 bg-white p-8 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
                 {{ $slot }}
             </div>
 

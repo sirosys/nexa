@@ -9,16 +9,17 @@
 <x-app-layout :title="'Detail PoP — ' . config('app.name', 'NEXA')">
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-            <a href="{{ route('pops.index') }}" class="text-sm font-medium text-primary hover:underline">&larr; Kembali ke PoP</a>
-            <h1 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ $pop->name }}</h1>
+            <a href="{{ route('pops.index') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"><x-icon name="arrow-left" size="4" />Kembali ke PoP</a>
+            <h1 class="mt-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ $pop->name }}</h1>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $pop->code }}</p>
         </div>
 
         <a
             href="{{ route('pops.edit', $pop) }}"
-            class="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-active"
+            class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98] inline-flex items-center gap-2"
         >
-            Ubah
+        <x-icon name="pencil-square" size="4" />
+        Ubah
         </a>
     </div>
 
@@ -28,7 +29,7 @@
         </div>
     @endif
 
-    <div class="mb-6 rounded-2xl border border-gray-300 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div class="mb-6 rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
         <dl>
             <x-detail-row label="Kode">{{ $pop->code }}</x-detail-row>
             <x-detail-row label="Nama">{{ $pop->name }}</x-detail-row>
@@ -46,7 +47,7 @@
             <x-detail-row label="Port REST API">{{ $pop->api_port ?? '—' }}</x-detail-row>
             <x-detail-row label="Username API">{{ $pop->api_username ?? '—' }}</x-detail-row>
             <x-detail-row label="Status">
-                <span class="inline-flex items-center rounded-full {{ $statusClasses[$pop->status] ?? $statusClasses[\App\Models\Pop::STATUS_UNKNOWN] }} px-2.5 py-1 text-xs font-medium">
+                <span class="inline-flex items-center rounded-full {{ $statusClasses[$pop->status] ?? $statusClasses[\App\Models\Pop::STATUS_UNKNOWN] }} px-3 py-1 text-[13px] font-semibold">
                     {{ \App\Models\Pop::STATUS_LABELS[$pop->status] ?? $pop->status }}
                 </span>
             </x-detail-row>
@@ -55,13 +56,13 @@
         </dl>
     </div>
 
-    <div class="rounded-2xl border border-gray-300 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
         <div class="border-b border-gray-300 p-4 dark:border-gray-700">
             <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Coverage di PoP Ini</h2>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm">
-                <thead class="border-b border-gray-300 text-xs uppercase text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                <thead class="border-b border-gray-200 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:text-gray-400">
                     <tr>
                         <th class="px-4 py-3">Kode</th>
                         <th class="px-4 py-3">Nama</th>
