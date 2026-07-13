@@ -47,4 +47,13 @@ interface MikrotikGateway
      * Hapus PPPoE secret sepenuhnya (mis. Service sudah dibongkar/dismantle).
      */
     public function deletePppoeSecret(Pop $pop, string $username): bool;
+
+    /**
+     * Cek apakah router milik $pop bisa dijangkau saat ini — dipakai
+     * scheduled command monitoring:check-pop-status (lihat CLAUDE.md
+     * "Monitoring"). Beda kontrak dari method lain di interface ini:
+     * method ini murni query status, jadi TIDAK throw saat gagal — cukup
+     * return false (gagal terhubung = tidak reachable, bukan exception).
+     */
+    public function isReachable(Pop $pop): bool;
 }

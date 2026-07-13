@@ -58,6 +58,27 @@ class MikrotikService
         });
     }
 
+    /**
+     * Dipakai command monitoring:check-pop-status (lihat CLAUDE.md
+     * "Monitoring") — beda dari provision/enable/disable/remove di atas,
+     * method ini punya nilai balik yang dipakai pemanggil (bukan cuma
+     * efek samping), jadi kegagalan gateway ditelan jadi `false`, bukan
+     * dilempar/diabaikan diam-diam.
+     */
+    public function checkStatus(Pop $pop): bool
+    {
+        try {
+            return $this->gateway->isReachable($pop);
+        } catch (Throwable $exception) {
+            Log::warning("MikroTik checkStatus gagal untuk PoP {$pop->code}", [
+                'pop_id' => $pop->id,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
     private function popFor(Service $service): Pop
     {
         $service->loadMissing('coverage.pop');

@@ -94,4 +94,27 @@ class HttpMikrotikGatewayTest extends TestCase
 
         (new HttpMikrotikGateway)->createPppoeSecret($pop, 'SRV000002', '123456');
     }
+
+    public function test_is_reachable_returns_true_on_successful_response(): void
+    {
+        Http::fake(['*/rest/system/resource' => Http::response(['board-name' => 'RB1100'], 200)]);
+
+        $this->assertTrue((new HttpMikrotikGateway)->isReachable($this->pop()));
+    }
+
+    public function test_is_reachable_returns_false_on_failed_response_without_throwing(): void
+    {
+        Http::fake(['*/rest/system/resource' => Http::response([], 500)]);
+
+        $this->assertFalse((new HttpMikrotikGateway)->isReachable($this->pop()));
+    }
+
+    public function test_is_reachable_returns_false_when_pop_has_no_host_configured(): void
+    {
+        $pop = new Pop(['code' => 'POP000003']);
+        $pop->exists = true;
+        $pop->id = 3;
+
+        $this->assertFalse((new HttpMikrotikGateway)->isReachable($pop));
+    }
 }

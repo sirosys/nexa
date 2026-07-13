@@ -52,5 +52,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // terantre di run yang sama (mereka baru eligible setelah ambang
         // config(dismantle.suspended_months_threshold) lewat).
         $schedule->command('dismantle:queue-overdue-suspensions')->dailyAt('06:15');
+
+        // Modul Monitoring (lihat CLAUDE.md "Monitoring") — granularitas
+        // per-5-menit (bukan per-hari seperti Renewal/Dismantle), status
+        // online/offline router adalah kondisi yang berubah cepat, beda
+        // dari siklus billing/suspend yang berbasis hari.
+        $schedule->command('monitoring:check-pop-status')->everyFiveMinutes();
     })
     ->create();

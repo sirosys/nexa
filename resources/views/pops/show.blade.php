@@ -1,3 +1,11 @@
+@php
+    $statusClasses = [
+        \App\Models\Pop::STATUS_ONLINE => 'bg-success-light text-success dark:bg-success/10',
+        \App\Models\Pop::STATUS_OFFLINE => 'bg-danger-light text-danger dark:bg-danger/10',
+        \App\Models\Pop::STATUS_UNKNOWN => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
+    ];
+@endphp
+
 <x-app-layout :title="'Detail PoP — ' . config('app.name', 'NEXA')">
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -37,6 +45,11 @@
             <x-detail-row label="Host/IP Router">{{ $pop->host ?? '—' }}</x-detail-row>
             <x-detail-row label="Port REST API">{{ $pop->api_port ?? '—' }}</x-detail-row>
             <x-detail-row label="Username API">{{ $pop->api_username ?? '—' }}</x-detail-row>
+            <x-detail-row label="Status">
+                <span class="inline-flex items-center rounded-full {{ $statusClasses[$pop->status] ?? $statusClasses[\App\Models\Pop::STATUS_UNKNOWN] }} px-2.5 py-1 text-xs font-medium">
+                    {{ \App\Models\Pop::STATUS_LABELS[$pop->status] ?? $pop->status }}
+                </span>
+            </x-detail-row>
             <x-detail-row label="Terakhir Online">{{ $pop->last_online_at?->locale('id')->translatedFormat('d F Y, H:i') ?? 'Belum pernah tercatat' }}</x-detail-row>
             <x-detail-row label="Ditambahkan">{{ $pop->created_at?->locale('id')->translatedFormat('d F Y, H:i') }}</x-detail-row>
         </dl>

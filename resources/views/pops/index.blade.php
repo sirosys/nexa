@@ -1,3 +1,11 @@
+@php
+    $statusClasses = [
+        \App\Models\Pop::STATUS_ONLINE => 'bg-success-light text-success dark:bg-success/10',
+        \App\Models\Pop::STATUS_OFFLINE => 'bg-danger-light text-danger dark:bg-danger/10',
+        \App\Models\Pop::STATUS_UNKNOWN => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
+    ];
+@endphp
+
 <x-app-layout :title="'PoP — ' . config('app.name', 'NEXA')">
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -40,6 +48,7 @@
                         <th class="px-4 py-3">Nama</th>
                         <th class="px-4 py-3">Wilayah</th>
                         <th class="px-4 py-3">Model</th>
+                        <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -50,6 +59,11 @@
                             <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $pop->name }}</td>
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $pop->subdistrict?->name }}, {{ $pop->subdistrict?->city_name }}</td>
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $pop->model ?? '—' }}</td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex items-center rounded-full {{ $statusClasses[$pop->status] ?? $statusClasses[\App\Models\Pop::STATUS_UNKNOWN] }} px-2.5 py-1 text-xs font-medium">
+                                    {{ \App\Models\Pop::STATUS_LABELS[$pop->status] ?? $pop->status }}
+                                </span>
+                            </td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-end gap-3">
                                     <a href="{{ route('pops.show', $pop) }}" class="font-medium text-gray-600 hover:underline dark:text-gray-300">Detail</a>
@@ -64,7 +78,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Belum ada PoP.</td>
+                            <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Belum ada PoP.</td>
                         </tr>
                     @endforelse
                 </tbody>

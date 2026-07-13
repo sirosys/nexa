@@ -43,6 +43,13 @@ class LogMikrotikGateway implements MikrotikGateway
         return true;
     }
 
+    public function isReachable(Pop $pop): bool
+    {
+        $this->log('isReachable', $pop, []);
+
+        return true;
+    }
+
     private function log(string $action, Pop $pop, array $context): void
     {
         Log::channel(config('services.mikrotik.log_channel', 'stack'))->info(

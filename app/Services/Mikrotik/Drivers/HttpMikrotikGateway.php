@@ -9,6 +9,7 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
+use Throwable;
 
 /**
  * Raw-HTTP client untuk RouterOS REST API (v7+) — lihat CLAUDE.md
@@ -83,6 +84,28 @@ class HttpMikrotikGateway implements MikrotikGateway
         }
 
         return true;
+    }
+
+    /**
+     * Beda kontrak dari method lain di kelas ini — tidak pernah throw,
+     * kegagalan apa pun (host kosong, network, auth, router down) cukup
+     * jadi false. Endpoint `/rest/system/resource` dipilih karena ringan
+     * (info resource router) dan tidak mengubah state apa pun di router,
+     * cocok untuk polling berkala.
+     */
+    public function isReachable(Pop $pop): bool
+    {
+        if (blank($pop->host)) {
+            return false;
+        }
+
+        try {
+            return $this->client($pop)->get('/rest/system/resource')->successful();
+        } catch (Throwable $exception) {
+            Log::warning("MikroTik isReachable gagal ({$pop->code})", ['exception' => $exception->getMessage()]);
+
+            return false;
+        }
     }
 
     private function setDisabled(Pop $pop, string $username, bool $disabled): bool

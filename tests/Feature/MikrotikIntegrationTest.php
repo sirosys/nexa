@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Package;
+use App\Models\Pop;
 use App\Models\Sale;
 use App\Models\Service;
 use App\Models\ServiceActivation;
@@ -10,6 +11,7 @@ use App\Models\User;
 use App\Services\DismantleService;
 use App\Services\InstallationService;
 use App\Services\Mikrotik\MikrotikGateway;
+use App\Services\MikrotikService;
 use App\Services\RenewalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -165,5 +167,24 @@ class MikrotikIntegrationTest extends TestCase
         $this->assertCount(1, $gateway->calls);
         $this->assertSame('deletePppoeSecret', $gateway->calls[0]['action']);
         $this->assertSame($service->code, $gateway->calls[0]['username']);
+    }
+
+    public function test_check_status_returns_gateway_result(): void
+    {
+        $gateway = $this->fakeGateway();
+        $gateway->reachable = true;
+        $pop = Pop::factory()->create();
+
+        $this->assertTrue(app(MikrotikService::class)->checkStatus($pop));
+        $this->assertSame('isReachable', $gateway->calls[0]['action']);
+    }
+
+    public function test_check_status_returns_false_and_does_not_throw_when_gateway_fails(): void
+    {
+        $gateway = $this->fakeGateway();
+        $gateway->shouldFail = true;
+        $pop = Pop::factory()->create();
+
+        $this->assertFalse(app(MikrotikService::class)->checkStatus($pop));
     }
 }

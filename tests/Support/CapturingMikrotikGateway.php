@@ -13,6 +13,8 @@ class CapturingMikrotikGateway implements MikrotikGateway
 
     public bool $shouldFail = false;
 
+    public bool $reachable = true;
+
     public function createPppoeSecret(Pop $pop, string $username, string $password, ?string $profile = null): bool
     {
         return $this->record('createPppoeSecret', $pop, $username, $password, $profile);
@@ -31,6 +33,23 @@ class CapturingMikrotikGateway implements MikrotikGateway
     public function deletePppoeSecret(Pop $pop, string $username): bool
     {
         return $this->record('deletePppoeSecret', $pop, $username);
+    }
+
+    public function isReachable(Pop $pop): bool
+    {
+        $this->calls[] = [
+            'action' => 'isReachable',
+            'pop_id' => $pop->id,
+            'username' => '',
+            'password' => null,
+            'profile' => null,
+        ];
+
+        if ($this->shouldFail) {
+            throw new RuntimeException('Simulated MikroTik failure');
+        }
+
+        return $this->reachable;
     }
 
     private function record(string $action, Pop $pop, string $username, ?string $password = null, ?string $profile = null): bool
