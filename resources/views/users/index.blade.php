@@ -76,7 +76,6 @@
                         <th class="px-4 py-3">NIK</th>
                         <th class="px-4 py-3">Login Terakhir</th>
                         <th class="px-4 py-3">Terdaftar</th>
-                        <th class="px-4 py-3 text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -112,31 +111,10 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $user->created_at?->translatedFormat('d M Y') }}</td>
-                            <td class="px-4 py-3 text-right">
-                                <x-actions-dropdown>
-                                    <a href="{{ route('users.show', $user) }}" class="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5">
-                                        <x-icon name="eye" size="4" class="text-gray-400" />
-                                        Detail
-                                    </a>
-                                    <a href="{{ route('users.edit', $user) }}" class="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5">
-                                        <x-icon name="pencil-square" size="4" class="text-gray-400" />
-                                        Ubah
-                                    </a>
-                                    <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
-                                    <form method="POST" action="{{ route('users.destroy', $user) }}" onsubmit="return confirm('Hapus pengguna ini?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2 text-left text-sm font-medium text-danger hover:bg-danger-light dark:hover:bg-danger/10">
-                                            <x-icon name="trash" size="4" />
-                                            Hapus
-                                        </button>
-                                    </form>
-                                </x-actions-dropdown>
-                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Belum ada pengguna.</td>
+                            <td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Belum ada pengguna.</td>
                         </tr>
                     @endforelse
                 </tbody>

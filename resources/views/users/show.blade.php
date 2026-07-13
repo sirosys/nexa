@@ -60,13 +60,27 @@
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $user->code ?? '—' }}</p>
         </div>
 
-        <a
-            href="{{ route('users.edit', $user) }}"
-            class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98] inline-flex items-center gap-2"
-        >
-            <x-icon name="pencil-square" size="4" />
-            Ubah
-        </a>
+        <div class="flex items-center gap-3">
+            <form method="POST" action="{{ route('users.destroy', $user) }}" onsubmit="return confirm('Hapus pengguna ini?');">
+                @csrf
+                @method('DELETE')
+                <button
+                    type="submit"
+                    class="rounded-xl border border-danger/30 px-5 py-2.5 text-sm font-semibold text-danger shadow-sm transition hover:bg-danger-light hover:shadow-md dark:hover:bg-danger/10 inline-flex items-center gap-2"
+                >
+                    <x-icon name="trash" size="4" />
+                    Hapus
+                </button>
+            </form>
+
+            <a
+                href="{{ route('users.edit', $user) }}"
+                class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98] inline-flex items-center gap-2"
+            >
+                <x-icon name="pencil-square" size="4" />
+                Ubah
+            </a>
+        </div>
     </div>
 
     @if (session('status'))
@@ -77,7 +91,7 @@
 
     <div class="flex flex-col gap-6 lg:flex-row lg:items-start">
         {{-- Kolom kiri: kartu ringkasan --}}
-        <div class="w-full shrink-0 lg:w-80">
+        <div class="w-full shrink-0 lg:w-96">
             <div class="rounded-2xl border border-gray-300 bg-white p-6 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
                 <div class="flex flex-col items-center text-center">
                     <span class="flex h-20 w-20 items-center justify-center rounded-full {{ $roleBadges[$role]['avatar'] ?? 'bg-gray-400' }} text-2xl font-bold text-white">
@@ -207,7 +221,6 @@
                                     <thead class="border-b border-gray-200 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:text-gray-400">
                                         <tr>
                                             <th class="px-6 py-3">Kode</th>
-                                            <th class="px-4 py-3">Alamat</th>
                                             <th class="px-4 py-3">Paket</th>
                                             <th class="px-4 py-3">Status</th>
                                             <th class="px-4 py-3">Berlaku Sampai</th>
@@ -219,7 +232,6 @@
                                                 <td class="px-6 py-3">
                                                     <a href="{{ route('services.show', $service) }}" class="font-semibold text-primary hover:underline">{{ $service->code }}</a>
                                                 </td>
-                                                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $service->address }}</td>
                                                 <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $service->package?->name ?? '—' }}</td>
                                                 <td class="px-4 py-3">
                                                     <span class="inline-flex items-center rounded-full {{ $serviceStatusBadges[$service->status] ?? 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' }} px-3 py-1 text-[13px] font-semibold">{{ Service::STATUS_LABELS[$service->status] ?? $service->status }}</span>
@@ -243,11 +255,9 @@
                                     <thead class="border-b border-gray-200 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:text-gray-400">
                                         <tr>
                                             <th class="px-6 py-3">Kode</th>
-                                            <th class="px-4 py-3">Paket</th>
                                             <th class="px-4 py-3">Total</th>
                                             <th class="px-4 py-3">Status</th>
                                             <th class="px-4 py-3">Tanggal Tagihan</th>
-                                            <th class="px-4 py-3">Channel Bayar</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -260,13 +270,11 @@
                                                         <span class="ms-1 inline-flex items-center rounded-full bg-info-light px-2 py-0.5 text-[11px] font-semibold text-info dark:bg-info/10">Perpanjangan</span>
                                                     @endif
                                                 </td>
-                                                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $sale->package?->name ?? '—' }}</td>
                                                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ Currency::rupiah($sale->grandtotal) }}</td>
                                                 <td class="px-4 py-3">
                                                     <span class="inline-flex items-center rounded-full {{ $status['class'] }} px-3 py-1 text-[13px] font-semibold">{{ $status['label'] }}</span>
                                                 </td>
                                                 <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $sale->invoiced_at?->locale('id')->translatedFormat('d M Y') ?? '—' }}</td>
-                                                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $sale->receipt?->channel_code ?? '—' }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -286,7 +294,6 @@
                                         <tr>
                                             <th class="px-6 py-3">Kode</th>
                                             <th class="px-4 py-3">Subjek</th>
-                                            <th class="px-4 py-3">Kategori</th>
                                             <th class="px-4 py-3">Status</th>
                                             <th class="px-4 py-3">Tanggal</th>
                                         </tr>
@@ -298,7 +305,6 @@
                                                     <a href="{{ route('tickets.show', $ticket) }}" class="font-semibold text-primary hover:underline">{{ $ticket->code }}</a>
                                                 </td>
                                                 <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $ticket->subject }}</td>
-                                                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ ServiceTicket::CATEGORY_LABELS[$ticket->category] ?? $ticket->category }}</td>
                                                 <td class="px-4 py-3">
                                                     <span class="inline-flex items-center rounded-full {{ $ticketStatusBadges[$ticket->status] ?? 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' }} px-3 py-1 text-[13px] font-semibold">{{ ServiceTicket::STATUS_LABELS[$ticket->status] ?? $ticket->status }}</span>
                                                 </td>

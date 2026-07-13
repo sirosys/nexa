@@ -83,7 +83,7 @@ class UserController extends Controller
 
         if ($user->isCustomer()) {
             $services = $user->services()
-                ->with(['coverage', 'package'])
+                ->with('package')
                 ->latest('id')
                 ->get();
 
@@ -91,7 +91,6 @@ class UserController extends Controller
 
             $sales = Sale::query()
                 ->whereIn('service_id', $serviceIds)
-                ->with(['package', 'receipt'])
                 ->latest('id')
                 ->get();
 
