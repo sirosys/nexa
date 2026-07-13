@@ -11,7 +11,7 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         $user = User::query()->updateOrCreate(
-            ['phone' => '6287878786240'],
+            ['phone' => '6280000000000'],
             [
                 'name' => 'Admin NEXA',
                 'email' => 'sirosys.id@gmail.com',
