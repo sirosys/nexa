@@ -48,6 +48,23 @@ class Service extends Model
         self::STATUS_DISMANTLED,
     ];
 
+    // Label Bahasa Indonesia per status — dipindah ke sini dari duplikasi
+    // inline di services/index.blade.php & services/show.blade.php begitu
+    // modul Dashboard butuh label yang sama untuk chart distribusi status
+    // (lihat CLAUDE.md "Dashboard"). View lama belum di-retrofit memakai ini
+    // (di luar scope), tapi modul baru sebaiknya reuse konstanta ini.
+    public const STATUS_LABELS = [
+        self::STATUS_PENDING_PAYMENT => 'Menunggu Pembayaran',
+        self::STATUS_PENDING_INSTALLATION => 'Menunggu Instalasi',
+        self::STATUS_INSTALLING => 'Sedang Instalasi',
+        self::STATUS_ACTIVE => 'Aktif',
+        self::STATUS_SUSPENDED => 'Suspend',
+        self::STATUS_CANCELED => 'Dibatalkan',
+        self::STATUS_PENDING_DISMANTLE => 'Antre Dismantle',
+        self::STATUS_DISMANTLING => 'Sedang Dismantle',
+        self::STATUS_DISMANTLED => 'Dibongkar',
+    ];
+
     /**
      * Get the attributes that should be cast.
      *
