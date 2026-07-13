@@ -1,9 +1,9 @@
 @php
     // TODO: hanya "Dashboard", "Pengguna", "Produk", "Paket", "PoP",
     // "Coverage", "Layanan", "Penjualan", "Instalasi", "Dismantle",
-    // "Tiket", dan "Inventaris" yang mengarah ke route sungguhan; sisanya
-    // placeholder sampai modul terkait dibangun (lihat roadmap modul di
-    // README.md).
+    // "Tiket", "Inventaris", "Vendor", dan "Purchase Order" yang mengarah
+    // ke route sungguhan; sisanya placeholder sampai modul terkait
+    // dibangun (lihat roadmap modul di README.md).
     $menu = [
         ['label' => 'Dashboard', 'route' => 'dashboard'],
         ['label' => 'Pengguna', 'route' => 'users.index'],
@@ -18,7 +18,11 @@
         ['label' => 'Billing'],
         ['label' => 'Tiket', 'route' => 'tickets.index'],
         ['label' => 'Inventaris', 'route' => 'inventory-items.index'],
-        ['label' => 'Vendor & Supplier'],
+        // Split flat "Vendor & Supplier" jadi dua item nyata — pola sama
+        // split Produk/Paket — karena Vendor (master data) dan Purchase
+        // Order (transaksi pengadaan) adalah dua resource CRUD terpisah.
+        ['label' => 'Vendor', 'route' => 'vendors.index'],
+        ['label' => 'Purchase Order', 'route' => 'purchase-orders.index'],
         ['label' => 'Laporan'],
         ['label' => 'Pengaturan'],
     ];

@@ -38,11 +38,13 @@ class InventoryService
     }
 
     /**
-     * @param  array{quantity: ?int, serial_numbers: ?string, notes: ?string}  $data
+     * @param  array{quantity: ?int, serial_numbers: ?string, notes: ?string, purchase_order_id?: ?int}  $data
      */
     public function stockIn(InventoryItem $item, array $data): void
     {
         DB::transaction(function () use ($item, $data) {
+            $purchaseOrderId = $data['purchase_order_id'] ?? null;
+
             if ($item->is_serialized) {
                 $serials = $this->parseSerialNumbers($data['serial_numbers'] ?? '');
 
@@ -55,7 +57,7 @@ class InventoryService
                         'updated_by' => Auth::id(),
                     ]);
 
-                    $this->recordMovement($item, InventoryMovement::TYPE_IN, 1, $data['notes'] ?? null, $unit->id);
+                    $this->recordMovement($item, InventoryMovement::TYPE_IN, 1, $data['notes'] ?? null, $unit->id, null, $purchaseOrderId);
                 }
 
                 $item->increment('quantity', count($serials));
@@ -64,7 +66,7 @@ class InventoryService
             }
 
             $quantity = (int) $data['quantity'];
-            $this->recordMovement($item, InventoryMovement::TYPE_IN, $quantity, $data['notes'] ?? null);
+            $this->recordMovement($item, InventoryMovement::TYPE_IN, $quantity, $data['notes'] ?? null, null, null, $purchaseOrderId);
             $item->increment('quantity', $quantity);
         });
     }
@@ -147,7 +149,7 @@ class InventoryService
         $item->decrement('quantity', $quantity);
     }
 
-    private function recordMovement(InventoryItem $item, string $type, int $quantity, ?string $notes, ?int $unitId = null, ?int $serviceId = null): void
+    private function recordMovement(InventoryItem $item, string $type, int $quantity, ?string $notes, ?int $unitId = null, ?int $serviceId = null, ?int $purchaseOrderId = null): void
     {
         InventoryMovement::create([
             'inventory_item_id' => $item->id,
@@ -155,6 +157,7 @@ class InventoryService
             'type' => $type,
             'quantity' => $quantity,
             'service_id' => $serviceId,
+            'purchase_order_id' => $purchaseOrderId,
             'notes' => $notes,
             'created_by' => Auth::id(),
         ]);

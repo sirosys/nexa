@@ -25,6 +25,8 @@ class PermissionSeeder extends Seeder
         'sales' => ['view', 'create', 'update', 'delete', 'retry-receipt'],
         'tickets' => ['view', 'create', 'update', 'delete', 'assign', 'claim', 'resolve', 'resolve-any'],
         'inventory' => ['view', 'create', 'delete', 'stock-in', 'adjust'],
+        'vendors' => ['view', 'create', 'update', 'delete'],
+        'purchase_orders' => ['view', 'create', 'update', 'delete', 'order', 'receive', 'cancel'],
     ];
 
     /**

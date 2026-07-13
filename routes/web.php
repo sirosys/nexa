@@ -14,11 +14,13 @@ use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PopController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceTicketController;
 use App\Http\Controllers\SubdistrictController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VendorController;
 use App\Http\Controllers\Webhooks\XenditWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -118,4 +120,13 @@ Route::middleware('auth')->group(function () {
         ->parameters(['inventory-items' => 'item']);
     Route::post('/inventory-items/{item}/stock-in', [InventoryItemController::class, 'stockIn'])->name('inventory-items.stock-in');
     Route::post('/inventory-items/{item}/adjust', [InventoryItemController::class, 'adjust'])->name('inventory-items.adjust');
+
+    // Modul Vendor & Supplier — lihat CLAUDE.md "Vendor & Supplier". Vendor
+    // resource CRUD biasa; Purchase Order resource CRUD plus 3 action
+    // non-resource (order/receive/cancel) untuk transisi status.
+    Route::resource('vendors', VendorController::class);
+    Route::post('/purchase-orders/{purchase_order}/order', [PurchaseOrderController::class, 'order'])->name('purchase-orders.order');
+    Route::post('/purchase-orders/{purchase_order}/receive', [PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive');
+    Route::post('/purchase-orders/{purchase_order}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
+    Route::resource('purchase-orders', PurchaseOrderController::class);
 });

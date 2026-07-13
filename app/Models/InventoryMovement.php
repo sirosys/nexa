@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['inventory_item_id', 'inventory_unit_id', 'type', 'quantity', 'service_id', 'notes', 'created_by'])]
+#[Fillable(['inventory_item_id', 'inventory_unit_id', 'type', 'quantity', 'service_id', 'purchase_order_id', 'notes', 'created_by'])]
 class InventoryMovement extends Model
 {
     public const TYPE_IN = 'in';
@@ -43,5 +43,11 @@ class InventoryMovement extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    /** @return BelongsTo<PurchaseOrder, $this> */
+    public function purchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrder::class);
     }
 }
