@@ -23,6 +23,13 @@ class InstallationCompleteRequest extends FormRequest
             'cable_length' => ['nullable', 'numeric', 'min:0'],
             'photo' => ['required', 'image', 'max:4096'],
             'notes' => ['nullable', 'string'],
+            // Equipment dari stok inventaris yang dipakai teknisi — opsional
+            // (belum semua PoP/item terdaftar di iterasi awal Inventaris),
+            // lihat CLAUDE.md "Inventaris".
+            'equipment' => ['nullable', 'array'],
+            'equipment.*.inventory_item_id' => ['required', 'integer', 'exists:inventory_items,id'],
+            'equipment.*.quantity' => ['nullable', 'integer', 'min:1'],
+            'equipment.*.serial_number' => ['nullable', 'string'],
         ];
     }
 

@@ -96,7 +96,19 @@
             @if ($service->status === \App\Models\Service::STATUS_INSTALLING && $viewer->isTechnician() && $activation?->installer_id === $viewer->id)
                 <div class="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                     <h2 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Selesaikan Instalasi</h2>
-                    <form method="POST" action="{{ route('installations.complete', $service) }}" enctype="multipart/form-data" class="space-y-3">
+                    <form
+                        method="POST"
+                        action="{{ route('installations.complete', $service) }}"
+                        enctype="multipart/form-data"
+                        class="space-y-3"
+                        x-data="{
+                            items: {{ \Illuminate\Support\Js::from($inventoryItems) }},
+                            rows: [],
+                            addRow() { this.rows.push({ inventory_item_id: '', quantity: 1, serial_number: '' }); },
+                            removeRow(index) { this.rows.splice(index, 1); },
+                            itemFor(id) { return this.items.find((i) => i.id === Number(id)) ?? null; },
+                        }"
+                    >
                         @csrf
                         <div>
                             <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">ODP Port</label>
@@ -112,6 +124,60 @@
                                 <p class="mt-1 text-xs text-danger">{{ $message }}</p>
                             @enderror
                         </div>
+                        <div>
+                            <div class="mb-1 flex items-center justify-between">
+                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">Equipment Terpakai (opsional)</label>
+                                <button type="button" @click="addRow()" class="text-xs font-medium text-primary hover:underline">+ Tambah</button>
+                            </div>
+                            <template x-if="items.length === 0">
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Belum ada stok inventaris tersedia.</p>
+                            </template>
+                            <div class="space-y-2">
+                                <template x-for="(row, index) in rows" :key="index">
+                                    <div class="flex items-center gap-2">
+                                        <select
+                                            :name="'equipment[' + index + '][inventory_item_id]'"
+                                            x-model.number="row.inventory_item_id"
+                                            @change="row.quantity = 1; row.serial_number = ''"
+                                            class="flex-1 rounded-lg border border-gray-300 bg-transparent px-2 py-1.5 text-xs text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white"
+                                        >
+                                            <option value="">Pilih item</option>
+                                            <template x-for="item in items" :key="item.id">
+                                                <option :value="item.id" x-text="item.name + (item.is_serialized ? '' : ' (stok: ' + item.quantity + ')')"></option>
+                                            </template>
+                                        </select>
+
+                                        <template x-if="itemFor(row.inventory_item_id)?.is_serialized">
+                                            <select
+                                                :name="'equipment[' + index + '][serial_number]'"
+                                                x-model="row.serial_number"
+                                                class="w-32 rounded-lg border border-gray-300 bg-transparent px-2 py-1.5 text-xs text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white"
+                                            >
+                                                <option value="">Pilih serial</option>
+                                                <template x-for="serial in itemFor(row.inventory_item_id)?.serials ?? []" :key="serial">
+                                                    <option :value="serial" x-text="serial"></option>
+                                                </template>
+                                            </select>
+                                        </template>
+                                        <template x-if="row.inventory_item_id && !itemFor(row.inventory_item_id)?.is_serialized">
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                :name="'equipment[' + index + '][quantity]'"
+                                                x-model.number="row.quantity"
+                                                class="w-20 rounded-lg border border-gray-300 bg-transparent px-2 py-1.5 text-xs text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white"
+                                            >
+                                        </template>
+
+                                        <button type="button" @click="removeRow(index)" class="text-xs font-medium text-danger hover:underline">Hapus</button>
+                                    </div>
+                                </template>
+                            </div>
+                            @error('equipment')
+                                <p class="mt-1 text-xs text-danger">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <div>
                             <label class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Foto Bukti Instalasi</label>
                             <input type="file" name="photo" accept="image/*" required class="w-full text-sm text-gray-500 dark:text-gray-400">

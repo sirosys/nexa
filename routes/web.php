@@ -7,6 +7,7 @@ use App\Http\Controllers\DismantleController;
 use App\Http\Controllers\DismantlePhotoController;
 use App\Http\Controllers\InstallationController;
 use App\Http\Controllers\InstallationPhotoController;
+use App\Http\Controllers\InventoryItemController;
 use App\Http\Controllers\KtpPhotoController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PackageController;
@@ -106,4 +107,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/tickets/{ticket}/claim', [ServiceTicketController::class, 'claim'])->name('tickets.claim');
     Route::post('/tickets/{ticket}/resolve', [ServiceTicketController::class, 'resolve'])->name('tickets.resolve');
     Route::resource('tickets', ServiceTicketController::class);
+
+    // Modul Inventaris — lihat CLAUDE.md "Inventaris". Tidak ada
+    // edit/update (product_id/is_serialized immutable setelah dibuat,
+    // tidak ada field lain yang masuk akal diedit lewat form biasa).
+    // Parameter route dipaksa {item} (bukan default {inventory_item})
+    // supaya konsisten dengan nama parameter di InventoryItemController.
+    Route::resource('inventory-items', InventoryItemController::class)
+        ->except(['edit', 'update'])
+        ->parameters(['inventory-items' => 'item']);
+    Route::post('/inventory-items/{item}/stock-in', [InventoryItemController::class, 'stockIn'])->name('inventory-items.stock-in');
+    Route::post('/inventory-items/{item}/adjust', [InventoryItemController::class, 'adjust'])->name('inventory-items.adjust');
 });
