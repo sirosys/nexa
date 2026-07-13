@@ -34,6 +34,9 @@
             <x-detail-row label="Serial">{{ $pop->serial ?? '—' }}</x-detail-row>
             <x-detail-row label="Model">{{ $pop->model ?? '—' }}</x-detail-row>
             <x-detail-row label="Lokasi">{{ $pop->location ?? '—' }}</x-detail-row>
+            <x-detail-row label="Host/IP Router">{{ $pop->host ?? '—' }}</x-detail-row>
+            <x-detail-row label="Port REST API">{{ $pop->api_port ?? '—' }}</x-detail-row>
+            <x-detail-row label="Username API">{{ $pop->api_username ?? '—' }}</x-detail-row>
             <x-detail-row label="Terakhir Online">{{ $pop->last_online_at?->locale('id')->translatedFormat('d F Y, H:i') ?? 'Belum pernah tercatat' }}</x-detail-row>
             <x-detail-row label="Ditambahkan">{{ $pop->created_at?->locale('id')->translatedFormat('d F Y, H:i') }}</x-detail-row>
         </dl>

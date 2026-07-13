@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['code', 'name', 'subdistrict_id', 'serial', 'model', 'location', 'token', 'last_online_at', 'created_by', 'updated_by'])]
+#[Fillable(['code', 'name', 'subdistrict_id', 'serial', 'model', 'location', 'token', 'host', 'api_port', 'api_username', 'last_online_at', 'created_by', 'updated_by'])]
 class Pop extends Model
 {
     /** @use HasFactory<PopFactory> */

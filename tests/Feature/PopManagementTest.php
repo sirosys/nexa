@@ -51,6 +51,26 @@ class PopManagementTest extends TestCase
         $this->assertSame('rahasia-token', $pop->token);
     }
 
+    public function test_superadmin_can_set_mikrotik_rest_api_fields(): void
+    {
+        $subdistrict = Subdistrict::factory()->create();
+
+        $response = $this->actingAs($this->superadmin())->post('/pops', [
+            'name' => 'PoP Wireguard',
+            'subdistrict_id' => $subdistrict->id,
+            'host' => '172.16.0.1',
+            'api_port' => 443,
+            'api_username' => 'api',
+        ]);
+
+        $response->assertRedirect(route('pops.index'));
+
+        $pop = Pop::where('name', 'PoP Wireguard')->firstOrFail();
+        $this->assertSame('172.16.0.1', $pop->host);
+        $this->assertSame(443, $pop->api_port);
+        $this->assertSame('api', $pop->api_username);
+    }
+
     public function test_pop_token_is_hidden_from_serialization(): void
     {
         $pop = Pop::factory()->create(['token' => 'rahasia-token']);

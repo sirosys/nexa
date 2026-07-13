@@ -18,6 +18,9 @@ class PopService
                 'model' => $data['model'] ?? null,
                 'location' => $data['location'] ?? null,
                 'token' => $data['token'] ?? null,
+                'host' => $data['host'] ?? null,
+                'api_port' => $data['api_port'] ?? null,
+                'api_username' => $data['api_username'] ?? null,
                 'created_by' => Auth::id(),
                 'updated_by' => Auth::id(),
             ]);
@@ -39,6 +42,9 @@ class PopService
             'model' => $data['model'] ?? null,
             'location' => $data['location'] ?? null,
             'token' => $data['token'] ?? $pop->token,
+            'host' => $data['host'] ?? null,
+            'api_port' => $data['api_port'] ?? null,
+            'api_username' => $data['api_username'] ?? null,
             'updated_by' => Auth::id(),
         ]);
 

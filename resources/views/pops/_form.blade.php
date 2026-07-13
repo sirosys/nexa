@@ -134,7 +134,7 @@
     </div>
 
     <div>
-        <label for="token" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Token Perangkat</label>
+        <label for="token" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Token Perangkat (Password API)</label>
         <input
             type="text"
             id="token"
@@ -143,9 +143,63 @@
             value="{{ old('token') }}"
             class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
         >
-        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Tersimpan terenkripsi. Kosongkan kalau tidak ingin mengubah token yang sudah ada.</p>
+        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Tersimpan terenkripsi. Kosongkan kalau tidak ingin mengubah token yang sudah ada. Dipakai sebagai password Basic Auth REST API MikroTik.</p>
         @error('token')
             <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
         @enderror
+    </div>
+
+    <div class="border-t border-gray-200 pt-4 dark:border-gray-700">
+        <p class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Akses REST API MikroTik</p>
+        <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">Belum wajib diisi — cuma dipakai kalau driver integrasi MikroTik sudah diaktifkan ke 'http' (lihat CLAUDE.md "Integrasi MikroTik").</p>
+
+        <div class="grid grid-cols-3 gap-4">
+            <div class="col-span-2">
+                <label for="host" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Host/IP Router</label>
+                <input
+                    type="text"
+                    id="host"
+                    name="host"
+                    placeholder="mis. 172.16.0.1 (IP WireGuard, bukan IP public)"
+                    value="{{ old('host', $pop?->host) }}"
+                    class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
+                >
+                @error('host')
+                    <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label for="api_port" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Port REST API</label>
+                <input
+                    type="number"
+                    id="api_port"
+                    name="api_port"
+                    min="1"
+                    max="65535"
+                    placeholder="443"
+                    value="{{ old('api_port', $pop?->api_port) }}"
+                    class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
+                >
+                @error('api_port')
+                    <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+                @enderror
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <label for="api_username" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Username API</label>
+            <input
+                type="text"
+                id="api_username"
+                name="api_username"
+                placeholder="mis. api"
+                value="{{ old('api_username', $pop?->api_username) }}"
+                class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
+            >
+            @error('api_username')
+                <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+            @enderror
+        </div>
     </div>
 </div>
