@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             SettingSeeder::class,
             AdminUserSeeder::class,
+            TestRoleUserSeeder::class,
             SubdistrictSeeder::class,
             PopCoverageSeeder::class,
             ProductPackageSeeder::class,
