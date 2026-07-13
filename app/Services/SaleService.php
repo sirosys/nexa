@@ -14,11 +14,16 @@ class SaleService
         return DB::transaction(function () use ($data) {
             $package = Package::findOrFail($data['package_id']);
 
+            $isRenewal = $data['is_renewal'] ?? false;
+
             $sale = Sale::create([
                 'service_id' => $data['service_id'],
                 'package_id' => $data['package_id'],
-                'is_starter' => $package->is_starter,
-                'is_renewal' => $data['is_renewal'] ?? false,
+                // Sale renewal TIDAK PERNAH is_starter, terlepas dari
+                // is_starter paket registrasi yang masih terpasang di
+                // service_id-nya — guard defensif, lihat CLAUDE.md "Renewal".
+                'is_starter' => $isRenewal ? false : $package->is_starter,
+                'is_renewal' => $isRenewal,
                 'notes' => $data['notes'] ?? null,
                 'tax' => $data['tax'] ?? 0,
                 'admin_fee' => $data['admin_fee'] ?? 0,
@@ -44,7 +49,9 @@ class SaleService
             $sale->update([
                 'service_id' => $data['service_id'],
                 'package_id' => $data['package_id'],
-                'is_starter' => $package->is_starter,
+                // is_renewal bukan field yang bisa diubah lewat form edit
+                // Sale — pakai nilai yang sudah ada di model, bukan $data.
+                'is_starter' => $sale->is_renewal ? false : $package->is_starter,
                 'notes' => $data['notes'] ?? null,
                 'tax' => $data['tax'] ?? 0,
                 'admin_fee' => $data['admin_fee'] ?? 0,

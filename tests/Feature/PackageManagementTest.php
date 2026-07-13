@@ -31,6 +31,7 @@ class PackageManagementTest extends TestCase
     public function test_superadmin_can_create_package_with_bundled_products(): void
     {
         $superadmin = $this->superadmin();
+        $internet = Product::factory()->create(['type' => 'langganan', 'price' => 0]);
         $modem = Product::factory()->create(['price' => 350000]);
         $installation = Product::factory()->create(['price' => 150000]);
 
@@ -39,7 +40,9 @@ class PackageManagementTest extends TestCase
             'name' => 'Paket Gratis 3 Bulan',
             'description' => 'Promo pendaftaran baru.',
             'price' => 0,
+            'base_product_id' => $internet->id,
             'products' => [
+                ['product_id' => $internet->id, 'quantity' => 1, 'price' => 0],
                 ['product_id' => $modem->id, 'quantity' => 1, 'price' => 0],
                 ['product_id' => $installation->id, 'quantity' => 1, 'price' => 0],
             ],
@@ -51,15 +54,62 @@ class PackageManagementTest extends TestCase
         $this->assertNotNull($package->code);
         $this->assertStringStartsWith('PKG', $package->code);
         $this->assertTrue($package->is_starter);
-        $this->assertCount(2, $package->products);
+        $this->assertSame($internet->id, $package->base_product_id);
+        $this->assertCount(3, $package->products);
         $this->assertDatabaseHas('package_product', [
             'package_id' => $package->id,
             'product_id' => $modem->id,
             'quantity' => 1,
         ]);
-        // Tidak ada produk bertipe langganan sama sekali di paket ini —
-        // duration_months fallback ke default 1 bulan.
         $this->assertSame(1, $package->duration_months);
+    }
+
+    public function test_base_product_id_is_required(): void
+    {
+        $product = Product::factory()->create();
+
+        $response = $this->actingAs($this->superadmin())->post('/packages', [
+            'name' => 'Paket Tanpa Base Product',
+            'price' => 100000,
+            'products' => [
+                ['product_id' => $product->id, 'quantity' => 1, 'price' => 100000],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors('base_product_id');
+    }
+
+    public function test_base_product_id_must_be_among_bundled_products(): void
+    {
+        $bundled = Product::factory()->create(['type' => 'langganan']);
+        $notBundled = Product::factory()->create(['type' => 'langganan']);
+
+        $response = $this->actingAs($this->superadmin())->post('/packages', [
+            'name' => 'Paket Base Product Salah',
+            'price' => 100000,
+            'base_product_id' => $notBundled->id,
+            'products' => [
+                ['product_id' => $bundled->id, 'quantity' => 1, 'price' => 100000],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors('base_product_id');
+    }
+
+    public function test_base_product_id_must_be_subscription_type(): void
+    {
+        $modem = Product::factory()->create(['type' => 'perangkat']);
+
+        $response = $this->actingAs($this->superadmin())->post('/packages', [
+            'name' => 'Paket Base Product Bukan Langganan',
+            'price' => 100000,
+            'base_product_id' => $modem->id,
+            'products' => [
+                ['product_id' => $modem->id, 'quantity' => 1, 'price' => 100000],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors('base_product_id');
     }
 
     public function test_duration_months_derived_from_subscription_product_quantity(): void
@@ -71,6 +121,7 @@ class PackageManagementTest extends TestCase
         $response = $this->actingAs($superadmin)->post('/packages', [
             'name' => 'Paket Internet 6 Bulan',
             'price' => 900000,
+            'base_product_id' => $internet->id,
             'products' => [
                 ['product_id' => $internet->id, 'quantity' => 6, 'price' => 150000],
                 ['product_id' => $modem->id, 'quantity' => 1, 'price' => 350000],
@@ -92,6 +143,7 @@ class PackageManagementTest extends TestCase
         $response = $this->actingAs($superadmin)->post('/packages', [
             'name' => 'Paket Campur Aduk',
             'price' => 500000,
+            'base_product_id' => $internetA->id,
             'products' => [
                 ['product_id' => $internetA->id, 'quantity' => 3, 'price' => 100000],
                 ['product_id' => $internetB->id, 'quantity' => 6, 'price' => 100000],
@@ -113,6 +165,7 @@ class PackageManagementTest extends TestCase
         $response = $this->actingAs($superadmin)->put("/packages/{$package->id}", [
             'name' => $package->name,
             'price' => $package->price,
+            'base_product_id' => $internet->id,
             'products' => [
                 ['product_id' => $internet->id, 'quantity' => 12, 'price' => 130000],
             ],
@@ -120,6 +173,7 @@ class PackageManagementTest extends TestCase
 
         $response->assertRedirect(route('packages.index'));
         $this->assertSame(12, $package->fresh()->duration_months);
+        $this->assertSame($internet->id, $package->fresh()->base_product_id);
     }
 
     public function test_package_requires_at_least_one_product(): void
@@ -156,11 +210,12 @@ class PackageManagementTest extends TestCase
         $originalProduct = Product::factory()->create();
         $package->products()->attach($originalProduct->id, ['quantity' => 1, 'price' => 100000]);
 
-        $newProduct = Product::factory()->create();
+        $newProduct = Product::factory()->create(['type' => 'langganan']);
 
         $response = $this->actingAs($superadmin)->put("/packages/{$package->id}", [
             'name' => $package->name,
             'price' => $package->price,
+            'base_product_id' => $newProduct->id,
             'products' => [
                 ['product_id' => $newProduct->id, 'quantity' => 2, 'price' => 75000],
             ],

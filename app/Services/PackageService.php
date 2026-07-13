@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Package;
-use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -14,6 +13,7 @@ class PackageService
         return DB::transaction(function () use ($data) {
             $package = Package::create([
                 'is_starter' => $data['is_starter'] ?? false,
+                'base_product_id' => $data['base_product_id'],
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
                 'price' => $data['price'],
@@ -36,6 +36,7 @@ class PackageService
         return DB::transaction(function () use ($package, $data) {
             $package->update([
                 'is_starter' => $data['is_starter'] ?? false,
+                'base_product_id' => $data['base_product_id'],
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
                 'price' => $data['price'],
@@ -65,29 +66,26 @@ class PackageService
         $package->products()->sync($pivotData);
 
         $package->update([
-            'duration_months' => $this->deriveDurationMonths($products),
+            'duration_months' => $this->deriveDurationMonths($products, $package->base_product_id),
         ]);
     }
 
     /**
-     * Durasi masa aktif paket = quantity item produk bertipe 'langganan'
-     * (1 unit = 1 bulan) — bukan dijumlah kalau ada lebih dari satu item
-     * langganan, karena PackageRequest sudah mewajibkan quantity-nya
-     * seragam. Default 1 bulan kalau paket tidak punya item langganan.
+     * Durasi masa aktif paket = quantity baris base_product_id di paket ini
+     * (1 unit = 1 bulan) — dibaca dari baris yang product_id-nya cocok
+     * base_product_id (bukan lagi "first langganan match"), karena
+     * base_product_id sekarang eksplisit menandai produk langganan mana
+     * yang jadi acuan tier paket ini (lihat CLAUDE.md "Product & Package").
+     * Default 1 bulan kalau baris tidak ketemu (seharusnya tidak pernah
+     * terjadi — PackageRequest::guardBaseProduct() sudah menegakkan
+     * base_product_id ada di antara $products).
      *
      * @param  array<int, array{product_id: int, quantity: int, price: float|string}>  $products
      */
-    private function deriveDurationMonths(array $products): int
+    private function deriveDurationMonths(array $products, ?int $baseProductId): int
     {
-        $productIds = collect($products)->pluck('product_id');
+        $row = collect($products)->first(fn (array $row) => (int) $row['product_id'] === $baseProductId);
 
-        $subscriptionProductIds = Product::whereIn('id', $productIds)
-            ->where('type', 'langganan')
-            ->pluck('id');
-
-        $subscriptionRow = collect($products)
-            ->first(fn (array $row) => $subscriptionProductIds->contains($row['product_id']));
-
-        return $subscriptionRow['quantity'] ?? 1;
+        return $row['quantity'] ?? 1;
     }
 }

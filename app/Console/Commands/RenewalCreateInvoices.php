@@ -8,6 +8,8 @@ use App\Services\RenewalService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 #[Signature('renewal:create-invoices')]
 #[Description('Buat tagihan perpanjangan (Sale) otomatis untuk Service yang mendekati masa expired (H-5)')]
@@ -24,8 +26,19 @@ class RenewalCreateInvoices extends Command
         $created = 0;
 
         foreach ($due as $service) {
-            if ($renewalService->createInvoiceForDueService($service)) {
-                $created++;
+            try {
+                if ($renewalService->createInvoiceForDueService($service)) {
+                    $created++;
+                }
+            } catch (RuntimeException $e) {
+                // Paket Service ini belum lengkap (mis. base_product_id
+                // kosong) — jangan sampai satu Service yang belum
+                // dikonfigurasi dengan benar menghentikan renewal Service
+                // lain di batch yang sama.
+                Log::warning('Gagal membuat tagihan perpanjangan.', [
+                    'service_id' => $service->id,
+                    'message' => $e->getMessage(),
+                ]);
             }
         }
 

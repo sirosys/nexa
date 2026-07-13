@@ -19,7 +19,10 @@
         'id' => $p->id,
         'name' => $p->name,
         'price' => (float) $p->price,
+        'type' => $p->type,
     ])->values()->all();
+
+    $initialBaseProductId = old('base_product_id', $package?->base_product_id ?? '');
 @endphp
 
 <div
@@ -27,6 +30,7 @@
     x-data="{
         rows: {{ \Illuminate\Support\Js::from($initialRows) }},
         products: {{ \Illuminate\Support\Js::from($productOptions) }},
+        baseProductId: {{ \Illuminate\Support\Js::from($initialBaseProductId) }},
         addRow() {
             this.rows.push({ product_id: '', quantity: 1, price: '' });
         },
@@ -40,6 +44,10 @@
             if (product && !row.price) {
                 row.price = product.price;
             }
+        },
+        get baseProductOptions() {
+            const selectedIds = this.rows.map((r) => Number(r.product_id));
+            return this.products.filter((p) => p.type === 'langganan' && selectedIds.includes(p.id));
         },
     }"
 >
@@ -158,6 +166,25 @@
         @enderror
         @error('products.*.price')
             <p class="mt-2 text-sm text-danger">Harga produk dalam paket harus diisi.</p>
+        @enderror
+    </div>
+
+    <div class="border-t border-gray-200 pt-4 dark:border-gray-700">
+        <label for="base_product_id" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Produk Dasar (Base Product)</label>
+        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Produk langganan yang mewakili tier paket ini — dipakai sistem saat membuat tagihan perpanjangan otomatis (harga katalog produk ini yang ditagih, bukan harga di paket ini). Harus salah satu produk bertipe "Langganan" yang sudah ditambahkan di atas.</p>
+        <select
+            id="base_product_id"
+            name="base_product_id"
+            x-model.number="baseProductId"
+            class="block w-full max-w-sm rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white"
+        >
+            <option value="">Pilih produk dasar</option>
+            <template x-for="product in baseProductOptions" :key="product.id">
+                <option :value="product.id" x-text="product.name"></option>
+            </template>
+        </select>
+        @error('base_product_id')
+            <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
         @enderror
     </div>
 </div>

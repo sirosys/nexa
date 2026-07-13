@@ -3,6 +3,7 @@
 namespace Tests\Feature\Renewal;
 
 use App\Models\Package;
+use App\Models\Product;
 use App\Models\Receipt;
 use App\Models\Sale;
 use App\Models\Service;
@@ -161,6 +162,51 @@ class RenewalReactivationTest extends TestCase
 
         $this->assertTrue($expiredAtAfterFirst->equalTo($expiredAtAfterSecond));
         Notification::assertSentToTimes($service->user, ServiceReactivatedNotification::class, 1);
+    }
+
+    /**
+     * Durasi perpanjangan dibaca dari quantity baris produk di Sale renewal
+     * itu sendiri (bukan package->duration_months) — nilainya SELALU 1 untuk
+     * renewal otomatis saat ini, tapi ditulis generik supaya siap dipakai
+     * perpanjangan non-default (quantity > 1, mis. promo prepay beberapa
+     * bulan) begitu customer app/API dibangun. Test ini membuktikan
+     * mekanismenya sudah benar untuk quantity > 1.
+     */
+    public function test_extends_expiry_by_sale_line_item_quantity_not_fixed_one_month(): void
+    {
+        Notification::fake();
+
+        $product = Product::factory()->create(['type' => 'langganan', 'price' => 150000]);
+        $package = Package::factory()->create(['duration_months' => 1, 'base_product_id' => $product->id]);
+        $oldExpiredAt = now()->addDays(2);
+        $service = Service::factory()->create([
+            'status' => Service::STATUS_ACTIVE,
+            'package_id' => $package->id,
+            'expired_at' => $oldExpiredAt,
+        ]);
+        $sale = Sale::factory()->create([
+            'service_id' => $service->id,
+            'package_id' => $package->id,
+            'is_renewal' => true,
+            'grandtotal' => 450000,
+            'invoiced_at' => now()->subDays(2),
+            'expired_at' => null,
+        ]);
+        $sale->products()->attach($product->id, ['price' => 150000, 'discount' => 0, 'quantity' => 3, 'unit' => $product->unit]);
+        $receipt = Receipt::factory()->create([
+            'sale_id' => $sale->id,
+            'amount' => 450000,
+            'status' => 'PENDING',
+            'xendit_payment_request_id' => 'pr-renewal-bulk-1',
+        ]);
+
+        $this->sendWebhook($receipt)->assertOk();
+
+        $service->refresh();
+        $this->assertSame(
+            $oldExpiredAt->copy()->addMonths(3)->format('Y-m-d H:i:s'),
+            $service->expired_at->format('Y-m-d H:i:s'),
+        );
     }
 
     /**

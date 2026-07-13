@@ -15,11 +15,18 @@ class RenewalCreateInvoicesTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function packageWithProduct(float $price = 200000): Package
+    /**
+     * $bundlePrice adalah harga snapshot di package_product (mis. harga
+     * promo registrasi) — beda dari $catalogPrice (products.price), yang
+     * seharusnya justru dipakai RenewalService saat menagih perpanjangan
+     * (lihat CLAUDE.md "Renewal"). Default keduanya sama supaya test yang
+     * tidak spesifik menguji perbedaan ini tetap sederhana.
+     */
+    private function packageWithProduct(float $catalogPrice = 200000, ?float $bundlePrice = null): Package
     {
-        $package = Package::factory()->create(['is_starter' => false]);
-        $product = Product::factory()->create(['price' => $price]);
-        $package->products()->attach($product->id, ['quantity' => 1, 'price' => $price]);
+        $product = Product::factory()->create(['type' => 'langganan', 'price' => $catalogPrice]);
+        $package = Package::factory()->create(['is_starter' => false, 'base_product_id' => $product->id]);
+        $package->products()->attach($product->id, ['quantity' => 1, 'price' => $bundlePrice ?? $catalogPrice]);
 
         return $package;
     }
@@ -97,7 +104,7 @@ class RenewalCreateInvoicesTest extends TestCase
      */
     public function test_free_package_renewal_auto_settles_and_extends_expiry_without_receipt(): void
     {
-        $package = Package::factory()->create(['is_starter' => false, 'duration_months' => 1]);
+        $package = $this->packageWithProduct(0);
         $oldExpiredAt = now()->addDays(2);
         $service = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,
@@ -121,5 +128,83 @@ class RenewalCreateInvoicesTest extends TestCase
         // command lagi tidak membuat Sale renewal kedua.
         Artisan::call('renewal:create-invoices');
         $this->assertSame(1, Sale::where('service_id', $service->id)->where('is_renewal', true)->count());
+    }
+
+    /**
+     * Bukti utama fix bug SAL000002: Sale renewal cuma menagih SATU baris
+     * (base product), bukan seluruh bundel registrasi (modem/instalasi),
+     * pada harga KATALOG SAAT INI (products.price) — bukan harga snapshot
+     * promo yang tersimpan di package_product.
+     */
+    public function test_renewal_invoice_only_bills_base_product_at_current_catalog_price(): void
+    {
+        $package = $this->packageWithProduct(catalogPrice: 150000, bundlePrice: 0);
+        $modem = Product::factory()->create(['type' => 'perangkat', 'price' => 300000]);
+        $package->products()->attach($modem->id, ['quantity' => 1, 'price' => 0]);
+
+        $service = Service::factory()->create([
+            'status' => Service::STATUS_ACTIVE,
+            'package_id' => $package->id,
+            'expired_at' => now()->addDays(3),
+        ]);
+
+        Artisan::call('renewal:create-invoices');
+
+        $sale = Sale::where('service_id', $service->id)->where('is_renewal', true)->firstOrFail();
+
+        $this->assertCount(1, $sale->products);
+        $this->assertSame($package->base_product_id, $sale->products->first()->id);
+        $this->assertEquals(150000, (float) $sale->products->first()->pivot->price);
+        $this->assertEquals(150000, (float) $sale->grandtotal);
+    }
+
+    /**
+     * sales.is_starter harus SELALU false untuk Sale renewal, terlepas dari
+     * is_starter paket registrasi yang masih terpasang di service_id-nya
+     * (paket promo/starter) — regression untuk SAL000002.
+     */
+    public function test_renewal_invoice_is_never_marked_as_starter(): void
+    {
+        $package = $this->packageWithProduct(150000);
+        $package->update(['is_starter' => true]);
+
+        $service = Service::factory()->create([
+            'status' => Service::STATUS_ACTIVE,
+            'package_id' => $package->id,
+            'expired_at' => now()->addDays(3),
+        ]);
+
+        Artisan::call('renewal:create-invoices');
+
+        $sale = Sale::where('service_id', $service->id)->where('is_renewal', true)->firstOrFail();
+
+        $this->assertFalse($sale->is_starter);
+    }
+
+    /**
+     * Service yang paketnya belum punya base_product_id (data lama/belum
+     * lengkap) dilewati dengan aman — tidak menghentikan batch renewal
+     * Service lain yang sudah benar.
+     */
+    public function test_service_without_base_product_is_skipped_without_crashing_batch(): void
+    {
+        $incompletePackage = Package::factory()->create(['is_starter' => false, 'base_product_id' => null]);
+        $incompleteService = Service::factory()->create([
+            'status' => Service::STATUS_ACTIVE,
+            'package_id' => $incompletePackage->id,
+            'expired_at' => now()->addDays(3),
+        ]);
+
+        $goodPackage = $this->packageWithProduct(150000);
+        $goodService = Service::factory()->create([
+            'status' => Service::STATUS_ACTIVE,
+            'package_id' => $goodPackage->id,
+            'expired_at' => now()->addDays(3),
+        ]);
+
+        Artisan::call('renewal:create-invoices');
+
+        $this->assertDatabaseMissing('sales', ['service_id' => $incompleteService->id, 'is_renewal' => true]);
+        $this->assertDatabaseHas('sales', ['service_id' => $goodService->id, 'is_renewal' => true]);
     }
 }

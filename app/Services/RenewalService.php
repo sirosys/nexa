@@ -2,14 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\Package;
-use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Service;
 use App\Notifications\RenewalReminderNotification;
 use App\Notifications\ServiceReactivatedNotification;
 use App\Notifications\ServiceSuspendedNotification;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 /**
  * Siklus billing perpanjangan Service: buat tagihan otomatis di H-5, kirim
@@ -28,30 +27,39 @@ class RenewalService
 
     /**
      * Buat Sale+Receipt perpanjangan untuk sebuah Service yang mendekati
-     * expired_at, snapshot dari package_id service saat ini. Idempotent —
-     * no-op kalau Service ini sudah punya Sale renewal terbuka (belum
-     * settled/canceled), supaya command bisa jalan berkali-kali/telat
-     * sehari tanpa menduplikasi tagihan.
+     * expired_at — SELALU 1 bulan, menagih HANYA base_product tier paket
+     * Service ini (bukan seluruh bundel registrasi), pada harga katalog
+     * produk SAAT INI (bukan harga snapshot promo registrasi). Lihat
+     * CLAUDE.md "Renewal" untuk alasan lengkap perubahan ini.
+     *
+     * Idempotent — no-op kalau Service ini sudah punya Sale renewal
+     * terbuka (belum settled/canceled), supaya command bisa jalan
+     * berkali-kali/telat sehari tanpa menduplikasi tagihan. Guard ini juga
+     * yang menegakkan aturan "perpanjangan non-default (masa depan, lewat
+     * customer app/API) ditolak selama tagihan default H-5 masih terbuka".
      */
     public function createInvoiceForDueService(Service $service): ?Sale
     {
-        $hasOpenRenewal = $service->sales()
-            ->where('is_renewal', true)
-            ->whereNull('settled_at')
-            ->whereNull('canceled_at')
-            ->exists();
-
-        if ($hasOpenRenewal) {
+        if ($this->hasOpenRenewalInvoice($service)) {
             return null;
         }
 
-        $package = $service->package;
+        $baseProduct = $service->package->baseProduct;
+
+        if (! $baseProduct) {
+            throw new RuntimeException("Paket layanan {$service->code} belum punya produk dasar (base product) — lengkapi dulu lewat halaman Paket.");
+        }
 
         $sale = $this->saleService->create([
             'service_id' => $service->id,
             'package_id' => $service->package_id,
             'is_renewal' => true,
-            'products' => $this->buildProductLines($package),
+            'products' => [[
+                'product_id' => $baseProduct->id,
+                'price' => (float) $baseProduct->price,
+                'quantity' => 1,
+                'unit' => $baseProduct->unit,
+            ]],
         ]);
 
         $this->receiptService->createForSale($sale, $service->expired_at);
@@ -67,6 +75,15 @@ class RenewalService
         }
 
         return $sale;
+    }
+
+    private function hasOpenRenewalInvoice(Service $service): bool
+    {
+        return $service->sales()
+            ->where('is_renewal', true)
+            ->whereNull('settled_at')
+            ->whereNull('canceled_at')
+            ->exists();
     }
 
     /**
@@ -117,11 +134,21 @@ class RenewalService
         $service = DB::transaction(function () use ($sale) {
             $service = $sale->service;
             $oldExpiredAt = $service->expired_at ?? now();
-            $durationMonths = (int) ($sale->package->duration_months ?? $service->package->duration_months ?? 1);
+
+            // Durasi perpanjangan = quantity baris produk di Sale renewal
+            // ITU SENDIRI (bukan lagi package->duration_months) — sales.package_id
+            // tetap paket registrasi asli (mis. promo 3 bulan), yang durasinya
+            // tidak relevan lagi untuk siklus renewal. Nilainya SELALU 1 untuk
+            // renewal otomatis saat ini, tapi ditulis generik lewat quantity
+            // baris Sale supaya siap dipakai juga oleh perpanjangan non-default
+            // (quantity > 1) begitu customer app/API dibangun — lihat CLAUDE.md
+            // "Renewal". Aman karena reactivate() cuma dipanggil untuk Sale
+            // is_renewal=true (selalu satu baris produk).
+            $monthsToExtend = (int) ($sale->products->first()?->pivot->quantity ?? 1);
 
             $service->update([
                 'status' => Service::STATUS_ACTIVE,
-                'expired_at' => $oldExpiredAt->copy()->addMonths($durationMonths),
+                'expired_at' => $oldExpiredAt->copy()->addMonths($monthsToExtend),
                 'suspended_at' => null,
             ]);
 
@@ -132,24 +159,5 @@ class RenewalService
         $this->notificationService->send($service->user, new ServiceReactivatedNotification($service));
 
         return $service;
-    }
-
-    /**
-     * Duplikasi sengaja dari ServiceService::buildProductLines() (private,
-     * 6 baris) — bukan diekstrak ke trait/parent, konsisten gaya project
-     * yang tidak bikin abstraksi untuk fungsi murni sekecil ini. Beda dari
-     * versi ServiceService: di sini snapshot dari package Service SAAT INI
-     * (langganan berjalan), bukan paket starter yang dipilih saat registrasi.
-     *
-     * @return array<int, array{product_id: int, price: float, quantity: int, unit: ?string}>
-     */
-    private function buildProductLines(Package $package): array
-    {
-        return $package->products->map(fn (Product $product) => [
-            'product_id' => $product->id,
-            'price' => (float) $product->pivot->price,
-            'quantity' => (int) $product->pivot->quantity,
-            'unit' => $product->unit,
-        ])->values()->all();
     }
 }
