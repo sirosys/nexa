@@ -14,9 +14,14 @@ class LogWhatsappGateway implements WhatsappGateway
 {
     public function sendOtp(string $phone, string $code): bool
     {
+        // Sama persis template pesan HttpWhatsappGateway::sendOtp(), supaya
+        // staff bisa review kata-kata yang sebenarnya dikirim lewat log,
+        // bukan cuma kode mentahnya.
+        $message = "Kode OTP NEXA Anda: {$code}. Berlaku ".config('otp.ttl_minutes').' menit. Jangan bagikan kode ini kepada siapa pun.';
+
         Log::channel(config('services.whatsapp.log_channel', 'stack'))->info(
             '[WhatsApp OTP - LOG DRIVER] pesan tidak benar-benar terkirim',
-            ['phone' => $phone, 'code' => $code]
+            ['phone' => $phone, 'code' => $code, 'message' => $message]
         );
 
         return true;
