@@ -8,6 +8,7 @@ use App\Models\Receipt;
 use App\Models\Sale;
 use App\Models\Service;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 
@@ -179,6 +180,36 @@ class RenewalCreateInvoicesTest extends TestCase
         $sale = Sale::where('service_id', $service->id)->where('is_renewal', true)->firstOrFail();
 
         $this->assertFalse($sale->is_starter);
+    }
+
+    /**
+     * Kalau command ini telat jalan (scheduler down beberapa hari, dsb.)
+     * dan expired_at Service SUDAH LEWAT saat invoice akhirnya dibuat, link
+     * pembayaran tidak boleh lahir dalam keadaan sudah kadaluarsa (muncul
+     * sebagai "Invalid signature" ke pelanggan begitu diklik) — harus di-floor
+     * ke invoice_ttl_days dari SEKARANG. Reproduksi bug nyata yang ditemukan
+     * user: expired_at 2026-07-13 21:00, invoice baru dibuat 2026-07-14 01:00.
+     */
+    public function test_checkout_url_is_never_generated_already_expired_when_service_is_already_overdue(): void
+    {
+        $package = $this->packageWithProduct(150000);
+        $service = Service::factory()->create([
+            'status' => Service::STATUS_ACTIVE,
+            'package_id' => $package->id,
+            'expired_at' => now()->subHours(4),
+        ]);
+
+        Artisan::call('renewal:create-invoices');
+
+        $sale = Sale::where('service_id', $service->id)->where('is_renewal', true)->firstOrFail();
+        $receipt = Receipt::where('sale_id', $sale->id)->firstOrFail();
+
+        parse_str(parse_url($receipt->checkout_url, PHP_URL_QUERY), $query);
+        $this->assertArrayHasKey('expires', $query);
+        $this->assertGreaterThan(now()->timestamp, (int) $query['expires']);
+
+        $request = Request::create($receipt->checkout_url, 'GET');
+        $this->assertTrue($request->hasValidSignature());
     }
 
     /**

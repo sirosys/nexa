@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Sale;
 use App\Models\Service;
+use App\Models\Setting;
 use App\Notifications\RenewalReminderNotification;
 use App\Notifications\ServiceReactivatedNotification;
 use App\Notifications\ServiceSuspendedNotification;
@@ -62,7 +63,20 @@ class RenewalService
             ]],
         ]);
 
-        $this->receiptService->createForSale($sale, $service->expired_at);
+        // $service->expired_at seharusnya masih di masa depan (command ini
+        // baru memprosesnya begitu masuk window H-5), tapi kalau command
+        // sempat telat jalan (scheduler down beberapa hari, atau Service ini
+        // sempat gagal diproses siklus sebelumnya) expired_at bisa sudah
+        // LEWAT saat invoice akhirnya dibuat — signed URL dengan expiry di
+        // masa lalu akan lahir dalam keadaan sudah kadaluarsa (link mati
+        // begitu dibuat, muncul sebagai "Invalid signature" ke pelanggan).
+        // Floor ke invoice_ttl_days dari SEKARANG supaya pelanggan tetap
+        // dapat window wajar untuk bayar, bukan link yang sudah mati.
+        $signedUrlExpiresAt = $service->expired_at->isFuture()
+            ? $service->expired_at
+            : now()->addDays((int) Setting::get('billing.invoice_ttl_days', config('billing.invoice_ttl_days')));
+
+        $this->receiptService->createForSale($sale, $signedUrlExpiresAt);
 
         // Paket gratis/promo (grandtotal 0) di-auto-settled langsung oleh
         // createForSale() tanpa lewat webhook Xendit sama sekali — kalau
