@@ -15,6 +15,7 @@ use App\Http\Controllers\PopController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\ServiceTicketController;
 use App\Http\Controllers\SubdistrictController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Webhooks\XenditWebhookController;
@@ -96,4 +97,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/dismantles/{service}/claim', [DismantleController::class, 'claim'])->name('dismantles.claim');
     Route::post('/dismantles/{service}/complete', [DismantleController::class, 'complete'])->name('dismantles.complete');
     Route::get('/secure/dismantle-photo/{service}', [DismantlePhotoController::class, 'show'])->name('secure.dismantle-photo');
+
+    // Modul Ticketing — lihat CLAUDE.md "Ticketing". Resource CRUD biasa
+    // (beda dari Installation/Dismantle yang route-model-binding di atas
+    // Service) plus 3 action non-resource untuk assign/klaim/selesaikan.
+    Route::get('/tickets/services/search', [ServiceTicketController::class, 'searchServices'])->name('tickets.services.search');
+    Route::post('/tickets/{ticket}/assign', [ServiceTicketController::class, 'assign'])->name('tickets.assign');
+    Route::post('/tickets/{ticket}/claim', [ServiceTicketController::class, 'claim'])->name('tickets.claim');
+    Route::post('/tickets/{ticket}/resolve', [ServiceTicketController::class, 'resolve'])->name('tickets.resolve');
+    Route::resource('tickets', ServiceTicketController::class);
 });
