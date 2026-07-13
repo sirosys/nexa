@@ -10,29 +10,51 @@ use Illuminate\Support\Collection;
 class DashboardService
 {
     /**
+     * Tiap stat digate ke permission modul yang jadi sumber datanya, supaya
+     * role yang tidak punya akses ke modul tsb (mis. technician vs data
+     * finansial) tidak ikut melihat/menghitungnya sama sekali — bukan cuma
+     * disembunyikan di view setelah query tetap jalan.
+     *
      * @return array<string, int|float>
      */
-    public function stats(): array
+    public function stats(User $user): array
     {
-        return [
-            'registered_customers' => User::role('customer')->count(),
-            'active_services' => Service::query()->where('status', Service::STATUS_ACTIVE)->count(),
-            'unpaid_invoices' => Sale::query()
+        $stats = [];
+
+        if ($user->can('users.view')) {
+            $stats['registered_customers'] = User::role('customer')->count();
+        }
+
+        if ($user->can('services.view')) {
+            $stats['active_services'] = Service::query()->where('status', Service::STATUS_ACTIVE)->count();
+        }
+
+        if ($user->can('sales.view')) {
+            $stats['unpaid_invoices'] = Sale::query()
                 ->whereNotNull('invoiced_at')
                 ->whereNull('settled_at')
                 ->whereNull('canceled_at')
-                ->count(),
-            'revenue_this_month' => (float) Sale::query()
+                ->count();
+
+            $stats['revenue_this_month'] = (float) Sale::query()
                 ->whereNotNull('settled_at')
                 ->whereBetween('settled_at', [now()->startOfMonth(), now()->endOfMonth()])
-                ->sum('grandtotal'),
-            'installation_queue' => Service::query()
+                ->sum('grandtotal');
+        }
+
+        if ($user->can('installations.view')) {
+            $stats['installation_queue'] = Service::query()
                 ->whereIn('status', [Service::STATUS_PENDING_INSTALLATION, Service::STATUS_INSTALLING])
-                ->count(),
-            'dismantle_queue' => Service::query()
+                ->count();
+        }
+
+        if ($user->can('dismantles.view')) {
+            $stats['dismantle_queue'] = Service::query()
                 ->whereIn('status', [Service::STATUS_PENDING_DISMANTLE, Service::STATUS_DISMANTLING])
-                ->count(),
-        ];
+                ->count();
+        }
+
+        return $stats;
     }
 
     /**

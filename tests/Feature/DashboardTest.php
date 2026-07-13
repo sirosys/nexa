@@ -112,6 +112,33 @@ class DashboardTest extends TestCase
         }
     }
 
+    public function test_technician_only_sees_installation_and_dismantle_stats_without_financial_data(): void
+    {
+        Service::factory()->create(['status' => Service::STATUS_ACTIVE]);
+        Sale::factory()->create(['settled_at' => now(), 'grandtotal' => 100000]);
+
+        $response = $this->actingAs($this->withRole('technician'))->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertViewHas('stats', fn (array $stats) => array_keys($stats) === ['installation_queue', 'dismantle_queue']);
+        $response->assertViewHas('statusDistribution', fn ($value) => $value === null);
+        $response->assertViewHas('monthlyRevenue', fn ($value) => $value === null);
+        $response->assertViewHas('recentServices', fn ($value) => $value === null);
+    }
+
+    public function test_finance_sees_financial_and_service_data_but_not_installation_dismantle_queues(): void
+    {
+        Service::factory()->create(['status' => Service::STATUS_ACTIVE]);
+
+        $response = $this->actingAs($this->withRole('finance'))->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertViewHas('stats', fn (array $stats) => array_keys($stats) === ['active_services', 'unpaid_invoices', 'revenue_this_month']);
+        $response->assertViewHas('statusDistribution', fn ($value) => $value !== null);
+        $response->assertViewHas('monthlyRevenue', fn ($value) => $value !== null);
+        $response->assertViewHas('recentServices', fn ($value) => $value !== null);
+    }
+
     public function test_guest_is_redirected_to_login(): void
     {
         $this->get('/dashboard')->assertRedirect('/login');
