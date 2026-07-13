@@ -66,4 +66,16 @@ class User extends Authenticatable
     {
         return $this->hasOne(UserDetail::class, 'id', 'id');
     }
+
+    /**
+     * Layanan yang didaftarkan atas nama user ini — hanya bermakna untuk
+     * role `customer` (lihat CLAUDE.md "Service"), tapi relasi ini generik
+     * di `User` karena FK-nya memang ke `users.id` langsung.
+     *
+     * @return HasMany<Service, $this>
+     */
+    public function services(): HasMany
+    {
+        return $this->hasMany(Service::class);
+    }
 }

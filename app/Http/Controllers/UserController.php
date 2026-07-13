@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CompleteKycRequest;
 use App\Http\Requests\UserRequest;
+use App\Models\Sale;
+use App\Models\ServiceActivation;
+use App\Models\ServiceDismantle;
+use App\Models\ServiceTicket;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
@@ -20,6 +24,8 @@ class UserController extends Controller
 
     public function index(Request $request): View
     {
+        $role = $request->string('role')->trim()->value();
+
         $users = User::query()
             ->with(['userDetails', 'roles'])
             ->when($request->string('q')->trim()->isNotEmpty(), function ($query) use ($request) {
@@ -30,11 +36,16 @@ class UserController extends Controller
                         ->orWhere('code', 'like', "%{$q}%");
                 });
             })
+            ->when($role !== '', fn ($query) => $query->role($role))
             ->latest('id')
             ->paginate(15)
             ->withQueryString();
 
-        return view('users.index', ['users' => $users, 'q' => $request->string('q')->value()]);
+        return view('users.index', [
+            'users' => $users,
+            'q' => $request->string('q')->value(),
+            'role' => $role,
+        ]);
     }
 
     public function create(): View
@@ -49,11 +60,77 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('status', 'Pengguna berhasil ditambahkan.');
     }
 
+    /**
+     * Data "belongs to" yang ditampilkan di halaman detail berbeda per role —
+     * hanya query yang relevan yang benar-benar dijalankan (bukan query semua
+     * lalu disembunyikan di view), konsisten pola gating permission di
+     * DashboardService. Customer: layanan miliknya + tagihan/receipt +
+     * tiket yang mereka buat (lewat layanan). Technician: job instalasi/
+     * dismantle yang ditangani + tiket teknis yang di-assign ke mereka.
+     * Role lain (superadmin/finance/sales) tidak punya data "milik pribadi"
+     * yang natural selain identitas dasar, jadi tidak ada query tambahan.
+     */
     public function show(User $user): View
     {
         $user->load(['userDetails', 'roles']);
 
-        return view('users.show', ['user' => $user]);
+        $services = null;
+        $sales = null;
+        $tickets = null;
+        $installations = null;
+        $dismantles = null;
+        $assignedTickets = null;
+
+        if ($user->isCustomer()) {
+            $services = $user->services()
+                ->with(['coverage', 'package'])
+                ->latest('id')
+                ->get();
+
+            $serviceIds = $services->pluck('id');
+
+            $sales = Sale::query()
+                ->whereIn('service_id', $serviceIds)
+                ->with(['package', 'receipt'])
+                ->latest('id')
+                ->get();
+
+            $tickets = ServiceTicket::query()
+                ->whereIn('service_id', $serviceIds)
+                ->with('service')
+                ->latest('id')
+                ->get();
+        }
+
+        if ($user->isTechnician()) {
+            $installations = ServiceActivation::query()
+                ->where('installer_id', $user->id)
+                ->with('service')
+                ->latest('id')
+                ->get();
+
+            $dismantles = ServiceDismantle::query()
+                ->where('technician_id', $user->id)
+                ->with('service')
+                ->latest('id')
+                ->get();
+
+            $assignedTickets = ServiceTicket::query()
+                ->where('assigned_technician_id', $user->id)
+                ->with('service')
+                ->latest('id')
+                ->get();
+        }
+
+        return view('users.show', [
+            'user' => $user,
+            'services' => $services,
+            'sales' => $sales,
+            'tickets' => $tickets,
+            'installations' => $installations,
+            'dismantles' => $dismantles,
+            'assignedTickets' => $assignedTickets,
+        ]);
     }
 
     public function edit(User $user): View
