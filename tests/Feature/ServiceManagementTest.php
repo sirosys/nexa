@@ -95,6 +95,32 @@ class ServiceManagementTest extends TestCase
         $this->assertSame(Service::STATUS_PENDING_PAYMENT, $service->status);
     }
 
+    /**
+     * services.create dibuka untuk role sales — alur registrasi pelanggan
+     * baru end-to-end (lihat CLAUDE.md "Authorization / Role & Permission").
+     */
+    public function test_sales_role_can_create_service(): void
+    {
+        $customer = $this->customer();
+        $subdistrict = Subdistrict::factory()->create();
+        $coverage = Coverage::factory()->create();
+        $package = Package::factory()->create(['is_starter' => true]);
+
+        $response = $this->actingAs($this->withRole('sales'))->post('/services', [
+            'user_id' => $customer->id,
+            'package_id' => $package->id,
+            'address' => 'Jl. Contoh No. 10',
+            'residential_name' => 'Perumahan Griya Asri',
+            'subdistrict_id' => $subdistrict->id,
+            'rw' => '05',
+            'rt' => '03',
+            'coverage_id' => $coverage->id,
+        ]);
+
+        $response->assertRedirect(route('services.index'));
+        $this->assertDatabaseHas('services', ['address' => 'Jl. Contoh No. 10', 'user_id' => $customer->id]);
+    }
+
     public function test_address_and_residential_name_are_normalized_to_title_case(): void
     {
         $customer = $this->customer();
@@ -375,16 +401,26 @@ class ServiceManagementTest extends TestCase
         $response->assertJsonCount(2);
     }
 
-    /**
-     * Gate `/services` masih sengaja cuma untuk superadmin, konsisten dengan
-     * gate `/users` dan `/products` (lihat CLAUDE.md "Authorization").
-     */
     public function test_non_superadmin_roles_cannot_access_service_routes(): void
     {
-        foreach (['technician', 'finance', 'sales', 'customer'] as $role) {
+        foreach (['technician', 'customer'] as $role) {
             $staff = $this->withRole($role);
 
             $this->actingAs($staff)->get('/services')->assertForbidden();
+        }
+    }
+
+    /**
+     * finance dan sales dapat services.view (finance: konteks tagihan;
+     * sales: alur registrasi pelanggan) — lihat CLAUDE.md "Authorization /
+     * Role & Permission".
+     */
+    public function test_finance_and_sales_roles_can_view_service_routes(): void
+    {
+        foreach (['finance', 'sales'] as $role) {
+            $staff = $this->withRole($role);
+
+            $this->actingAs($staff)->get('/services')->assertOk();
         }
     }
 

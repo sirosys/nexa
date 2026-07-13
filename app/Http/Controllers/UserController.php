@@ -86,7 +86,7 @@ class UserController extends Controller
      */
     public function completeKyc(CompleteKycRequest $request, User $user): JsonResponse
     {
-        $this->authorize('update', $user);
+        $this->authorize('completeKyc', $user);
 
         $updated = $this->userService->completeKyc(
             $user,

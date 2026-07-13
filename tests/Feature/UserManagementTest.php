@@ -414,4 +414,25 @@ class UserManagementTest extends TestCase
             'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
         ])->assertForbidden();
     }
+
+    /**
+     * users.complete-kyc dibuka untuk role sales — supaya alur registrasi
+     * pelanggan baru (modal "Lengkapi NIK & Foto KTP" di form Service) tidak
+     * terblokir walau sales tidak punya users.update penuh (lihat CLAUDE.md
+     * "Authorization / Role & Permission").
+     */
+    public function test_complete_kyc_endpoint_allowed_for_sales(): void
+    {
+        Storage::fake('local');
+        $sales = $this->withRole('sales');
+        $customer = $this->withRole('customer');
+
+        $response = $this->actingAs($sales)->postJson("/users/{$customer->id}/complete-kyc", [
+            'nik' => self::NIK_MALE,
+            'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
+        ]);
+
+        $response->assertOk();
+        $this->assertSame(self::NIK_MALE, $customer->fresh()->userDetails->nik);
+    }
 }

@@ -298,21 +298,36 @@ class DismantleManagementTest extends TestCase
         $response->assertSessionHasErrors(['photo']);
     }
 
-    public function test_superadmin_cannot_claim_or_complete(): void
+    public function test_superadmin_cannot_claim(): void
     {
         $service = $this->queuedForDismantleService();
         $superadmin = $this->superadmin();
 
+        // Klaim tetap aksi fieldwork khusus technician — superadmin sengaja
+        // tidak ikut kebagian walau punya seluruh permission lain (lihat
+        // CLAUDE.md "Authorization / Role & Permission").
         $this->actingAs($superadmin)->post("/dismantles/{$service->id}/claim")->assertForbidden();
+    }
+
+    public function test_superadmin_can_complete_dismantle_via_override(): void
+    {
+        $service = $this->queuedForDismantleService();
+        $superadmin = $this->superadmin();
 
         $service->update(['status' => Service::STATUS_DISMANTLING]);
         ServiceDismantle::where('service_id', $service->id)->firstOrFail()->update([
             'technician_id' => $this->withRole('technician')->id,
         ]);
 
-        $this->actingAs($superadmin)->post("/dismantles/{$service->id}/complete", [
+        // dismantles.complete-any: jalur darurat kalau teknisi yang
+        // di-assign resign/tidak aktif — menutup gap "job stuck permanen"
+        // (lihat CLAUDE.md "Authorization / Role & Permission").
+        $response = $this->actingAs($superadmin)->post("/dismantles/{$service->id}/complete", [
             'photo' => UploadedFile::fake()->image('bukti.jpg'),
-        ])->assertForbidden();
+        ]);
+
+        $response->assertRedirect(route('dismantles.show', $service));
+        $this->assertSame(Service::STATUS_DISMANTLED, $service->fresh()->status);
     }
 
     public function test_non_superadmin_non_technician_roles_forbidden_from_dismantle_routes(): void

@@ -7,63 +7,61 @@ use App\Models\User;
 
 class ServiceTicketPolicy
 {
-    // viewAny/view sengaja terbuka untuk technician juga (bukan
-    // superadmin-only seperti mayoritas Policy lain) — /tickets adalah
-    // resource sendiri (bukan reuse ServicePolicy), jadi tidak perlu method
-    // "queue" terpisah seperti Installation/Dismantle untuk melonggarkan
-    // akses baca tanpa menyentuh gate modul lain.
     public function viewAny(User $user): bool
     {
-        return $user->isSuperadmin() || $user->isTechnician();
+        return $user->can('tickets.view');
     }
 
     public function view(User $user): bool
     {
-        return $user->isSuperadmin() || $user->isTechnician();
+        return $user->can('tickets.view');
     }
 
-    // Pembuatan tiket staff-mediated untuk iterasi ini (lihat CLAUDE.md
-    // "Ticketing") — customer belum bisa login/API belum ada, jadi
-    // superadmin-only, konsisten gate default modul lain.
     public function create(User $user): bool
     {
-        return $user->isSuperadmin();
+        return $user->can('tickets.create');
     }
 
     public function update(User $user): bool
     {
-        return $user->isSuperadmin();
+        return $user->can('tickets.update');
     }
 
     public function delete(User $user): bool
     {
-        return $user->isSuperadmin();
+        return $user->can('tickets.delete');
     }
 
     public function assignTicket(User $user, ServiceTicket $ticket): bool
     {
-        return $user->isSuperadmin();
+        return $user->can('tickets.assign');
     }
 
     // Guard "kategori butuh teknisi"/"sudah diklaim" ada di
     // ServiceTicketService (business state), bukan di sini — pola konsisten
-    // Policy lain di project ini.
+    // Policy lain di project ini. isTechnician() tetap wajib di samping
+    // permission, alasan sama seperti claimInstallation di ServicePolicy —
+    // klaim adalah aksi fieldwork, superadmin sengaja tidak ikut kebagian
+    // walau punya seluruh permission.
     public function claimTicket(User $user, ServiceTicket $ticket): bool
     {
-        return $user->isTechnician();
+        return $user->isTechnician() && $user->can('tickets.claim');
     }
 
-    // Kondisional kategori: tiket kategori teknis cuma bisa diselesaikan
-    // teknisi yang jadi assigned_technician_id (ownership-only, TIDAK ada
-    // override superadmin — gap yang sama seperti completeInstallation/
-    // completeDismantle, dipertahankan konsisten). Kategori lain
-    // diselesaikan langsung superadmin, tanpa penugasan teknisi.
+    // tickets.resolve-any (dipegang superadmin) mencakup DUA hal sekaligus:
+    // (1) override ownership utk tiket kategori teknis (menutup gap "job
+    // stuck" kalau teknisi yang di-assign resign), DAN (2) resolusi tiket
+    // kategori non-teknis (yang memang selalu superadmin-only, tidak lewat
+    // penugasan teknisi) — tidak perlu permission ketiga karena keduanya
+    // sama-sama "boleh selesaikan tiket apa pun".
     public function resolveTicket(User $user, ServiceTicket $ticket): bool
     {
-        if (in_array($ticket->category, ServiceTicket::CATEGORIES_REQUIRING_TECHNICIAN, true)) {
-            return $user->isTechnician() && $ticket->assigned_technician_id === $user->id;
+        if ($user->can('tickets.resolve-any')) {
+            return true;
         }
 
-        return $user->isSuperadmin();
+        return in_array($ticket->category, ServiceTicket::CATEGORIES_REQUIRING_TECHNICIAN, true)
+            && $user->can('tickets.resolve')
+            && $ticket->assigned_technician_id === $user->id;
     }
 }

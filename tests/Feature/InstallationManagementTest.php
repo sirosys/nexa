@@ -284,12 +284,22 @@ class InstallationManagementTest extends TestCase
         $response->assertSessionHasErrors(['odp_port', 'photo']);
     }
 
-    public function test_superadmin_cannot_claim_or_complete(): void
+    public function test_superadmin_cannot_claim(): void
     {
         $service = $this->pendingInstallationService();
         $superadmin = $this->superadmin();
 
+        // Klaim tetap aksi fieldwork khusus technician — superadmin sengaja
+        // tidak ikut kebagian walau punya seluruh permission lain (lihat
+        // CLAUDE.md "Authorization / Role & Permission").
         $this->actingAs($superadmin)->post("/installations/{$service->id}/claim")->assertForbidden();
+    }
+
+    public function test_superadmin_can_complete_installation_via_override(): void
+    {
+        Storage::fake('local');
+        $service = $this->pendingInstallationService();
+        $superadmin = $this->superadmin();
 
         $service->update(['status' => Service::STATUS_INSTALLING]);
         ServiceActivation::create([
@@ -298,10 +308,16 @@ class InstallationManagementTest extends TestCase
             'installer_id' => $this->withRole('technician')->id,
         ]);
 
-        $this->actingAs($superadmin)->post("/installations/{$service->id}/complete", [
+        // installations.complete-any: jalur darurat kalau teknisi yang
+        // di-assign resign/tidak aktif — menutup gap "job stuck permanen"
+        // (lihat CLAUDE.md "Authorization / Role & Permission").
+        $response = $this->actingAs($superadmin)->post("/installations/{$service->id}/complete", [
             'odp_port' => 'ODP-01-02',
             'photo' => UploadedFile::fake()->image('bukti.jpg'),
-        ])->assertForbidden();
+        ]);
+
+        $response->assertRedirect(route('installations.show', $service));
+        $this->assertSame(Service::STATUS_ACTIVE, $service->fresh()->status);
     }
 
     public function test_non_superadmin_non_technician_roles_forbidden_from_installation_routes(): void

@@ -223,15 +223,21 @@ class ServiceTicketManagementTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_superadmin_cannot_resolve_technical_ticket_without_override(): void
+    public function test_superadmin_can_resolve_technical_ticket_via_override(): void
     {
         $ticket = $this->ticket(['category' => ServiceTicket::CATEGORY_TEKNIS]);
         $technician = $this->withRole('technician');
         $this->actingAs($technician)->post("/tickets/{$ticket->id}/claim");
 
-        $response = $this->actingAs($this->superadmin())->post("/tickets/{$ticket->id}/resolve", []);
+        // tickets.resolve-any: jalur darurat kalau teknisi yang di-assign
+        // resign/tidak aktif — menutup gap "tiket stuck permanen" (lihat
+        // CLAUDE.md "Authorization / Role & Permission").
+        $response = $this->actingAs($this->superadmin())->post("/tickets/{$ticket->id}/resolve", [
+            'resolution_notes' => 'Diselesaikan oleh superadmin lewat jalur override.',
+        ]);
 
-        $response->assertForbidden();
+        $response->assertRedirect(route('tickets.show', $ticket));
+        $this->assertSame(ServiceTicket::STATUS_RESOLVED, $ticket->fresh()->status);
     }
 
     public function test_superadmin_can_resolve_non_technical_ticket_directly(): void

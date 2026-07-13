@@ -219,4 +219,27 @@ class ReceiptCreationTest extends TestCase
         $this->assertNull($receipt->xendit_payment_request_id);
         $this->assertCount(0, $fake->calls);
     }
+
+    /**
+     * sales.retry-receipt dibuka untuk role finance (bukan sales.update
+     * penuh) — lihat CLAUDE.md "Authorization / Role & Permission".
+     */
+    public function test_finance_role_can_retry_receipt(): void
+    {
+        $finance = User::factory()->create();
+        $finance->assignRole('finance');
+
+        $customer = $this->customer();
+        $package = Package::factory()->create(['is_starter' => true]);
+        $product = Product::factory()->create(['price' => 100000]);
+        $package->products()->attach($product->id, ['quantity' => 1, 'price' => 100000]);
+
+        $this->registerService($customer, $package);
+
+        $sale = Sale::firstOrFail();
+
+        $response = $this->actingAs($finance)->post("/sales/{$sale->id}/receipt/retry");
+
+        $response->assertRedirect(route('sales.show', $sale));
+    }
 }

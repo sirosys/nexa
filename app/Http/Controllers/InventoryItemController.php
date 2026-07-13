@@ -66,7 +66,7 @@ class InventoryItemController extends Controller
 
     public function stockIn(InventoryStockInRequest $request, InventoryItem $item): RedirectResponse
     {
-        $this->authorize('update', $item);
+        $this->authorize('stockIn', $item);
 
         $this->inventoryService->stockIn($item, $request->validated());
 
@@ -75,7 +75,7 @@ class InventoryItemController extends Controller
 
     public function adjust(InventoryAdjustmentRequest $request, InventoryItem $item): RedirectResponse
     {
-        $this->authorize('update', $item);
+        $this->authorize('adjust', $item);
 
         try {
             $this->inventoryService->adjustStock($item, (int) $request->validated('delta'), $request->validated('notes'));

@@ -99,7 +99,7 @@ class SaleController extends Controller
      */
     public function retryReceipt(Sale $sale): RedirectResponse
     {
-        $this->authorize('update', $sale);
+        $this->authorize('retryReceipt', $sale);
 
         if ($sale->invoiced_at || $sale->settled_at || $sale->canceled_at) {
             return redirect()->route('sales.show', $sale)->with('status', 'Tagihan sudah pernah berhasil dibuat atau Sale sudah tidak aktif.');

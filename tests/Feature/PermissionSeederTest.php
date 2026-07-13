@@ -1,0 +1,76 @@
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Tests\TestCase;
+
+/**
+ * Verifikasi matrix role->permission dari PermissionSeeder (dijalankan
+ * otomatis lewat migration 2026_07_13_120000_seed_role_permissions.php,
+ * bukan lewat DatabaseSeeder — RefreshDatabase tidak menjalankan seeder)
+ * sesuai CLAUDE.md "Authorization / Role & Permission".
+ */
+class PermissionSeederTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_superadmin_has_every_permission(): void
+    {
+        $superadmin = Role::findByName('superadmin', 'web');
+
+        $this->assertSame(
+            Permission::count(),
+            $superadmin->permissions()->count()
+        );
+    }
+
+    public function test_technician_permissions_match_matrix(): void
+    {
+        $expected = [
+            'installations.view', 'installations.claim', 'installations.complete',
+            'dismantles.view', 'dismantles.claim', 'dismantles.complete',
+            'tickets.view', 'tickets.claim', 'tickets.resolve',
+            'inventory.view',
+        ];
+
+        $this->assertSameArrays($expected, $this->permissionsFor('technician'));
+    }
+
+    public function test_finance_permissions_match_matrix(): void
+    {
+        $expected = ['sales.view', 'sales.retry-receipt', 'services.view'];
+
+        $this->assertSameArrays($expected, $this->permissionsFor('finance'));
+    }
+
+    public function test_sales_permissions_match_matrix(): void
+    {
+        $expected = [
+            'services.view', 'services.create', 'services.update',
+            'sales.view', 'sales.create', 'sales.update',
+            'users.complete-kyc',
+        ];
+
+        $this->assertSameArrays($expected, $this->permissionsFor('sales'));
+    }
+
+    public function test_customer_has_no_permission(): void
+    {
+        $this->assertSame([], $this->permissionsFor('customer'));
+    }
+
+    private function permissionsFor(string $role): array
+    {
+        return Role::findByName($role, 'web')->permissions->pluck('name')->all();
+    }
+
+    private function assertSameArrays(array $expected, array $actual): void
+    {
+        sort($expected);
+        sort($actual);
+        $this->assertSame($expected, $actual);
+    }
+}
