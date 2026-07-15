@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\PackageRequest;
 use App\Models\Package;
+use App\Models\Plan;
 use App\Models\Product;
 use App\Services\PackageService;
 use Illuminate\Http\RedirectResponse;
@@ -20,6 +21,7 @@ class PackageController extends Controller
     public function index(Request $request): View
     {
         $packages = Package::query()
+            ->with('plan')
             ->when($request->string('q')->trim()->isNotEmpty(), function ($query) use ($request) {
                 $q = $request->string('q')->trim()->value();
                 $query->where(function ($query) use ($q) {
@@ -36,7 +38,10 @@ class PackageController extends Controller
 
     public function create(): View
     {
-        return view('packages.create', ['products' => Product::query()->orderBy('name')->get()]);
+        return view('packages.create', [
+            'products' => Product::query()->orderBy('name')->get(),
+            'plans' => Plan::query()->orderBy('name')->get(),
+        ]);
     }
 
     public function store(PackageRequest $request): RedirectResponse
@@ -48,18 +53,19 @@ class PackageController extends Controller
 
     public function show(Package $package): View
     {
-        $package->load('products');
+        $package->load(['products', 'plan']);
 
         return view('packages.show', ['package' => $package]);
     }
 
     public function edit(Package $package): View
     {
-        $package->load('products');
+        $package->load(['products', 'plan']);
 
         return view('packages.edit', [
             'package' => $package,
             'products' => Product::query()->orderBy('name')->get(),
+            'plans' => Plan::query()->orderBy('name')->get(),
         ]);
     }
 

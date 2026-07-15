@@ -31,7 +31,7 @@ class RenewalCreateInvoices extends Command
                     $created++;
                 }
             } catch (RuntimeException $e) {
-                // Paket Service ini belum lengkap (mis. base_product_id
+                // Paket Service ini belum lengkap (mis. plan_id
                 // kosong) — jangan sampai satu Service yang belum
                 // dikonfigurasi dengan benar menghentikan renewal Service
                 // lain di batch yang sama.

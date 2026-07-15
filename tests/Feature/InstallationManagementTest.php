@@ -54,7 +54,7 @@ class InstallationManagementTest extends TestCase
      */
     private function pendingInstallationService(?Package $package = null): Service
     {
-        $package ??= Package::factory()->create(['is_starter' => true, 'duration_months' => 1]);
+        $package ??= Package::factory()->create(['is_starter' => true, 'plan_qty' => 1]);
         $service = Service::factory()->create([
             'package_id' => $package->id,
             'status' => Service::STATUS_PENDING_INSTALLATION,
@@ -159,7 +159,7 @@ class InstallationManagementTest extends TestCase
     {
         Storage::fake('local');
         $gateway = $this->fakeGateway();
-        $package = Package::factory()->create(['is_starter' => true, 'duration_months' => 3]);
+        $package = Package::factory()->create(['is_starter' => true, 'plan_qty' => 3]);
         $service = $this->pendingInstallationService($package);
         $technician = $this->withRole('technician');
         $this->actingAs($technician)->post("/installations/{$service->id}/claim");
@@ -200,7 +200,7 @@ class InstallationManagementTest extends TestCase
     public function test_complete_installation_consumes_equipment_from_inventory(): void
     {
         Storage::fake('local');
-        $package = Package::factory()->create(['is_starter' => true, 'duration_months' => 1]);
+        $package = Package::factory()->create(['is_starter' => true, 'plan_qty' => 1]);
         $service = $this->pendingInstallationService($package);
         $technician = $this->withRole('technician');
         $this->actingAs($technician)->post("/installations/{$service->id}/claim");
@@ -234,7 +234,7 @@ class InstallationManagementTest extends TestCase
     public function test_complete_installation_fails_when_equipment_stock_insufficient(): void
     {
         Storage::fake('local');
-        $package = Package::factory()->create(['is_starter' => true, 'duration_months' => 1]);
+        $package = Package::factory()->create(['is_starter' => true, 'plan_qty' => 1]);
         $service = $this->pendingInstallationService($package);
         $technician = $this->withRole('technician');
         $this->actingAs($technician)->post("/installations/{$service->id}/claim");

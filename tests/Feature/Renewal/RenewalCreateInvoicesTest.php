@@ -3,7 +3,7 @@
 namespace Tests\Feature\Renewal;
 
 use App\Models\Package;
-use App\Models\Product;
+use App\Models\Plan;
 use App\Models\Receipt;
 use App\Models\Sale;
 use App\Models\Service;
@@ -17,24 +17,27 @@ class RenewalCreateInvoicesTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * $bundlePrice adalah harga snapshot di package_product (mis. harga
-     * promo registrasi) — beda dari $catalogPrice (products.price), yang
+     * $bundlePrice adalah harga snapshot di packages.plan_price (mis. harga
+     * promo registrasi) — beda dari $catalogPrice (plans.price), yang
      * seharusnya justru dipakai RenewalService saat menagih perpanjangan
      * (lihat CLAUDE.md "Renewal"). Default keduanya sama supaya test yang
      * tidak spesifik menguji perbedaan ini tetap sederhana.
      */
-    private function packageWithProduct(float $catalogPrice = 200000, ?float $bundlePrice = null): Package
+    private function packageWithPlan(float $catalogPrice = 200000, ?float $bundlePrice = null): Package
     {
-        $product = Product::factory()->create(['type' => 'langganan', 'price' => $catalogPrice]);
-        $package = Package::factory()->create(['is_starter' => false, 'base_product_id' => $product->id]);
-        $package->products()->attach($product->id, ['quantity' => 1, 'price' => $bundlePrice ?? $catalogPrice]);
+        $plan = Plan::factory()->create(['price' => $catalogPrice]);
 
-        return $package;
+        return Package::factory()->create([
+            'is_starter' => false,
+            'plan_id' => $plan->id,
+            'plan_price' => $bundlePrice ?? $catalogPrice,
+            'plan_qty' => 1,
+        ]);
     }
 
     public function test_creates_renewal_invoice_when_service_within_h5_window(): void
     {
-        $package = $this->packageWithProduct(200000);
+        $package = $this->packageWithPlan(200000);
         $service = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,
             'package_id' => $package->id,
@@ -57,7 +60,7 @@ class RenewalCreateInvoicesTest extends TestCase
 
     public function test_does_not_duplicate_invoice_when_run_twice(): void
     {
-        $package = $this->packageWithProduct();
+        $package = $this->packageWithPlan();
         $service = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,
             'package_id' => $package->id,
@@ -72,7 +75,7 @@ class RenewalCreateInvoicesTest extends TestCase
 
     public function test_does_not_create_invoice_outside_window(): void
     {
-        $package = $this->packageWithProduct();
+        $package = $this->packageWithPlan();
         $service = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,
             'package_id' => $package->id,
@@ -86,7 +89,7 @@ class RenewalCreateInvoicesTest extends TestCase
 
     public function test_does_not_touch_non_active_service(): void
     {
-        $package = $this->packageWithProduct();
+        $package = $this->packageWithPlan();
         $service = Service::factory()->create([
             'status' => Service::STATUS_PENDING_INSTALLATION,
             'package_id' => $package->id,
@@ -105,7 +108,7 @@ class RenewalCreateInvoicesTest extends TestCase
      */
     public function test_free_package_renewal_auto_settles_and_extends_expiry_without_receipt(): void
     {
-        $package = $this->packageWithProduct(0);
+        $package = $this->packageWithPlan(0);
         $oldExpiredAt = now()->addDays(2);
         $service = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,
@@ -132,16 +135,14 @@ class RenewalCreateInvoicesTest extends TestCase
     }
 
     /**
-     * Bukti utama fix bug SAL000002: Sale renewal cuma menagih SATU baris
-     * (base product), bukan seluruh bundel registrasi (modem/instalasi),
-     * pada harga KATALOG SAAT INI (products.price) — bukan harga snapshot
-     * promo yang tersimpan di package_product.
+     * Bukti utama fix bug SAL000002: Sale renewal cuma menagih Plan tier
+     * paket ini (tidak ada baris sale_products sama sekali — modem/instalasi
+     * TIDAK ikut tertagih ulang), pada harga katalog Plan SAAT INI — bukan
+     * harga snapshot promo yang tersimpan di packages.plan_price.
      */
-    public function test_renewal_invoice_only_bills_base_product_at_current_catalog_price(): void
+    public function test_renewal_invoice_only_bills_plan_at_current_catalog_price(): void
     {
-        $package = $this->packageWithProduct(catalogPrice: 150000, bundlePrice: 0);
-        $modem = Product::factory()->create(['type' => 'perangkat', 'price' => 300000]);
-        $package->products()->attach($modem->id, ['quantity' => 1, 'price' => 0]);
+        $package = $this->packageWithPlan(catalogPrice: 150000, bundlePrice: 0);
 
         $service = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,
@@ -153,9 +154,10 @@ class RenewalCreateInvoicesTest extends TestCase
 
         $sale = Sale::where('service_id', $service->id)->where('is_renewal', true)->firstOrFail();
 
-        $this->assertCount(1, $sale->products);
-        $this->assertSame($package->base_product_id, $sale->products->first()->id);
-        $this->assertEquals(150000, (float) $sale->products->first()->pivot->price);
+        $this->assertCount(0, $sale->products);
+        $this->assertSame($package->plan_id, $sale->plan_id);
+        $this->assertEquals(150000, (float) $sale->plan_price);
+        $this->assertSame(1, $sale->plan_qty);
         $this->assertEquals(150000, (float) $sale->grandtotal);
     }
 
@@ -166,7 +168,7 @@ class RenewalCreateInvoicesTest extends TestCase
      */
     public function test_renewal_invoice_is_never_marked_as_starter(): void
     {
-        $package = $this->packageWithProduct(150000);
+        $package = $this->packageWithPlan(150000);
         $package->update(['is_starter' => true]);
 
         $service = Service::factory()->create([
@@ -192,7 +194,7 @@ class RenewalCreateInvoicesTest extends TestCase
      */
     public function test_checkout_url_is_never_generated_already_expired_when_service_is_already_overdue(): void
     {
-        $package = $this->packageWithProduct(150000);
+        $package = $this->packageWithPlan(150000);
         $service = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,
             'package_id' => $package->id,
@@ -213,20 +215,20 @@ class RenewalCreateInvoicesTest extends TestCase
     }
 
     /**
-     * Service yang paketnya belum punya base_product_id (data lama/belum
-     * lengkap) dilewati dengan aman — tidak menghentikan batch renewal
-     * Service lain yang sudah benar.
+     * Service yang paketnya belum punya plan_id (data lama/belum lengkap)
+     * dilewati dengan aman — tidak menghentikan batch renewal Service lain
+     * yang sudah benar.
      */
-    public function test_service_without_base_product_is_skipped_without_crashing_batch(): void
+    public function test_service_without_plan_is_skipped_without_crashing_batch(): void
     {
-        $incompletePackage = Package::factory()->create(['is_starter' => false, 'base_product_id' => null]);
+        $incompletePackage = Package::factory()->create(['is_starter' => false, 'plan_id' => null]);
         $incompleteService = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,
             'package_id' => $incompletePackage->id,
             'expired_at' => now()->addDays(3),
         ]);
 
-        $goodPackage = $this->packageWithProduct(150000);
+        $goodPackage = $this->packageWithPlan(150000);
         $goodService = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,
             'package_id' => $goodPackage->id,

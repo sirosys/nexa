@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['code', 'is_starter', 'duration_months', 'base_product_id', 'name', 'description', 'price', 'created_by', 'updated_by'])]
+#[Fillable(['code', 'is_starter', 'plan_id', 'plan_price', 'plan_qty', 'name', 'description', 'price', 'created_by', 'updated_by'])]
 class Package extends Model
 {
     /** @use HasFactory<PackageFactory> */
@@ -25,6 +25,7 @@ class Package extends Model
         return [
             'is_starter' => 'boolean',
             'price' => 'decimal:2',
+            'plan_price' => 'decimal:2',
         ];
     }
 
@@ -37,13 +38,14 @@ class Package extends Model
     }
 
     /**
-     * Produk langganan reguler yang mewakili tier paket ini — dipakai
-     * RenewalService untuk menagih perpanjangan (lihat CLAUDE.md "Renewal").
+     * Plan internet (tier layanan) yang mewakili paket ini — dipakai
+     * RenewalService untuk menagih perpanjangan (lihat CLAUDE.md "Renewal"
+     * dan "Plan").
      *
-     * @return BelongsTo<Product, $this>
+     * @return BelongsTo<Plan, $this>
      */
-    public function baseProduct(): BelongsTo
+    public function plan(): BelongsTo
     {
-        return $this->belongsTo(Product::class, 'base_product_id');
+        return $this->belongsTo(Plan::class);
     }
 }

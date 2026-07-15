@@ -15,6 +15,7 @@ class PermissionSeeder extends Seeder
      */
     private const PERMISSIONS = [
         'users' => ['view', 'create', 'update', 'delete', 'complete-kyc', 'view-ktp-photo'],
+        'plans' => ['view', 'create', 'update', 'delete'],
         'products' => ['view', 'create', 'update', 'delete'],
         'packages' => ['view', 'create', 'update', 'delete'],
         'pops' => ['view', 'create', 'update', 'delete'],

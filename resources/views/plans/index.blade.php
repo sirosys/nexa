@@ -1,16 +1,16 @@
-<x-app-layout :title="'Paket — ' . config('app.name', 'NEXA')">
+<x-app-layout :title="'Plan — ' . config('app.name', 'NEXA')">
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Paket</h1>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Paket bundling produk yang bisa dilanggan pelanggan.</p>
+            <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Plan</h1>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Katalog layanan internet (tier) yang jadi acuan tagihan perpanjangan otomatis.</p>
         </div>
 
         <a
-            href="{{ route('packages.create') }}"
+            href="{{ route('plans.create') }}"
             class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98] inline-flex items-center gap-2"
         >
         <x-icon name="plus" size="4" />
-        Tambah Paket
+        Tambah Plan
         </a>
     </div>
 
@@ -22,7 +22,7 @@
 
     <div class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
         <div class="border-b border-gray-300 p-4 dark:border-gray-700">
-            <form method="GET" action="{{ route('packages.index') }}">
+            <form method="GET" action="{{ route('plans.index') }}">
                 <input
                     type="text"
                     name="q"
@@ -39,31 +39,21 @@
                     <tr>
                         <th class="px-4 py-3">Kode</th>
                         <th class="px-4 py-3">Nama</th>
-                        <th class="px-4 py-3">Starter</th>
-                        <th class="px-4 py-3">Plan</th>
-                        <th class="px-4 py-3">Harga</th>
+                        <th class="px-4 py-3">Harga per Bulan</th>
                         <th class="px-4 py-3 text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                    @forelse ($packages as $package)
+                    @forelse ($plans as $plan)
                         <tr>
-                            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $package->code }}</td>
-                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $package->name }}</td>
-                            <td class="px-4 py-3">
-                                @if ($package->is_starter)
-                                    <span class="inline-flex items-center rounded-full bg-success-light px-3 py-1 text-[13px] font-semibold text-success dark:bg-success/10">Ya</span>
-                                @else
-                                    <span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-[13px] font-semibold text-gray-500 dark:bg-gray-700 dark:text-gray-400">Tidak</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $package->plan?->name ?? '—' }} &times; {{ $package->plan_qty }} bulan</td>
-                            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">Rp{{ number_format((float) $package->price, 0, ',', '.') }}</td>
+                            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $plan->code }}</td>
+                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $plan->name }}</td>
+                            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">Rp{{ number_format((float) $plan->price, 0, ',', '.') }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-end gap-1">
-                                    <x-row-action :href="route('packages.show', $package)" icon="eye" label="Detail" />
-                                    <x-row-action :href="route('packages.edit', $package)" icon="pencil-square" label="Ubah" variant="primary" />
-                                    <form method="POST" action="{{ route('packages.destroy', $package) }}" onsubmit="return confirm('Hapus paket ini?');">
+                                    <x-row-action :href="route('plans.show', $plan)" icon="eye" label="Detail" />
+                                    <x-row-action :href="route('plans.edit', $plan)" icon="pencil-square" label="Ubah" variant="primary" />
+                                    <form method="POST" action="{{ route('plans.destroy', $plan) }}" onsubmit="return confirm('Hapus plan ini?');">
                                         @csrf
                                         @method('DELETE')
                                         <x-row-action icon="trash" label="Hapus" variant="danger" />
@@ -73,16 +63,16 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Belum ada paket.</td>
+                            <td colspan="4" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Belum ada plan.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        @if ($packages->hasPages())
+        @if ($plans->hasPages())
             <div class="border-t border-gray-300 p-4 dark:border-gray-700">
-                {{ $packages->links() }}
+                {{ $plans->links() }}
             </div>
         @endif
     </div>

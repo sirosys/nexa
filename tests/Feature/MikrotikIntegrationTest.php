@@ -42,7 +42,7 @@ class MikrotikIntegrationTest extends TestCase
 
     private function pendingInstallationService(): Service
     {
-        $package = Package::factory()->create(['is_starter' => true, 'duration_months' => 1]);
+        $package = Package::factory()->create(['is_starter' => true, 'plan_qty' => 1]);
         $service = Service::factory()->create([
             'package_id' => $package->id,
             'status' => Service::STATUS_PENDING_INSTALLATION,
@@ -139,7 +139,7 @@ class MikrotikIntegrationTest extends TestCase
     {
         Storage::fake('local');
         $gateway = $this->fakeGateway();
-        $package = Package::factory()->create(['is_starter' => true, 'duration_months' => 1]);
+        $package = Package::factory()->create(['is_starter' => true, 'plan_qty' => 1]);
         $service = Service::factory()->create([
             'package_id' => $package->id,
             'status' => Service::STATUS_SUSPENDED,

@@ -32,8 +32,16 @@
                     <span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-[13px] font-semibold text-gray-500 dark:bg-gray-700 dark:text-gray-400">Tidak</span>
                 @endif
             </x-detail-row>
-            <x-detail-row label="Durasi">{{ $package->duration_months }} bulan</x-detail-row>
-            <x-detail-row label="Harga">Rp{{ number_format((float) $package->price, 0, ',', '.') }}</x-detail-row>
+            <x-detail-row label="Plan">
+                @if ($package->plan)
+                    <a href="{{ route('plans.show', $package->plan) }}" class="font-medium text-primary hover:underline">{{ $package->plan->name }}</a>
+                @else
+                    —
+                @endif
+            </x-detail-row>
+            <x-detail-row label="Durasi Plan">{{ $package->plan_qty }} bulan</x-detail-row>
+            <x-detail-row label="Harga Plan di Paket Ini">Rp{{ number_format((float) $package->plan_price, 0, ',', '.') }}</x-detail-row>
+            <x-detail-row label="Harga Paket">Rp{{ number_format((float) $package->price, 0, ',', '.') }}</x-detail-row>
             <x-detail-row label="Deskripsi">{{ $package->description ?? '—' }}</x-detail-row>
             <x-detail-row label="Ditambahkan">{{ $package->created_at?->locale('id')->translatedFormat('d F Y, H:i') }}</x-detail-row>
         </dl>
@@ -41,7 +49,7 @@
 
     <div class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
         <div class="border-b border-gray-300 p-4 dark:border-gray-700">
-            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Produk dalam Paket</h2>
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Produk Lain dalam Paket</h2>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm">

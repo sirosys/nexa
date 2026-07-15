@@ -28,10 +28,10 @@ class RenewalService
 
     /**
      * Buat Sale+Receipt perpanjangan untuk sebuah Service yang mendekati
-     * expired_at — SELALU 1 bulan, menagih HANYA base_product tier paket
-     * Service ini (bukan seluruh bundel registrasi), pada harga katalog
-     * produk SAAT INI (bukan harga snapshot promo registrasi). Lihat
-     * CLAUDE.md "Renewal" untuk alasan lengkap perubahan ini.
+     * expired_at — SELALU 1 bulan, menagih HANYA Plan tier paket Service ini
+     * (bukan seluruh bundel registrasi), pada harga katalog Plan SAAT INI
+     * (bukan harga snapshot promo registrasi). Lihat CLAUDE.md "Renewal"
+     * dan "Plan" untuk alasan lengkap desain ini.
      *
      * Idempotent — no-op kalau Service ini sudah punya Sale renewal
      * terbuka (belum settled/canceled), supaya command bisa jalan
@@ -45,22 +45,20 @@ class RenewalService
             return null;
         }
 
-        $baseProduct = $service->package->baseProduct;
+        $plan = $service->package->plan;
 
-        if (! $baseProduct) {
-            throw new RuntimeException("Paket layanan {$service->code} belum punya produk dasar (base product) — lengkapi dulu lewat halaman Paket.");
+        if (! $plan) {
+            throw new RuntimeException("Paket layanan {$service->code} belum punya plan — lengkapi dulu lewat halaman Paket.");
         }
 
         $sale = $this->saleService->create([
             'service_id' => $service->id,
             'package_id' => $service->package_id,
             'is_renewal' => true,
-            'products' => [[
-                'product_id' => $baseProduct->id,
-                'price' => (float) $baseProduct->price,
-                'quantity' => 1,
-                'unit' => $baseProduct->unit,
-            ]],
+            'plan_id' => $plan->id,
+            'plan_price' => (float) $plan->price,
+            'plan_qty' => 1,
+            'products' => [],
         ]);
 
         // $service->expired_at seharusnya masih di masa depan (command ini
@@ -149,16 +147,15 @@ class RenewalService
             $service = $sale->service;
             $oldExpiredAt = $service->expired_at ?? now();
 
-            // Durasi perpanjangan = quantity baris produk di Sale renewal
-            // ITU SENDIRI (bukan lagi package->duration_months) — sales.package_id
+            // Durasi perpanjangan = plan_qty Sale renewal ITU SENDIRI (bukan
+            // lagi package->duration_months/base product) — sales.package_id
             // tetap paket registrasi asli (mis. promo 3 bulan), yang durasinya
             // tidak relevan lagi untuk siklus renewal. Nilainya SELALU 1 untuk
-            // renewal otomatis saat ini, tapi ditulis generik lewat quantity
-            // baris Sale supaya siap dipakai juga oleh perpanjangan non-default
+            // renewal otomatis saat ini, tapi ditulis generik lewat plan_qty
+            // Sale supaya siap dipakai juga oleh perpanjangan non-default
             // (quantity > 1) begitu customer app/API dibangun — lihat CLAUDE.md
-            // "Renewal". Aman karena reactivate() cuma dipanggil untuk Sale
-            // is_renewal=true (selalu satu baris produk).
-            $monthsToExtend = (int) ($sale->products->first()?->pivot->quantity ?? 1);
+            // "Renewal".
+            $monthsToExtend = (int) ($sale->plan_qty ?? 1);
 
             $service->update([
                 'status' => Service::STATUS_ACTIVE,

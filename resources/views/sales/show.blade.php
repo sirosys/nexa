@@ -113,6 +113,19 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    @if ($sale->plan)
+                        <tr class="bg-primary/5 dark:bg-primary/10">
+                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
+                                {{ $sale->plan->name }}
+                                <span class="ml-1 inline-flex items-center rounded-full bg-primary-light px-2 py-0.5 text-[11px] font-semibold text-primary dark:bg-primary/10">Plan</span>
+                            </td>
+                            <td class="px-4 py-3 text-right text-gray-500 dark:text-gray-400">{{ $sale->plan_qty }}</td>
+                            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">bulan</td>
+                            <td class="px-4 py-3 text-right text-gray-500 dark:text-gray-400">{{ number_format((float) $sale->plan_price, 2) }}</td>
+                            <td class="px-4 py-3 text-right text-gray-500 dark:text-gray-400">0,00</td>
+                            <td class="px-4 py-3 text-right text-gray-900 dark:text-white">{{ number_format((float) $sale->plan_price * (int) $sale->plan_qty, 2) }}</td>
+                        </tr>
+                    @endif
                     @forelse ($sale->products as $product)
                         <tr>
                             <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $product->name }}</td>
@@ -123,9 +136,11 @@
                             <td class="px-4 py-3 text-right text-gray-900 dark:text-white">{{ number_format(((float) $product->pivot->price * $product->pivot->quantity) - (float) $product->pivot->discount, 2) }}</td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Belum ada produk di sale ini.</td>
-                        </tr>
+                        @unless ($sale->plan)
+                            <tr>
+                                <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Belum ada produk di sale ini.</td>
+                            </tr>
+                        @endunless
                     @endforelse
                 </tbody>
             </table>

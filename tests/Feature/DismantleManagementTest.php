@@ -53,7 +53,7 @@ class DismantleManagementTest extends TestCase
      */
     private function serviceWithActivation(string $status, array $overrides = []): Service
     {
-        $package = Package::factory()->create(['is_starter' => true, 'duration_months' => 1]);
+        $package = Package::factory()->create(['is_starter' => true, 'plan_qty' => 1]);
         $service = Service::factory()->create(array_merge([
             'package_id' => $package->id,
             'status' => $status,

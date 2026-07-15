@@ -12,6 +12,7 @@ use App\Http\Controllers\KtpPhotoController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PlanController;
 use App\Http\Controllers\PopController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
@@ -69,6 +70,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/users/{user}/complete-kyc', [UserController::class, 'completeKyc'])->name('users.complete-kyc');
     Route::resource('users', UserController::class);
     Route::get('/secure/ktp/{user}', [KtpPhotoController::class, 'show'])->name('secure.ktp');
+    Route::resource('plans', PlanController::class);
     Route::resource('products', ProductController::class);
     Route::resource('packages', PackageController::class);
     Route::get('/subdistricts/search', [SubdistrictController::class, 'search'])->name('subdistricts.search');

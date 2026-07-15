@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['code', 'service_id', 'package_id', 'is_starter', 'is_renewal', 'total', 'discount', 'subtotal', 'tax', 'admin_fee', 'grandtotal', 'notes', 'invoiced_at', 'expired_at', 'settled_at', 'canceled_at', 'renewal_reminder_h3_sent_at', 'renewal_reminder_h1_sent_at', 'created_by', 'updated_by'])]
+#[Fillable(['code', 'service_id', 'package_id', 'plan_id', 'plan_price', 'plan_qty', 'is_starter', 'is_renewal', 'total', 'discount', 'subtotal', 'tax', 'admin_fee', 'grandtotal', 'notes', 'invoiced_at', 'expired_at', 'settled_at', 'canceled_at', 'renewal_reminder_h3_sent_at', 'renewal_reminder_h1_sent_at', 'created_by', 'updated_by'])]
 class Sale extends Model
 {
     /** @use HasFactory<SaleFactory> */
@@ -27,6 +27,7 @@ class Sale extends Model
         return [
             'is_starter' => 'boolean',
             'is_renewal' => 'boolean',
+            'plan_price' => 'decimal:2',
             'total' => 'decimal:2',
             'discount' => 'decimal:2',
             'subtotal' => 'decimal:2',
@@ -52,6 +53,12 @@ class Sale extends Model
     public function package(): BelongsTo
     {
         return $this->belongsTo(Package::class);
+    }
+
+    /** @return BelongsTo<Plan, $this> */
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
     }
 
     /** @return BelongsToMany<Product, $this> */

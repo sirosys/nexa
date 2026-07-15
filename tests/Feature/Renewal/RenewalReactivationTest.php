@@ -3,7 +3,7 @@
 namespace Tests\Feature\Renewal;
 
 use App\Models\Package;
-use App\Models\Product;
+use App\Models\Plan;
 use App\Models\Receipt;
 use App\Models\Sale;
 use App\Models\Service;
@@ -45,7 +45,7 @@ class RenewalReactivationTest extends TestCase
     {
         Notification::fake();
 
-        $package = Package::factory()->create(['duration_months' => 1]);
+        $package = Package::factory()->create();
         $oldExpiredAt = now()->subDays(20); // jauh terlewat, simulasi telat bayar
         $service = Service::factory()->create([
             'status' => Service::STATUS_SUSPENDED,
@@ -94,7 +94,7 @@ class RenewalReactivationTest extends TestCase
     {
         Notification::fake();
 
-        $package = Package::factory()->create(['duration_months' => 1]);
+        $package = Package::factory()->create();
         $oldExpiredAt = now()->addDays(2); // belum lewat, service masih active
         $service = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,
@@ -131,7 +131,7 @@ class RenewalReactivationTest extends TestCase
     {
         Notification::fake();
 
-        $package = Package::factory()->create(['duration_months' => 1]);
+        $package = Package::factory()->create();
         $oldExpiredAt = now()->subDays(3);
         $service = Service::factory()->create([
             'status' => Service::STATUS_SUSPENDED,
@@ -165,19 +165,18 @@ class RenewalReactivationTest extends TestCase
     }
 
     /**
-     * Durasi perpanjangan dibaca dari quantity baris produk di Sale renewal
-     * itu sendiri (bukan package->duration_months) — nilainya SELALU 1 untuk
-     * renewal otomatis saat ini, tapi ditulis generik supaya siap dipakai
-     * perpanjangan non-default (quantity > 1, mis. promo prepay beberapa
-     * bulan) begitu customer app/API dibangun. Test ini membuktikan
-     * mekanismenya sudah benar untuk quantity > 1.
+     * Durasi perpanjangan dibaca dari sales.plan_qty ITU SENDIRI (bukan
+     * package->plan_qty) — nilainya SELALU 1 untuk renewal otomatis saat
+     * ini, tapi ditulis generik supaya siap dipakai perpanjangan non-default
+     * (qty > 1, mis. promo prepay beberapa bulan) begitu customer app/API
+     * dibangun. Test ini membuktikan mekanismenya sudah benar untuk qty > 1.
      */
     public function test_extends_expiry_by_sale_line_item_quantity_not_fixed_one_month(): void
     {
         Notification::fake();
 
-        $product = Product::factory()->create(['type' => 'langganan', 'price' => 150000]);
-        $package = Package::factory()->create(['duration_months' => 1, 'base_product_id' => $product->id]);
+        $plan = Plan::factory()->create(['price' => 150000]);
+        $package = Package::factory()->create(['plan_id' => $plan->id, 'plan_price' => 150000, 'plan_qty' => 1]);
         $oldExpiredAt = now()->addDays(2);
         $service = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,
@@ -188,11 +187,13 @@ class RenewalReactivationTest extends TestCase
             'service_id' => $service->id,
             'package_id' => $package->id,
             'is_renewal' => true,
+            'plan_id' => $plan->id,
+            'plan_price' => 150000,
+            'plan_qty' => 3,
             'grandtotal' => 450000,
             'invoiced_at' => now()->subDays(2),
             'expired_at' => null,
         ]);
-        $sale->products()->attach($product->id, ['price' => 150000, 'discount' => 0, 'quantity' => 3, 'unit' => $product->unit]);
         $receipt = Receipt::factory()->create([
             'sale_id' => $sale->id,
             'amount' => 450000,

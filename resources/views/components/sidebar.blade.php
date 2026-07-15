@@ -44,6 +44,7 @@
         [
             'label' => 'Katalog & Gudang',
             'items' => [
+                ['label' => 'Plan', 'route' => 'plans.index', 'icon' => 'signal', 'permission' => 'plans.view'],
                 ['label' => 'Produk', 'route' => 'products.index', 'icon' => 'cube', 'permission' => 'products.view'],
                 ['label' => 'Paket', 'route' => 'packages.index', 'icon' => 'gift', 'permission' => 'packages.view'],
                 ['label' => 'Inventaris', 'route' => 'inventory-items.index', 'icon' => 'archive-box', 'permission' => 'inventory.view'],

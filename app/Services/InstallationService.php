@@ -90,7 +90,7 @@ class InstallationService
             ]);
 
             $activatedAt = now();
-            $durationMonths = (int) ($service->package->duration_months ?? 1);
+            $durationMonths = (int) ($service->package->plan_qty ?? 1);
 
             $service->update([
                 'status' => Service::STATUS_ACTIVE,

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Package;
+use App\Models\Plan;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Service;
@@ -342,6 +343,36 @@ class SaleManagementTest extends TestCase
         $response->assertOk();
         $response->assertSee($sale->code);
         $response->assertSee('Modem Detail');
+    }
+
+    /**
+     * Baris Plan di tabel line item cuma muncul kalau Sale-nya punya
+     * plan_id — regression untuk Blade `@if ($sale->plan)` di sales/show.
+     */
+    public function test_sale_detail_renders_plan_line_when_present(): void
+    {
+        $superadmin = $this->superadmin();
+        $service = Service::factory()->create();
+        $plan = Plan::factory()->create(['name' => 'Internet Detail']);
+        $package = Package::factory()->create(['plan_id' => $plan->id, 'plan_price' => 150000, 'plan_qty' => 1]);
+        $product = Product::factory()->create();
+
+        $this->actingAs($superadmin)->post('/sales', [
+            'service_id' => $service->id,
+            'package_id' => $package->id,
+            'products' => [
+                ['product_id' => $product->id, 'quantity' => 1, 'price' => 50000, 'discount' => 0],
+            ],
+        ]);
+
+        $sale = Sale::where('service_id', $service->id)->firstOrFail();
+        $this->assertSame($plan->id, $sale->plan_id);
+        $this->assertEquals(200000, (float) $sale->grandtotal);
+
+        $response = $this->actingAs($superadmin)->get(route('sales.show', $sale));
+
+        $response->assertOk();
+        $response->assertSee('Internet Detail');
     }
 
     public function test_create_and_edit_pages_render(): void
