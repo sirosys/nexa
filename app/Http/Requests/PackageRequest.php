@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -34,7 +33,6 @@ class PackageRequest extends FormRequest
     {
         $validator->after(function (Validator $validator) {
             $this->guardDuplicateProducts($validator);
-            $this->guardNoLegacySubscriptionProducts($validator);
         });
     }
 
@@ -44,29 +42,6 @@ class PackageRequest extends FormRequest
 
         if ($productIds->count() !== $productIds->unique()->count()) {
             $validator->errors()->add('products', 'Satu produk tidak boleh ditambahkan lebih dari sekali — gunakan kolom kuantitas.');
-        }
-    }
-
-    /**
-     * Produk bertipe 'langganan' sudah digantikan Plan (lihat CLAUDE.md
-     * "Plan") — tolak kalau staff masih mencoba membundel produk jenis itu
-     * ke package_product, supaya kebingungan lama (base product numpang di
-     * katalog produk umum) tidak terulang untuk paket baru.
-     */
-    private function guardNoLegacySubscriptionProducts(Validator $validator): void
-    {
-        $productIds = collect($this->input('products', []))->pluck('product_id')->filter();
-
-        if ($productIds->isEmpty()) {
-            return;
-        }
-
-        $hasLegacySubscription = Product::whereIn('id', $productIds)
-            ->where('type', 'langganan')
-            ->exists();
-
-        if ($hasLegacySubscription) {
-            $validator->errors()->add('products', 'Produk bertipe Langganan sudah digantikan Plan — pilih dari Plan di atas, bukan di sini.');
         }
     }
 }

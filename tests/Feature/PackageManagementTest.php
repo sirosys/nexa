@@ -98,25 +98,6 @@ class PackageManagementTest extends TestCase
         $response->assertSessionHasErrors(['plan_price', 'plan_qty', 'products']);
     }
 
-    public function test_legacy_subscription_type_product_cannot_be_bundled(): void
-    {
-        $plan = Plan::factory()->create();
-        $legacyProduct = Product::factory()->create(['type' => 'langganan']);
-
-        $response = $this->actingAs($this->superadmin())->post('/packages', [
-            'name' => 'Paket Salah Bundling',
-            'price' => 100000,
-            'plan_id' => $plan->id,
-            'plan_price' => 0,
-            'plan_qty' => 1,
-            'products' => [
-                ['product_id' => $legacyProduct->id, 'quantity' => 1, 'price' => 100000],
-            ],
-        ]);
-
-        $response->assertSessionHasErrors('products');
-    }
-
     public function test_superadmin_can_update_package_plan_and_qty(): void
     {
         $superadmin = $this->superadmin();

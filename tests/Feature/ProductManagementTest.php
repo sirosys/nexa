@@ -44,7 +44,11 @@ class ProductManagementTest extends TestCase
         $this->assertStringStartsWith('PRD', $product->code);
     }
 
-    public function test_langganan_is_an_accepted_product_type(): void
+    /**
+     * 'langganan' sudah dihapus dari daftar tipe (digantikan modul Plan,
+     * lihat CLAUDE.md "Plan") — produk baru tidak boleh lagi bertipe ini.
+     */
+    public function test_langganan_is_no_longer_an_accepted_product_type(): void
     {
         $response = $this->actingAs($this->superadmin())->post('/products', [
             'type' => 'langganan',
@@ -53,8 +57,8 @@ class ProductManagementTest extends TestCase
             'unit' => 'bulan',
         ]);
 
-        $response->assertRedirect(route('products.index'));
-        $this->assertDatabaseHas('products', ['name' => 'Internet 10 Mbps', 'type' => 'langganan']);
+        $response->assertSessionHasErrors('type');
+        $this->assertDatabaseMissing('products', ['name' => 'Internet 10 Mbps']);
     }
 
     public function test_product_type_must_be_one_of_the_fixed_list(): void

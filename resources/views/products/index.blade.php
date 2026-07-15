@@ -5,7 +5,6 @@
         'perangkat' => ['label' => 'Perangkat', 'class' => 'bg-info-light text-info dark:bg-info/10'],
         'jasa' => ['label' => 'Jasa', 'class' => 'bg-success-light text-success dark:bg-success/10'],
         'biaya' => ['label' => 'Biaya', 'class' => 'bg-warning-light text-warning dark:bg-warning/10'],
-        'langganan' => ['label' => 'Langganan', 'class' => 'bg-danger-light text-danger dark:bg-danger/10'],
         'lainnya' => ['label' => 'Lainnya', 'class' => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'],
     ];
 @endphp
