@@ -40,6 +40,7 @@
                         <th class="px-4 py-3">Kode</th>
                         <th class="px-4 py-3">Nama</th>
                         <th class="px-4 py-3">Starter</th>
+                        <th class="px-4 py-3">Masa Berlaku</th>
                         <th class="px-4 py-3">Plan</th>
                         <th class="px-4 py-3">Harga</th>
                         <th class="px-4 py-3 text-right">Aksi</th>
@@ -55,6 +56,15 @@
                                     <span class="inline-flex items-center rounded-full bg-success-light px-3 py-1 text-[13px] font-semibold text-success dark:bg-success/10">Ya</span>
                                 @else
                                     <span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-[13px] font-semibold text-gray-500 dark:bg-gray-700 dark:text-gray-400">Tidak</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                @if (! $package->valid_until)
+                                    <span class="inline-flex items-center rounded-full bg-info-light px-3 py-1 text-[13px] font-semibold text-info dark:bg-info/10">Unlimited</span>
+                                @elseif ($package->isAvailable())
+                                    <span class="inline-flex items-center rounded-full bg-success-light px-3 py-1 text-[13px] font-semibold text-success dark:bg-success/10">s.d. {{ $package->valid_until->translatedFormat('d M Y') }}</span>
+                                @else
+                                    <span class="inline-flex items-center rounded-full bg-danger-light px-3 py-1 text-[13px] font-semibold text-danger dark:bg-danger/10">Kadaluarsa</span>
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $package->plan?->name ?? '—' }} &times; {{ $package->plan_qty }} bulan</td>
@@ -73,7 +83,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Belum ada paket.</td>
+                            <td colspan="7" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">Belum ada paket.</td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -16,6 +16,7 @@ class PackageRequest extends FormRequest
     {
         return [
             'is_starter' => ['sometimes', 'boolean'],
+            'valid_until' => ['nullable', 'date'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'price' => ['required', 'numeric', 'min:0'],

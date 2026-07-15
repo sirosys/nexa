@@ -104,6 +104,21 @@
     @enderror
     <p class="text-xs text-gray-500 dark:text-gray-400">Kalau tidak dicentang, paket ini hanya bisa dipilih oleh pelanggan yang sudah aktif berlangganan (mis. paket upgrade/add-on).</p>
 
+    <div>
+        <label for="valid_until" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Masa Berlaku Sampai</label>
+        <input
+            type="datetime-local"
+            id="valid_until"
+            name="valid_until"
+            value="{{ old('valid_until', $package?->valid_until?->format('Y-m-d\TH:i')) }}"
+            class="block w-full max-w-xs rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white"
+        >
+        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Kosongkan untuk unlimited (selalu tersedia). Kalau diisi, paket otomatis berhenti ditawarkan untuk pendaftaran baru begitu tanggal ini lewat — mis. promo 1-2 bulan.</p>
+        @error('valid_until')
+            <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+        @enderror
+    </div>
+
     <div class="border-t border-gray-200 pt-4 dark:border-gray-700">
         <label for="plan_id" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Plan</label>
         <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Layanan internet (tier) yang mewakili paket ini — dipakai sistem saat membuat tagihan perpanjangan otomatis (harga katalog Plan SAAT INI yang ditagih, bukan harga di bawah ini).</p>

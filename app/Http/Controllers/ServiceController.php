@@ -46,7 +46,7 @@ class ServiceController extends Controller
     {
         return view('services.create', [
             'coverages' => Coverage::orderBy('name')->get(),
-            'packages' => Package::where('is_starter', true)->orderBy('name')->get(),
+            'packages' => Package::where('is_starter', true)->available()->orderBy('name')->get(),
         ]);
     }
 
@@ -71,7 +71,7 @@ class ServiceController extends Controller
         return view('services.edit', [
             'service' => $service,
             'coverages' => Coverage::orderBy('name')->get(),
-            'packages' => Package::where('is_starter', true)->orderBy('name')->get(),
+            'packages' => Package::where('is_starter', true)->available()->orderBy('name')->get(),
         ]);
     }
 

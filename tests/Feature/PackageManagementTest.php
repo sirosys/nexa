@@ -67,6 +67,48 @@ class PackageManagementTest extends TestCase
         ]);
     }
 
+    public function test_superadmin_can_set_valid_until_for_promo_package(): void
+    {
+        $superadmin = $this->superadmin();
+        $plan = Plan::factory()->create();
+        $validUntil = now()->addMonths(2)->startOfMinute();
+
+        $response = $this->actingAs($superadmin)->post('/packages', [
+            'is_starter' => '1',
+            'name' => 'Paket Promo 2 Bulan',
+            'price' => 100000,
+            'plan_id' => $plan->id,
+            'plan_price' => 0,
+            'plan_qty' => 1,
+            'valid_until' => $validUntil->format('Y-m-d\TH:i'),
+            'products' => [
+                ['product_id' => Product::factory()->create(['type' => 'perangkat'])->id, 'quantity' => 1, 'price' => 0],
+            ],
+        ]);
+
+        $response->assertRedirect(route('packages.index'));
+
+        $package = Package::where('name', 'Paket Promo 2 Bulan')->firstOrFail();
+        $this->assertTrue($package->valid_until->equalTo($validUntil));
+    }
+
+    public function test_valid_until_left_empty_means_unlimited(): void
+    {
+        $package = Package::factory()->create(['valid_until' => null]);
+
+        $this->assertNull($package->valid_until);
+        $this->assertTrue($package->isAvailable());
+    }
+
+    public function test_package_is_not_available_after_valid_until_passes(): void
+    {
+        $expired = Package::factory()->create(['valid_until' => now()->subDay()]);
+        $stillValid = Package::factory()->create(['valid_until' => now()->addDay()]);
+
+        $this->assertFalse($expired->isAvailable());
+        $this->assertTrue($stillValid->isAvailable());
+    }
+
     public function test_plan_id_is_required(): void
     {
         $product = Product::factory()->create(['type' => 'perangkat']);

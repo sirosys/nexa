@@ -13,6 +13,7 @@ class PackageService
         return DB::transaction(function () use ($data) {
             $package = Package::create([
                 'is_starter' => $data['is_starter'] ?? false,
+                'valid_until' => $data['valid_until'] ?? null,
                 'plan_id' => $data['plan_id'],
                 'plan_price' => $data['plan_price'],
                 'plan_qty' => $data['plan_qty'],
@@ -38,6 +39,7 @@ class PackageService
         return DB::transaction(function () use ($package, $data) {
             $package->update([
                 'is_starter' => $data['is_starter'] ?? false,
+                'valid_until' => $data['valid_until'] ?? null,
                 'plan_id' => $data['plan_id'],
                 'plan_price' => $data['plan_price'],
                 'plan_qty' => $data['plan_qty'],

@@ -73,6 +73,8 @@ class ServiceRequest extends FormRequest
 
                 if ($package && ! $package->is_starter) {
                     $validator->errors()->add('package_id', 'Paket yang dipilih tidak tersedia untuk pendaftaran baru.');
+                } elseif ($package && ! $package->isAvailable()) {
+                    $validator->errors()->add('package_id', 'Paket yang dipilih sudah melewati masa berlaku.');
                 }
             }
         });

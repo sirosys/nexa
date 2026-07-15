@@ -32,6 +32,15 @@
                     <span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-[13px] font-semibold text-gray-500 dark:bg-gray-700 dark:text-gray-400">Tidak</span>
                 @endif
             </x-detail-row>
+            <x-detail-row label="Masa Berlaku">
+                @if (! $package->valid_until)
+                    <span class="inline-flex items-center rounded-full bg-info-light px-3 py-1 text-[13px] font-semibold text-info dark:bg-info/10">Unlimited</span>
+                @elseif ($package->isAvailable())
+                    <span class="inline-flex items-center rounded-full bg-success-light px-3 py-1 text-[13px] font-semibold text-success dark:bg-success/10">Aktif s.d. {{ $package->valid_until->translatedFormat('d F Y, H:i') }}</span>
+                @else
+                    <span class="inline-flex items-center rounded-full bg-danger-light px-3 py-1 text-[13px] font-semibold text-danger dark:bg-danger/10">Kadaluarsa sejak {{ $package->valid_until->translatedFormat('d F Y, H:i') }}</span>
+                @endif
+            </x-detail-row>
             <x-detail-row label="Plan">
                 @if ($package->plan)
                     <a href="{{ route('plans.show', $package->plan) }}" class="font-medium text-primary hover:underline">{{ $package->plan->name }}</a>

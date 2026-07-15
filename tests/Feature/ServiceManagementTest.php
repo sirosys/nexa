@@ -251,6 +251,63 @@ class ServiceManagementTest extends TestCase
         $response->assertSessionHasErrors('package_id');
     }
 
+    /**
+     * Paket promo yang sudah melewati valid_until tidak boleh lagi dipilih
+     * untuk pendaftaran baru — lihat CLAUDE.md "Product & Package".
+     */
+    public function test_expired_package_cannot_be_selected_at_registration(): void
+    {
+        $customer = $this->customer();
+        $subdistrict = Subdistrict::factory()->create();
+        $coverage = Coverage::factory()->create();
+        $package = Package::factory()->create(['is_starter' => true, 'valid_until' => now()->subDay()]);
+
+        $response = $this->actingAs($this->superadmin())->post('/services', [
+            'user_id' => $customer->id,
+            'package_id' => $package->id,
+            'address' => 'Jl. Contoh No. 14',
+            'subdistrict_id' => $subdistrict->id,
+            'coverage_id' => $coverage->id,
+        ]);
+
+        $response->assertSessionHasErrors('package_id');
+    }
+
+    /**
+     * Paket unlimited (valid_until null) atau yang belum lewat tanggalnya
+     * tetap bisa dipilih seperti biasa.
+     */
+    public function test_unlimited_or_still_valid_package_can_be_selected_at_registration(): void
+    {
+        $customer = $this->customer();
+        $subdistrict = Subdistrict::factory()->create();
+        $coverage = Coverage::factory()->create();
+        $package = Package::factory()->create(['is_starter' => true, 'valid_until' => now()->addMonth()]);
+
+        $response = $this->actingAs($this->superadmin())->post('/services', [
+            'user_id' => $customer->id,
+            'package_id' => $package->id,
+            'address' => 'Jl. Contoh No. 15',
+            'subdistrict_id' => $subdistrict->id,
+            'coverage_id' => $coverage->id,
+        ]);
+
+        $response->assertSessionDoesntHaveErrors('package_id');
+    }
+
+    public function test_expired_package_is_excluded_from_registration_dropdown(): void
+    {
+        $superadmin = $this->superadmin();
+        $expired = Package::factory()->create(['is_starter' => true, 'valid_until' => now()->subDay(), 'name' => 'Paket Kadaluarsa Unik']);
+        $available = Package::factory()->create(['is_starter' => true, 'valid_until' => null, 'name' => 'Paket Unlimited Unik']);
+
+        $response = $this->actingAs($superadmin)->get('/services/create');
+
+        $response->assertOk();
+        $response->assertDontSee('Paket Kadaluarsa Unik');
+        $response->assertSee('Paket Unlimited Unik');
+    }
+
     public function test_subdistrict_coverage_and_package_must_exist(): void
     {
         $customer = $this->customer();
