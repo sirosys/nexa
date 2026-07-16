@@ -24,6 +24,7 @@ class RenewalService
         private readonly ReceiptService $receiptService,
         private readonly NotificationService $notificationService,
         private readonly MikrotikService $mikrotikService,
+        private readonly AuditLogService $auditLogService,
     ) {}
 
     /**
@@ -130,6 +131,7 @@ class RenewalService
 
         $this->mikrotikService->disable($service);
         $this->notificationService->send($service->user, new ServiceSuspendedNotification($service));
+        $this->auditLogService->record('service.suspended', $service, "Layanan {$service->code} disuspend otomatis karena telat bayar.");
     }
 
     /**
@@ -168,6 +170,7 @@ class RenewalService
 
         $this->mikrotikService->enable($service);
         $this->notificationService->send($service->user, new ServiceReactivatedNotification($service));
+        $this->auditLogService->record('service.reactivated', $service, "Layanan {$service->code} diaktifkan kembali setelah pembayaran perpanjangan diterima.");
 
         return $service;
     }

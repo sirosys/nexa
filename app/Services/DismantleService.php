@@ -17,6 +17,7 @@ class DismantleService
     public function __construct(
         private readonly NotificationService $notificationService,
         private readonly MikrotikService $mikrotikService,
+        private readonly AuditLogService $auditLogService,
     ) {}
 
     /**
@@ -26,7 +27,7 @@ class DismantleService
      */
     public function queue(Service $service, ?User $queuedBy = null): ServiceDismantle
     {
-        return DB::transaction(function () use ($service, $queuedBy) {
+        $dismantle = DB::transaction(function () use ($service, $queuedBy) {
             if (! in_array($service->status, [Service::STATUS_ACTIVE, Service::STATUS_SUSPENDED], true)) {
                 throw new RuntimeException('Layanan ini tidak dalam status yang bisa diantrekan untuk dismantle.');
             }
@@ -51,6 +52,14 @@ class DismantleService
 
             return $dismantle;
         });
+
+        $description = $queuedBy === null
+            ? "Layanan {$service->code} diantrekan untuk dismantle otomatis (suspend berkepanjangan)."
+            : "Layanan {$service->code} diantrekan untuk dismantle oleh {$queuedBy->name} (manual).";
+
+        $this->auditLogService->record('service.dismantle_queued', $service, $description);
+
+        return $dismantle;
     }
 
     public function assign(Service $service, User $technician, User $assignedBy): ServiceDismantle
@@ -130,6 +139,7 @@ class DismantleService
 
         $this->mikrotikService->remove($service);
         $this->notificationService->send($service->user, new ServiceDismantledNotification($service));
+        $this->auditLogService->record('service.dismantled', $service, "Layanan {$service->code} selesai dibongkar (dismantle).");
 
         return $service;
     }

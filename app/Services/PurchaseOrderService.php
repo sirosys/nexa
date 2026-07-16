@@ -10,7 +10,10 @@ use RuntimeException;
 
 class PurchaseOrderService
 {
-    public function __construct(private readonly InventoryService $inventoryService) {}
+    public function __construct(
+        private readonly InventoryService $inventoryService,
+        private readonly AuditLogService $auditLogService,
+    ) {}
 
     public function create(array $data): PurchaseOrder
     {
@@ -97,6 +100,8 @@ class PurchaseOrderService
             'updated_by' => Auth::id(),
         ]);
 
+        $this->auditLogService->record('purchase_order.ordered', $purchaseOrder, "Purchase Order {$purchaseOrder->code} ditandai dipesan.");
+
         return $purchaseOrder;
     }
 
@@ -111,6 +116,8 @@ class PurchaseOrderService
             'canceled_at' => now(),
             'updated_by' => Auth::id(),
         ]);
+
+        $this->auditLogService->record('purchase_order.canceled', $purchaseOrder, "Purchase Order {$purchaseOrder->code} dibatalkan.");
 
         return $purchaseOrder;
     }
@@ -130,7 +137,7 @@ class PurchaseOrderService
             throw new RuntimeException('Cuma Purchase Order berstatus dipesan yang bisa diterima.');
         }
 
-        return DB::transaction(function () use ($purchaseOrder, $serialNumbersByItem) {
+        $purchaseOrder = DB::transaction(function () use ($purchaseOrder, $serialNumbersByItem) {
             $purchaseOrder->load('inventoryItems');
 
             foreach ($purchaseOrder->inventoryItems as $item) {
@@ -173,5 +180,9 @@ class PurchaseOrderService
 
             return $purchaseOrder;
         });
+
+        $this->auditLogService->record('purchase_order.received', $purchaseOrder, "Purchase Order {$purchaseOrder->code} diterima, stok Inventaris diperbarui.");
+
+        return $purchaseOrder;
     }
 }

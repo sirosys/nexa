@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\CoverageController;
 use App\Http\Controllers\DashboardController;
@@ -144,4 +145,9 @@ Route::middleware('auth')->group(function () {
     // sekaligus.
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
+
+    // Modul Audit Log — lihat CLAUDE.md "Audit Log". Read-only, tidak ada
+    // create/update/delete lewat UI (append-only, dicatat lewat
+    // AuditLogService::record() di titik-titik aksi sensitif).
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 });

@@ -62,6 +62,7 @@
             'label' => 'Sistem',
             'items' => [
                 ['label' => 'Pengaturan', 'route' => 'settings.index', 'icon' => 'cog-6-tooth', 'permission' => 'settings.view'],
+                ['label' => 'Log Aktivitas', 'route' => 'audit-logs.index', 'icon' => 'shield-check', 'permission' => 'audit_logs.view'],
             ],
         ],
     ];

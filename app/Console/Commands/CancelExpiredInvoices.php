@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Sale;
 use App\Models\Service;
+use App\Services\AuditLogService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -19,7 +20,7 @@ class CancelExpiredInvoices extends Command
      * membatalkan Sale/Service supaya tidak ada dua sumber kebenaran soal
      * kapan sesuatu dianggap batal.
      */
-    public function handle(): int
+    public function handle(AuditLogService $auditLogService): int
     {
         $expired = Sale::query()
             ->whereNotNull('invoiced_at')
@@ -37,6 +38,8 @@ class CancelExpiredInvoices extends Command
 
                 $sale->receipt?->update(['status' => 'EXPIRED']);
             });
+
+            $auditLogService->record('sale.canceled', $sale, "Tagihan {$sale->code} dibatalkan otomatis (lewat jatuh tempo).");
         }
 
         $this->info("Dibatalkan: {$expired->count()} tagihan.");

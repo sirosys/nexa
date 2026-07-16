@@ -18,6 +18,7 @@ class InstallationService
         private readonly NotificationService $notificationService,
         private readonly MikrotikService $mikrotikService,
         private readonly InventoryService $inventoryService,
+        private readonly AuditLogService $auditLogService,
     ) {}
 
     public function assign(Service $service, User $installer, User $assignedBy): ServiceActivation
@@ -112,6 +113,7 @@ class InstallationService
 
         $this->mikrotikService->provision($service);
         $this->notificationService->send($service->user, new ServiceActivatedNotification($service));
+        $this->auditLogService->record('service.activated', $service, "Layanan {$service->code} diaktifkan (instalasi selesai).");
 
         return $service;
     }

@@ -21,7 +21,10 @@ class UserService
         'customer' => 'Pelanggan',
     ];
 
-    public function __construct(private readonly NotificationService $notificationService) {}
+    public function __construct(
+        private readonly NotificationService $notificationService,
+        private readonly AuditLogService $auditLogService,
+    ) {}
 
     public function create(array $data): User
     {
@@ -60,12 +63,21 @@ class UserService
 
         $this->notificationService->send($user, new UserRegisteredNotification(self::ROLE_LABELS[$data['role']] ?? $data['role']));
 
+        $roleLabel = self::ROLE_LABELS[$data['role']] ?? $data['role'];
+        $this->auditLogService->record(
+            'user.created',
+            $user,
+            "Membuat akun pengguna baru \"{$user->name}\" (role: {$roleLabel}).",
+        );
+
         return $user;
     }
 
     public function update(User $user, array $data): User
     {
-        return DB::transaction(function () use ($user, $data) {
+        $oldRole = $user->getRoleNames()->first();
+
+        $user = DB::transaction(function () use ($user, $data) {
             $user->update([
                 'name' => $data['name'],
                 'phone' => $data['phone'],
@@ -98,6 +110,22 @@ class UserService
 
             return $user;
         });
+
+        $newRole = $user->getRoleNames()->first();
+
+        if ($oldRole !== $newRole) {
+            $oldLabel = self::ROLE_LABELS[$oldRole] ?? $oldRole;
+            $newLabel = self::ROLE_LABELS[$newRole] ?? $newRole;
+
+            $this->auditLogService->record(
+                'user.role_changed',
+                $user,
+                "Mengubah role pengguna \"{$user->name}\" dari {$oldLabel} menjadi {$newLabel}.",
+                ['from' => $oldRole, 'to' => $newRole],
+            );
+        }
+
+        return $user;
     }
 
     /**
@@ -120,10 +148,19 @@ class UserService
 
     public function delete(User $user): void
     {
+        $name = $user->name;
+        $phone = $user->phone;
+
         if ($user->userDetails?->ktp_photo) {
             Storage::disk('local')->delete($user->userDetails->ktp_photo);
         }
 
         $user->delete();
+
+        $this->auditLogService->record(
+            'user.deleted',
+            null,
+            "Menghapus akun pengguna \"{$name}\" ({$phone}).",
+        );
     }
 }
