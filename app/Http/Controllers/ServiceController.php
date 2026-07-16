@@ -7,6 +7,7 @@ use App\Http\Requests\ServiceRequest;
 use App\Models\Coverage;
 use App\Models\Package;
 use App\Models\Service;
+use App\Models\Subdistrict;
 use App\Models\User;
 use App\Services\ServiceService;
 use App\Services\UserService;
@@ -39,14 +40,26 @@ class ServiceController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('services.index', ['services' => $services, 'q' => $request->string('q')->value()]);
-    }
+        // Dipakai modal wizard "Tambah Service" (lihat services/_wizard.blade.php)
+        // untuk mengisi ulang label pelanggan/wilayah yang sudah dipilih kalau
+        // redirect-back membawa error validasi — tanpa ini staff harus mengulang
+        // step 1/3 dari nol tiap kali validasi step berikutnya gagal.
+        $oldCustomer = $request->old('user_id')
+            ? User::with('userDetails')->find($request->old('user_id'))
+            : null;
+        $oldSubdistrict = $request->old('subdistrict_id')
+            ? Subdistrict::find($request->old('subdistrict_id'))
+            : null;
 
-    public function create(): View
-    {
-        return view('services.create', [
+        return view('services.index', [
+            'services' => $services,
+            'q' => $request->string('q')->value(),
             'coverages' => Coverage::orderBy('name')->get(),
-            'packages' => Package::where('is_starter', true)->available()->orderBy('name')->get(),
+            'packages' => Package::with('plan')->where('is_starter', true)->available()->orderBy('name')->get(),
+            'oldCustomerLabel' => $oldCustomer ? "{$oldCustomer->name} ({$oldCustomer->phone})" : '',
+            'oldSubdistrictLabel' => $oldSubdistrict
+                ? "{$oldSubdistrict->name}, {$oldSubdistrict->district_name}, {$oldSubdistrict->city_name}, {$oldSubdistrict->province_name}"
+                : '',
         ]);
     }
 

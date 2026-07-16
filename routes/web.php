@@ -68,7 +68,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/users/{user}/complete-kyc', [UserController::class, 'completeKyc'])->name('users.complete-kyc');
-    Route::resource('users', UserController::class);
+    // 'create' sengaja tidak dipakai — "Tambah Pengguna" sekarang modal di
+    // halaman index (lihat users/index.blade.php), bukan halaman terpisah.
+    Route::resource('users', UserController::class)->except(['create']);
     Route::get('/secure/ktp/{user}', [KtpPhotoController::class, 'show'])->name('secure.ktp');
     Route::resource('plans', PlanController::class);
     Route::resource('products', ProductController::class);
@@ -78,7 +80,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('coverages', CoverageController::class);
     Route::get('/services/customers/search', [ServiceController::class, 'searchCustomers'])->name('services.customers.search');
     Route::post('/services/customers', [ServiceController::class, 'storeCustomer'])->name('services.customers.store');
-    Route::resource('services', ServiceController::class);
+    // 'create' sengaja tidak dipakai — "Tambah Service" sekarang modal wizard
+    // di halaman index (lihat services/index.blade.php + _wizard.blade.php),
+    // bukan halaman terpisah. Pola sama users.store, lihat CLAUDE.md "User".
+    Route::resource('services', ServiceController::class)->except(['create']);
     Route::get('/sales/services/search', [SaleController::class, 'searchServices'])->name('sales.services.search');
     Route::post('/sales/{sale}/receipt/retry', [SaleController::class, 'retryReceipt'])->name('sales.receipt.retry');
     Route::resource('sales', SaleController::class);

@@ -347,13 +347,18 @@ class ServiceManagementTest extends TestCase
         $response->assertSessionDoesntHaveErrors('package_id');
     }
 
+    /**
+     * Paket starter ditampilkan di step 2 modal wizard "Tambah Service" di
+     * halaman index (bukan lagi halaman /services/create terpisah, lihat
+     * CLAUDE.md "Service").
+     */
     public function test_expired_package_is_excluded_from_registration_dropdown(): void
     {
         $superadmin = $this->superadmin();
         $expired = Package::factory()->create(['is_starter' => true, 'valid_until' => now()->subDay(), 'name' => 'Paket Kadaluarsa Unik']);
         $available = Package::factory()->create(['is_starter' => true, 'valid_until' => null, 'name' => 'Paket Unlimited Unik']);
 
-        $response = $this->actingAs($superadmin)->get('/services/create');
+        $response = $this->actingAs($superadmin)->get('/services');
 
         $response->assertOk();
         $response->assertDontSee('Paket Kadaluarsa Unik');
@@ -474,7 +479,9 @@ class ServiceManagementTest extends TestCase
         $superadmin = $this->superadmin();
         $service = Service::factory()->create();
 
-        $this->actingAs($superadmin)->get('/services/create')->assertOk();
+        // "Tambah Service" sekarang modal wizard di halaman index, bukan
+        // halaman /services/create terpisah — lihat CLAUDE.md "Service".
+        $this->actingAs($superadmin)->get('/services')->assertOk();
         $this->actingAs($superadmin)->get("/services/{$service->id}/edit")->assertOk();
     }
 

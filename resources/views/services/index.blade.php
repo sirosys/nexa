@@ -15,19 +15,24 @@
 @endphp
 
 <x-app-layout :title="'Layanan — ' . config('app.name', 'NEXA')">
+    {{-- showCreateModal auto-terbuka kalau redirect balik ke sini membawa
+        error validasi dari submit wizard (lihat ServiceController::store()
+        dan services/_wizard.blade.php untuk step mana yang dibuka). --}}
+    <div x-data="{ showCreateModal: {{ \Illuminate\Support\Js::from($errors->any()) }} }">
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Layanan</h1>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Langganan pelanggan (alamat pemasangan + coverage).</p>
         </div>
 
-        <a
-            href="{{ route('services.create') }}"
+        <button
+            type="button"
+            @click="showCreateModal = true"
             class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98] inline-flex items-center gap-2"
         >
-        <x-icon name="plus" size="4" />
-        Tambah Service
-        </a>
+            <x-icon name="plus" size="4" />
+            Tambah Service
+        </button>
     </div>
 
     @if (session('status'))
@@ -98,5 +103,34 @@
                 {{ $services->links() }}
             </div>
         @endif
+    </div>
+
+    {{-- Modal "Tambah Service" — wizard bertahap menggantikan halaman
+        /services/create terpisah, lihat CLAUDE.md "Service". --}}
+    <div
+        x-show="showCreateModal"
+        x-cloak
+        class="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-gray-900/50 p-4"
+        @keydown.escape.window="showCreateModal = false"
+    >
+        <div
+            x-show="showCreateModal"
+            @click.outside="showCreateModal = false"
+            class="my-8 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800 sm:p-8"
+        >
+            <div class="mb-6 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tambah Service</h3>
+                <button type="button" @click="showCreateModal = false" class="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300">
+                    <x-icon name="x-mark" size="5" />
+                </button>
+            </div>
+
+            <form method="POST" action="{{ route('services.store') }}">
+                @csrf
+
+                @include('services._wizard')
+            </form>
+        </div>
+    </div>
     </div>
 </x-app-layout>
