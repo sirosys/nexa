@@ -109,11 +109,16 @@
             this.customerQuery = '';
         },
 
-        // Modal "Tambah Pelanggan Baru" — field-nya SAMA dengan form "Tambah
-        // Pengguna" di /users (nama/telepon/email/NIK/foto KTP, lihat
-        // CLAUDE.md "Service"), satu submission langsung lengkap. Multipart
+        // Modal 'Tambah Pelanggan Baru' — field-nya SAMA dengan form 'Tambah
+        // Pengguna' di /users (nama/telepon/email/NIK/foto KTP, lihat
+        // CLAUDE.md 'Service'), satu submission langsung lengkap. Multipart
         // (ada file upload) lewat FormData + fetch, pola sama submitKyc()
         // di bawah — bukan lagi JSON, supaya ktp_photo ikut terkirim.
+        // PENTING: attribute x-data ini dibungkus tanda kutip GANDA di HTML
+        // (lihat pembuka blok ini), jadi string/komentar JS di dalam sini
+        // TIDAK BOLEH mengandung tanda kutip ganda literal — pakai kutip
+        // tunggal, kalau tidak atribut x-data akan terpotong di tengah dan
+        // sisa JS-nya bocor jadi teks halaman biasa (bug nyata, 2026-07-16).
         showAddCustomerModal: false,
         newCustomer: { name: '', phone: '', email: '', nik: '' },
         newCustomerPhotoFile: null,
@@ -160,11 +165,11 @@
                 .finally(() => { this.newCustomerSubmitting = false; });
         },
 
-        // Modal "Lengkapi NIK & Foto KTP" — sekarang HANYA untuk pelanggan
+        // Modal 'Lengkapi NIK & Foto KTP' — sekarang HANYA untuk pelanggan
         // LAMA yang ketemu lewat pencarian tapi datanya belum lengkap
         // (dipicu dari selectCustomer() di atas). Pelanggan BARU dari modal
-        // "Tambah Pelanggan Baru" tidak lagi lewat sini — NIK/foto KTP-nya
-        // sudah diminta langsung di modal itu, lihat CLAUDE.md "Service".
+        // 'Tambah Pelanggan Baru' tidak lagi lewat sini — NIK/foto KTP-nya
+        // sudah diminta langsung di modal itu, lihat CLAUDE.md 'Service'.
         showKycModal: false,
         kycUser: { id: null, code: null, name: '' },
         kycNik: '',
