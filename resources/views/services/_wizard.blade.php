@@ -109,26 +109,40 @@
             this.customerQuery = '';
         },
 
+        // Modal "Tambah Pelanggan Baru" — field-nya SAMA dengan form "Tambah
+        // Pengguna" di /users (nama/telepon/email/NIK/foto KTP, lihat
+        // CLAUDE.md "Service"), satu submission langsung lengkap. Multipart
+        // (ada file upload) lewat FormData + fetch, pola sama submitKyc()
+        // di bawah — bukan lagi JSON, supaya ktp_photo ikut terkirim.
         showAddCustomerModal: false,
-        newCustomer: { name: '', phone: '', email: '' },
+        newCustomer: { name: '', phone: '', email: '', nik: '' },
+        newCustomerPhotoFile: null,
         newCustomerErrors: {},
         newCustomerSubmitting: false,
         openAddCustomerModal() {
-            this.newCustomer = { name: '', phone: '', email: '' };
+            this.newCustomer = { name: '', phone: '', email: '', nik: '' };
+            this.newCustomerPhotoFile = null;
             this.newCustomerErrors = {};
             this.showAddCustomerModal = true;
         },
         submitNewCustomer() {
             this.newCustomerSubmitting = true;
             this.newCustomerErrors = {};
+            const formData = new FormData();
+            formData.append('name', this.newCustomer.name);
+            formData.append('phone', this.newCustomer.phone);
+            formData.append('email', this.newCustomer.email);
+            formData.append('nik', this.newCustomer.nik);
+            if (this.newCustomerPhotoFile) {
+                formData.append('ktp_photo', this.newCustomerPhotoFile);
+            }
             fetch('{{ route('services.customers.store') }}', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': this.csrfToken(),
                 },
-                body: JSON.stringify(this.newCustomer),
+                body: formData,
             })
                 .then(async (res) => {
                     const data = await res.json();
@@ -136,12 +150,21 @@
                         this.newCustomerErrors = data.errors || {};
                         return;
                     }
+                    // Pelanggan baru sudah lengkap NIK & foto KTP sejak awal
+                    // (tidak lagi disusul modal KYC terpisah) — langsung
+                    // terpilih di step 1, nama langsung tercantum di form.
                     this.showAddCustomerModal = false;
-                    this.openKycModalFor(data);
+                    this.customerId = data.id;
+                    this.customerQuery = data.name + ' (' + data.phone + ')';
                 })
                 .finally(() => { this.newCustomerSubmitting = false; });
         },
 
+        // Modal "Lengkapi NIK & Foto KTP" — sekarang HANYA untuk pelanggan
+        // LAMA yang ketemu lewat pencarian tapi datanya belum lengkap
+        // (dipicu dari selectCustomer() di atas). Pelanggan BARU dari modal
+        // "Tambah Pelanggan Baru" tidak lagi lewat sini — NIK/foto KTP-nya
+        // sudah diminta langsung di modal itu, lihat CLAUDE.md "Service".
         showKycModal: false,
         kycUser: { id: null, code: null, name: '' },
         kycNik: '',
@@ -580,9 +603,11 @@
         <div
             x-show="showAddCustomerModal"
             @click.outside="showAddCustomerModal = false"
-            class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800"
+            class="my-8 w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800"
+            style="max-height: calc(100vh - 4rem)"
         >
-            <h3 class="mb-4 text-base font-semibold text-gray-900 dark:text-white">Tambah Pelanggan Baru</h3>
+            <h3 class="mb-1 text-base font-semibold text-gray-900 dark:text-white">Tambah Pelanggan Baru</h3>
+            <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Data harus lengkap — sama seperti form "Tambah Pengguna" di halaman Pengguna.</p>
 
             <div class="space-y-4">
                 <div>
@@ -620,6 +645,30 @@
                     >
                     <p x-show="newCustomerErrors.email" x-text="newCustomerErrors.email?.[0]" class="mt-1.5 text-sm text-danger"></p>
                 </div>
+
+                <div>
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">NIK</label>
+                    <input
+                        type="text"
+                        x-model="newCustomer.nik"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        maxlength="16"
+                        class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white"
+                    >
+                    <p x-show="newCustomerErrors.nik" x-text="newCustomerErrors.nik?.[0]" class="mt-1.5 text-sm text-danger"></p>
+                </div>
+
+                <div>
+                    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Foto KTP</label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        @change="newCustomerPhotoFile = $event.target.files[0]"
+                        class="block w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-primary-light file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary dark:text-gray-300"
+                    >
+                    <p x-show="newCustomerErrors.ktp_photo" x-text="newCustomerErrors.ktp_photo?.[0]" class="mt-1.5 text-sm text-danger"></p>
+                </div>
             </div>
 
             <div class="mt-6 flex justify-end gap-2">
@@ -630,7 +679,7 @@
                     :disabled="newCustomerSubmitting"
                     class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98] disabled:opacity-60"
                 >
-                    <span x-show="! newCustomerSubmitting">Simpan &amp; Lanjutkan</span>
+                    <span x-show="! newCustomerSubmitting">Simpan Pelanggan</span>
                     <span x-show="newCustomerSubmitting">Menyimpan...</span>
                 </button>
             </div>

@@ -139,10 +139,10 @@ class ServiceController extends Controller
 
     /**
      * Modal "Tambah Pelanggan Baru" di form Service (dipakai kalau pelanggan
-     * tidak ditemukan di typeahead) — lihat CLAUDE.md "Service". Selalu
-     * role customer, tanpa NIK/foto KTP (disusul modal "Lengkapi NIK &
-     * Foto KTP" terpisah, karena keduanya wajib diisi sebelum Service bisa
-     * didaftarkan).
+     * tidak ditemukan di typeahead) — lihat CLAUDE.md "Service". Selalu role
+     * customer. NIK & foto KTP diisi LANGSUNG di sini (sejak 2026-07-16,
+     * disamakan dengan form "Tambah Pengguna" di /users) — bukan lagi
+     * disusul modal "Lengkapi NIK & Foto KTP" terpisah.
      */
     public function storeCustomer(QuickCreateCustomerRequest $request): JsonResponse
     {
@@ -151,15 +151,15 @@ class ServiceController extends Controller
         $customer = $this->userService->create([
             ...$request->validated(),
             'role' => 'customer',
-        ]);
+        ])->load('userDetails');
 
         return response()->json([
             'id' => $customer->id,
             'name' => $customer->name,
             'phone' => $customer->phone,
             'code' => $customer->code,
-            'has_nik' => false,
-            'has_ktp_photo' => false,
+            'has_nik' => filled($customer->userDetails?->nik),
+            'has_ktp_photo' => filled($customer->userDetails?->ktp_photo),
         ], 201);
     }
 }

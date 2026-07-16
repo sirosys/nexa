@@ -13,6 +13,7 @@ use App\Models\UserDetail;
 use App\Notifications\ServiceRegisteredNotification;
 use App\Services\Whatsapp\WhatsappGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\Support\CapturingWhatsappGateway;
 use Tests\Support\GeneratesValidNik;
 use Tests\TestCase;
@@ -607,24 +608,36 @@ class ServiceManagementTest extends TestCase
         $this->assertSame('Alamat Baru Tanpa Data Lengkap', $service->fresh()->address);
     }
 
+    /**
+     * NIK & foto KTP sekarang WAJIB diisi langsung di modal "Tambah
+     * Pelanggan Baru" (disamakan dengan form "Tambah Pengguna" di /users,
+     * lihat CLAUDE.md "Service") — tidak ada lagi modal "Lengkapi NIK &
+     * Foto KTP" susulan untuk jalur ini, jadi pelanggan yang baru dibuat
+     * langsung has_nik/has_ktp_photo true.
+     */
     public function test_quick_create_customer_endpoint_creates_customer_and_sends_whatsapp_notification(): void
     {
         $gateway = $this->fakeGateway();
         $superadmin = $this->superadmin();
+        $nik = $this->validNik();
 
-        $response = $this->actingAs($superadmin)->postJson('/services/customers', [
+        $response = $this->actingAs($superadmin)->post('/services/customers', [
             'name' => 'pelanggan   baru',
             'phone' => '81234000111',
             'email' => 'pelanggan.baru@example.com',
-        ]);
+            'nik' => $nik,
+            'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
+        ], ['Accept' => 'application/json']);
 
         $response->assertCreated();
-        $response->assertJsonFragment(['name' => 'Pelanggan Baru', 'has_nik' => false, 'has_ktp_photo' => false]);
+        $response->assertJsonFragment(['name' => 'Pelanggan Baru', 'has_nik' => true, 'has_ktp_photo' => true]);
 
         $customer = User::where('phone', '6281234000111')->firstOrFail();
         $this->assertTrue($customer->hasRole('customer'));
         $this->assertSame('pelanggan.baru@example.com', $customer->email);
         $this->assertNotNull($customer->code);
+        $this->assertSame($nik, $customer->userDetails->nik);
+        $this->assertNotNull($customer->userDetails->ktp_photo);
         $this->assertSame((string) $customer->phone, $gateway->phone);
     }
 
@@ -633,24 +646,42 @@ class ServiceManagementTest extends TestCase
         $superadmin = $this->superadmin();
         User::factory()->create(['phone' => '6281234000222', 'email' => 'sudah.ada@example.com']);
 
-        $response = $this->actingAs($superadmin)->postJson('/services/customers', [
+        $response = $this->actingAs($superadmin)->post('/services/customers', [
             'name' => 'Pelanggan Baru',
             'phone' => '81234000222',
             'email' => 'sudah.ada@example.com',
-        ]);
+            'nik' => $this->validNik(),
+            'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
+        ], ['Accept' => 'application/json']);
 
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors(['phone', 'email']);
+    }
+
+    public function test_quick_create_customer_endpoint_rejects_missing_nik_or_ktp_photo(): void
+    {
+        $superadmin = $this->superadmin();
+
+        $response = $this->actingAs($superadmin)->post('/services/customers', [
+            'name' => 'Pelanggan Tanpa KYC',
+            'phone' => '81234000444',
+            'email' => 'tanpa.kyc@example.com',
+        ], ['Accept' => 'application/json']);
+
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors(['nik', 'ktp_photo']);
     }
 
     public function test_quick_create_customer_endpoint_forbidden_for_non_superadmin(): void
     {
         $staff = $this->withRole('technician');
 
-        $this->actingAs($staff)->postJson('/services/customers', [
+        $this->actingAs($staff)->post('/services/customers', [
             'name' => 'Pelanggan Baru',
             'phone' => '81234000333',
             'email' => 'pelanggan.lain@example.com',
-        ])->assertForbidden();
+            'nik' => $this->validNik(),
+            'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
+        ], ['Accept' => 'application/json'])->assertForbidden();
     }
 }
