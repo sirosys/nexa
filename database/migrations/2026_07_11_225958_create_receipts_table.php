@@ -21,6 +21,10 @@ return new class extends Migration
             // Null berarti belum berhasil dibuat di Xendit (mis. panggilan
             // HTTP gagal) — sinyal untuk tombol retry manual di UI.
             $table->string('xendit_payment_request_id')->nullable()->unique();
+            // Diisi begitu pelanggan memilih channel di halaman
+            // /pay/{receipt} — null berarti masih menunggu pelanggan
+            // memilih (status AWAITING_CHANNEL_SELECTION).
+            $table->string('channel_code')->nullable();
             $table->decimal('amount', 12, 2);
             // Mirror status mentah dari Xendit (PENDING/REQUIRES_ACTION/
             // SUCCEEDED/FAILED/EXPIRED, dst) — sengaja tidak diterjemahkan

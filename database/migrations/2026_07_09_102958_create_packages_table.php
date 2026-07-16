@@ -15,6 +15,18 @@ return new class extends Migration
             $table->id();
             $table->string('code')->nullable()->unique();
             $table->boolean('is_starter')->default(false);
+            // null = unlimited (paket selalu tersedia dipilih selama masih
+            // is_starter). Terisi = paket otomatis tidak lagi ditawarkan
+            // untuk pendaftaran baru begitu tanggal ini lewat — lihat
+            // Package::isAvailable()/scopeAvailable().
+            $table->timestamp('valid_until')->nullable();
+            // Plan (tier layanan internet) wajib untuk semua paket — lihat
+            // CLAUDE.md "Plan"/"Product & Package". Nullable di DB murni
+            // supaya migration bisa dijalankan ke tabel berisi data;
+            // "wajib" ditegakkan di PackageRequest.
+            $table->foreignId('plan_id')->nullable()->constrained('plans')->restrictOnDelete();
+            // Jumlah bulan Plan yang dibeli di paket ini, input manual staff.
+            $table->unsignedSmallInteger('plan_qty')->nullable();
             $table->string('name');
             $table->text('description')->nullable();
             $table->decimal('price', 12, 2);

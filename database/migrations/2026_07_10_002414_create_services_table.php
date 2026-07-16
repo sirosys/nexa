@@ -23,8 +23,12 @@ return new class extends Migration
             $table->string('rt')->nullable();
             $table->foreignId('coverage_id')->constrained('coverages')->restrictOnDelete();
             $table->foreignId('package_id')->constrained('packages')->restrictOnDelete();
+            // Kolom enum eksplisit (bukan dihitung dari kombinasi
+            // timestamp) — lihat App\Models\Service::STATUSES.
+            $table->string('status')->default('pending_payment');
             $table->timestamp('activated_at')->nullable();
             $table->timestamp('expired_at')->nullable();
+            $table->timestamp('suspended_at')->nullable();
             $table->timestamp('dismantled_at')->nullable();
             $table->timestamp('canceled_at')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

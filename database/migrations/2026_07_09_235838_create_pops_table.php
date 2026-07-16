@@ -20,7 +20,16 @@ return new class extends Migration
             $table->string('model')->nullable();
             $table->string('location')->nullable();
             $table->text('token')->nullable();
+            // Alamat router untuk integrasi MikroTik (lihat CLAUDE.md
+            // "Integrasi MikroTik") — token (di atas, encrypted) dipakai
+            // sebagai password Basic Auth, tidak ada kolom password baru.
+            $table->string('host')->nullable();
+            $table->unsignedSmallInteger('api_port')->nullable();
+            $table->string('api_username')->nullable();
             $table->timestamp('last_online_at')->nullable();
+            // Kolom enum eksplisit (bukan disimpulkan dari last_online_at),
+            // diisi scheduled command monitoring:check-pop-status.
+            $table->string('status')->default('unknown');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

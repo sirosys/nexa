@@ -15,8 +15,16 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            // Format internasional (62 + nomor, tanpa leading 0), lihat
+            // App\Support\PhoneNumber::normalize(). Nullable karena "harus
+            // terdaftar" ditegakkan di Form Request, bukan di DB.
+            $table->unsignedBigInteger('phone')->nullable()->unique();
+            // Cuma digenerate untuk role customer ('CUS'+6 digit) — lihat
+            // CLAUDE.md "User".
+            $table->string('code')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->timestamp('last_login_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
