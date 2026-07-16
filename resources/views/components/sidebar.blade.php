@@ -4,8 +4,12 @@
     // tidak berwenang (technician/finance/sales) tidak melihat menu yang kalau
     // diklik cuma akan 403 — permission sama persis dengan yang dipakai Policy
     // masing-masing modul (lihat CLAUDE.md "Authorization / Role & Permission").
-    // Item TANPA 'route' (placeholder, mis. "Billing"/"Laporan") sengaja tidak
-    // diberi permission — modulnya belum ada, jadi belum ada yang bisa digate.
+    // Item TANPA 'route' (placeholder, mis. "Billing") sengaja tidak diberi
+    // permission — modulnya belum ada, jadi belum ada yang bisa digate. Item
+    // yang route-nya salah satu dari beberapa sub-halaman (mis. "Laporan",
+    // 4 kategori) pakai 'active' terpisah (route pattern wildcard) supaya
+    // menu tetap ter-highlight di semua sub-halamannya, bukan cuma yang
+    // persis sama dengan 'route'.
     //
     // Dikelompokkan per area kerja (bukan lagi daftar flat 17 item) supaya lebih
     // gampang dipindai — meniru pengelompokan menu ala Metronic. Label grup
@@ -55,7 +59,7 @@
         [
             'label' => 'Lainnya',
             'items' => [
-                ['label' => 'Laporan', 'icon' => 'chart-bar', 'permission' => null],
+                ['label' => 'Laporan', 'route' => 'reports.finance', 'active' => 'reports.*', 'icon' => 'chart-bar', 'permission' => 'reports.view'],
             ],
         ],
         [
@@ -107,7 +111,7 @@
             @endif
             <ul class="space-y-1">
                 @foreach ($group['items'] as $item)
-                    @php $active = isset($item['route']) && request()->routeIs($item['route']); @endphp
+                    @php $active = isset($item['route']) && request()->routeIs($item['active'] ?? $item['route']); @endphp
                     <li>
                         <a
                             href="{{ isset($item['route']) ? route($item['route']) : '#' }}"

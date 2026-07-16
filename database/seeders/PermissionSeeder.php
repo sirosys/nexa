@@ -30,6 +30,7 @@ class PermissionSeeder extends Seeder
         'purchase_orders' => ['view', 'create', 'update', 'delete', 'order', 'receive', 'cancel'],
         'settings' => ['view', 'update'],
         'audit_logs' => ['view'],
+        'reports' => ['view'],
     ];
 
     /**

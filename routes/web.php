@@ -17,6 +17,7 @@ use App\Http\Controllers\PlanController;
 use App\Http\Controllers\PopController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceTicketController;
@@ -150,4 +151,14 @@ Route::middleware('auth')->group(function () {
     // create/update/delete lewat UI (append-only, dicatat lewat
     // AuditLogService::record() di titik-titik aksi sensitif).
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+    // Modul Reporting — lihat CLAUDE.md "Reporting". Murni agregasi
+    // read-only lintas modul, tidak melekat ke satu Eloquent model, jadi
+    // tanpa Policy class dan tanpa landing page — 4 halaman kategori
+    // berdiri sendiri (bukan tab Alpine satu halaman) supaya filter tanggal
+    // + paginasi tiap kategori independen lewat query string GET.
+    Route::get('/reports/finance', [ReportController::class, 'finance'])->name('reports.finance');
+    Route::get('/reports/operations', [ReportController::class, 'operations'])->name('reports.operations');
+    Route::get('/reports/customers', [ReportController::class, 'customers'])->name('reports.customers');
+    Route::get('/reports/inventory', [ReportController::class, 'inventory'])->name('reports.inventory');
 });
