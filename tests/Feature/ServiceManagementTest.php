@@ -71,7 +71,14 @@ class ServiceManagementTest extends TestCase
         $customer = $this->customer();
         $subdistrict = Subdistrict::factory()->create();
         $coverage = Coverage::factory()->create();
+        // Paket berbayar (bukan gratis) — supaya assertion status di bawah
+        // menguji alur normal "menunggu pembayaran", bukan kebetulan lolos
+        // gara-gara package factory default tidak membundel produk apa pun
+        // (grandtotal 0 auto-settle langsung ke pending_installation, lihat
+        // test_registering_with_free_package_skips_straight_to_installation).
         $package = Package::factory()->create(['is_starter' => true]);
+        $product = Product::factory()->create(['price' => 150000]);
+        $package->products()->attach($product->id, ['quantity' => 1, 'price' => 150000]);
 
         $response = $this->actingAs($this->superadmin())->post('/services', [
             'user_id' => $customer->id,
@@ -93,6 +100,45 @@ class ServiceManagementTest extends TestCase
         $this->assertSame($customer->id, $service->user_id);
         $this->assertSame($package->id, $service->package_id);
         $this->assertSame(Service::STATUS_PENDING_PAYMENT, $service->status);
+    }
+
+    /**
+     * Regression test untuk bug nyata: paket gratis (mis. promo) membuat
+     * ReceiptService::createForSale() langsung mengisi sale.settled_at
+     * tanpa pernah membuat Receipt — sebelum diperbaiki, tidak ada apa pun
+     * yang memicu transisi status Service, jadi macet selamanya di
+     * pending_payment tanpa tagihan yang pernah dibuat/dikirim ke
+     * pelanggan. Lihat CLAUDE.md "Service" / ServiceService::create().
+     *
+     * `price` dipaksa 0 lewat factory (bypass validasi PackageRequest)
+     * karena sejak 2026-07-16 harga paket pendaftaran tidak boleh lagi
+     * 0/gratis lewat form (lihat CLAUDE.md "Product & Package") — jalur
+     * defensif ini secara praktik sudah tidak mungkin tercapai lewat UI,
+     * tapi tetap diuji sebagai jaring pengaman kalau ada baris data lama
+     * yang masih 0.
+     */
+    public function test_registering_with_free_package_skips_straight_to_installation(): void
+    {
+        $customer = $this->customer();
+        $subdistrict = Subdistrict::factory()->create();
+        $coverage = Coverage::factory()->create();
+        $package = Package::factory()->create(['is_starter' => true, 'price' => 0]);
+
+        $this->actingAs($this->superadmin())->post('/services', [
+            'user_id' => $customer->id,
+            'package_id' => $package->id,
+            'address' => 'Jl. Contoh Promo No. 1',
+            'subdistrict_id' => $subdistrict->id,
+            'coverage_id' => $coverage->id,
+        ]);
+
+        $service = Service::where('address', 'Jl. Contoh Promo No. 1')->firstOrFail();
+        $this->assertSame(Service::STATUS_PENDING_INSTALLATION, $service->status);
+
+        $sale = $service->sales()->firstOrFail();
+        $this->assertSame('0.00', $sale->grandtotal);
+        $this->assertNotNull($sale->settled_at);
+        $this->assertFalse($sale->receipt()->exists());
     }
 
     /**
@@ -143,12 +189,12 @@ class ServiceManagementTest extends TestCase
     }
 
     /**
-     * Pakai paket gratis (tanpa produk, grandtotal 0) supaya cuma
-     * ServiceRegisteredNotification yang terkirim lewat WhatsApp di test
-     * ini — InvoiceCreatedNotification sengaja tidak terkirim untuk Sale
-     * gratis (lihat CLAUDE.md "Billing / Invoice (Xendit)"), jadi tidak
-     * menimpa isi CapturingWhatsappGateway yang cuma menyimpan satu pesan
-     * terakhir.
+     * Registrasi (paket gratis di sini) selalu mengirim lebih dari satu
+     * notifikasi WhatsApp berurutan (ServiceRegisteredNotification lalu
+     * PaymentReceivedNotification begitu Sale gratis auto-settled — lihat
+     * test_registering_with_free_package_skips_straight_to_installation),
+     * jadi dicari dari riwayat $gateway->messages, bukan cuma
+     * $gateway->message (yang cuma menyimpan panggilan TERAKHIR).
      */
     public function test_creating_service_sends_whatsapp_registration_notification(): void
     {
@@ -168,8 +214,11 @@ class ServiceManagementTest extends TestCase
 
         $service = Service::where('address', 'Jl. Contoh No. 21')->firstOrFail();
 
-        $this->assertSame((string) $customer->phone, $gateway->phone);
-        $this->assertStringContainsString($service->code, $gateway->message);
+        $registrationMessage = collect($gateway->messages)
+            ->firstWhere(fn (array $sent) => str_contains($sent['message'], $service->code));
+
+        $this->assertNotNull($registrationMessage, 'Tidak ada pesan WhatsApp yang berisi kode service.');
+        $this->assertSame((string) $customer->phone, $registrationMessage['phone']);
         $this->assertDatabaseHas('notifications', [
             'notifiable_id' => $customer->id,
             'type' => ServiceRegisteredNotification::class,
@@ -186,7 +235,10 @@ class ServiceManagementTest extends TestCase
         $customer = $this->customer();
         $subdistrict = Subdistrict::factory()->create();
         $coverage = Coverage::factory()->create();
-        $package = Package::factory()->create(['is_starter' => true]);
+        // price=0 — isolasi test ini ke perhitungan sale_products saja,
+        // tanpa kontribusi packages.price (lihat CLAUDE.md "Product &
+        // Package"/"Sales").
+        $package = Package::factory()->create(['is_starter' => true, 'price' => 0]);
         $product = Product::factory()->create(['price' => 150000]);
         $package->products()->attach($product->id, ['quantity' => 2, 'price' => 150000]);
 

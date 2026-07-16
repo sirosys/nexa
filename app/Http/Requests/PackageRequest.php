@@ -19,9 +19,12 @@ class PackageRequest extends FormRequest
             'valid_until' => ['nullable', 'date'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'price' => ['required', 'numeric', 'min:0'],
+            // Harga paket pendaftaran TIDAK PERNAH boleh gratis/0 (keputusan
+            // bisnis eksplisit user 2026-07-16) — beda dari harga produk
+            // pendukung individual (mis. biaya instalasi/modem) di bawah,
+            // yang tetap boleh 0 untuk promo "gratis pasang & modem".
+            'price' => ['required', 'numeric', 'gt:0'],
             'plan_id' => ['required', 'integer', 'exists:plans,id'],
-            'plan_price' => ['required', 'numeric', 'min:0'],
             'plan_qty' => ['required', 'integer', 'min:1'],
             'products' => ['required', 'array', 'min:1'],
             'products.*.product_id' => ['required', 'integer', 'exists:products,id'],

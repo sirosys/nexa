@@ -176,7 +176,7 @@ class RenewalReactivationTest extends TestCase
         Notification::fake();
 
         $plan = Plan::factory()->create(['price' => 150000]);
-        $package = Package::factory()->create(['plan_id' => $plan->id, 'plan_price' => 150000, 'plan_qty' => 1]);
+        $package = Package::factory()->create(['plan_id' => $plan->id, 'plan_qty' => 1]);
         $oldExpiredAt = now()->addDays(2);
         $service = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,

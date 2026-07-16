@@ -36,13 +36,14 @@ class PackageManagementTest extends TestCase
         $modem = Product::factory()->create(['type' => 'perangkat', 'price' => 350000]);
         $installation = Product::factory()->create(['type' => 'jasa', 'price' => 150000]);
 
+        // Produk pendukung (modem/instalasi) boleh gratis, harga paket
+        // sendiri tidak — lihat CLAUDE.md "Product & Package".
         $response = $this->actingAs($superadmin)->post('/packages', [
             'is_starter' => '1',
-            'name' => 'Paket Gratis 3 Bulan',
+            'name' => 'Promo 3 Bulan Gratis Modem & Instalasi',
             'description' => 'Promo pendaftaran baru.',
-            'price' => 0,
+            'price' => 200000,
             'plan_id' => $plan->id,
-            'plan_price' => 0,
             'plan_qty' => 3,
             'products' => [
                 ['product_id' => $modem->id, 'quantity' => 1, 'price' => 0],
@@ -52,12 +53,12 @@ class PackageManagementTest extends TestCase
 
         $response->assertRedirect(route('packages.index'));
 
-        $package = Package::where('name', 'Paket Gratis 3 Bulan')->firstOrFail();
+        $package = Package::where('name', 'Promo 3 Bulan Gratis Modem & Instalasi')->firstOrFail();
         $this->assertNotNull($package->code);
         $this->assertStringStartsWith('PKG', $package->code);
         $this->assertTrue($package->is_starter);
         $this->assertSame($plan->id, $package->plan_id);
-        $this->assertSame(0.0, (float) $package->plan_price);
+        $this->assertSame(200000.0, (float) $package->price);
         $this->assertSame(3, $package->plan_qty);
         $this->assertCount(2, $package->products);
         $this->assertDatabaseHas('package_product', [
@@ -65,6 +66,32 @@ class PackageManagementTest extends TestCase
             'product_id' => $modem->id,
             'quantity' => 1,
         ]);
+    }
+
+    /**
+     * Regression test untuk keputusan bisnis eksplisit (2026-07-16): harga
+     * paket pendaftaran tidak boleh 0/gratis — beda dari harga produk
+     * pendukung individual (modem/instalasi) yang tetap boleh 0. Lihat
+     * CLAUDE.md "Product & Package".
+     */
+    public function test_package_price_cannot_be_zero(): void
+    {
+        $plan = Plan::factory()->create();
+        $product = Product::factory()->create(['type' => 'perangkat']);
+
+        $response = $this->actingAs($this->superadmin())->post('/packages', [
+            'is_starter' => '1',
+            'name' => 'Paket Gratis Ditolak',
+            'price' => 0,
+            'plan_id' => $plan->id,
+            'plan_qty' => 1,
+            'products' => [
+                ['product_id' => $product->id, 'quantity' => 1, 'price' => 0],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors('price');
+        $this->assertDatabaseMissing('packages', ['name' => 'Paket Gratis Ditolak']);
     }
 
     public function test_superadmin_can_set_valid_until_for_promo_package(): void
@@ -78,7 +105,6 @@ class PackageManagementTest extends TestCase
             'name' => 'Paket Promo 2 Bulan',
             'price' => 100000,
             'plan_id' => $plan->id,
-            'plan_price' => 0,
             'plan_qty' => 1,
             'valid_until' => $validUntil->format('Y-m-d\TH:i'),
             'products' => [
@@ -116,7 +142,6 @@ class PackageManagementTest extends TestCase
         $response = $this->actingAs($this->superadmin())->post('/packages', [
             'name' => 'Paket Tanpa Plan',
             'price' => 100000,
-            'plan_price' => 0,
             'plan_qty' => 1,
             'products' => [
                 ['product_id' => $product->id, 'quantity' => 1, 'price' => 100000],
@@ -126,18 +151,18 @@ class PackageManagementTest extends TestCase
         $response->assertSessionHasErrors('plan_id');
     }
 
-    public function test_plan_price_and_plan_qty_are_required(): void
+    public function test_plan_qty_is_required(): void
     {
         $plan = Plan::factory()->create();
 
         $response = $this->actingAs($this->superadmin())->post('/packages', [
-            'name' => 'Paket Tanpa Plan Price/Qty',
+            'name' => 'Paket Tanpa Plan Qty',
             'price' => 100000,
             'plan_id' => $plan->id,
             'products' => [],
         ]);
 
-        $response->assertSessionHasErrors(['plan_price', 'plan_qty', 'products']);
+        $response->assertSessionHasErrors(['plan_qty', 'products']);
     }
 
     public function test_superadmin_can_update_package_plan_and_qty(): void
@@ -150,9 +175,8 @@ class PackageManagementTest extends TestCase
 
         $response = $this->actingAs($superadmin)->put("/packages/{$package->id}", [
             'name' => $package->name,
-            'price' => $package->price,
+            'price' => 130000,
             'plan_id' => $plan->id,
-            'plan_price' => 130000,
             'plan_qty' => 12,
             'products' => [
                 ['product_id' => $originalProduct->id, 'quantity' => 1, 'price' => 100000],
@@ -162,7 +186,7 @@ class PackageManagementTest extends TestCase
         $response->assertRedirect(route('packages.index'));
         $package->refresh();
         $this->assertSame($plan->id, $package->plan_id);
-        $this->assertSame(130000.0, (float) $package->plan_price);
+        $this->assertSame(130000.0, (float) $package->price);
         $this->assertSame(12, $package->plan_qty);
     }
 
@@ -180,7 +204,6 @@ class PackageManagementTest extends TestCase
             'name' => 'Paket Semesteran',
             'price' => 450000,
             'plan_id' => $plan->id,
-            'plan_price' => 0,
             'plan_qty' => 6,
             'products' => [],
         ]);
@@ -197,7 +220,6 @@ class PackageManagementTest extends TestCase
             'name' => 'Paket Duplikat',
             'price' => 100000,
             'plan_id' => $plan->id,
-            'plan_price' => 0,
             'plan_qty' => 1,
             'products' => [
                 ['product_id' => $product->id, 'quantity' => 1, 'price' => 50000],
@@ -212,7 +234,7 @@ class PackageManagementTest extends TestCase
     {
         $superadmin = $this->superadmin();
         $plan = Plan::factory()->create();
-        $package = Package::factory()->create(['plan_id' => $plan->id, 'plan_price' => 0, 'plan_qty' => 1]);
+        $package = Package::factory()->create(['plan_id' => $plan->id, 'plan_qty' => 1]);
         $originalProduct = Product::factory()->create(['type' => 'perangkat']);
         $package->products()->attach($originalProduct->id, ['quantity' => 1, 'price' => 100000]);
 
@@ -222,7 +244,6 @@ class PackageManagementTest extends TestCase
             'name' => $package->name,
             'price' => $package->price,
             'plan_id' => $plan->id,
-            'plan_price' => 0,
             'plan_qty' => 1,
             'products' => [
                 ['product_id' => $newProduct->id, 'quantity' => 2, 'price' => 75000],

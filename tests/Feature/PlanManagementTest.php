@@ -80,7 +80,7 @@ class PlanManagementTest extends TestCase
     {
         $superadmin = $this->superadmin();
         $plan = Plan::factory()->create();
-        Package::factory()->create(['plan_id' => $plan->id, 'plan_price' => 0, 'plan_qty' => 1]);
+        Package::factory()->create(['plan_id' => $plan->id, 'plan_qty' => 1]);
 
         $this->actingAs($superadmin)->delete("/plans/{$plan->id}");
 

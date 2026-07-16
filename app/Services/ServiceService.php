@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Package;
 use App\Models\Product;
 use App\Models\Service;
+use App\Notifications\PaymentReceivedNotification;
 use App\Notifications\ServiceRegisteredNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -62,6 +63,20 @@ class ServiceService
         // dibuat) — bukan di sini, supaya retry manual lewat
         // SaleController::retryReceipt() juga ikut mengirim notifikasi.
         $this->receiptService->createForSale($sale);
+
+        // Paket gratis (grandtotal 0, mis. promo) membuat
+        // ReceiptService::createForSale() langsung mengisi
+        // sale.settled_at TANPA pernah membuat Receipt — tidak ada
+        // webhook Xendit yang bisa memicu transisi
+        // pending_payment -> pending_installation seperti pembayaran
+        // sungguhan, jadi Service akan macet selamanya di
+        // pending_payment kalau tidak ditangani eksplisit di sini
+        // (pola sama RenewalService::createInvoiceForDueService() yang
+        // mendeteksi kasus sama untuk Sale perpanjangan).
+        if ($sale->fresh()->settled_at !== null) {
+            $sale->service->update(['status' => Service::STATUS_PENDING_INSTALLATION]);
+            $this->notificationService->send($sale->service->user, new PaymentReceivedNotification($sale));
+        }
 
         return $sale->service;
     }

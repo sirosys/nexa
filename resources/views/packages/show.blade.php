@@ -49,7 +49,6 @@
                 @endif
             </x-detail-row>
             <x-detail-row label="Durasi Plan">{{ $package->plan_qty }} bulan</x-detail-row>
-            <x-detail-row label="Harga Plan di Paket Ini">Rp{{ number_format((float) $package->plan_price, 0, ',', '.') }}</x-detail-row>
             <x-detail-row label="Harga Paket">Rp{{ number_format((float) $package->price, 0, ',', '.') }}</x-detail-row>
             <x-detail-row label="Deskripsi">{{ $package->description ?? '—' }}</x-detail-row>
             <x-detail-row label="Ditambahkan">{{ $package->created_at?->locale('id')->translatedFormat('d F Y, H:i') }}</x-detail-row>

@@ -79,11 +79,12 @@
             id="price"
             name="price"
             step="0.01"
-            min="0"
+            min="1"
             value="{{ old('price', $package?->price) }}"
             required
             class="block w-full max-w-xs rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
         >
+        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Harga paket pendaftaran tidak boleh gratis/Rp0 — kalau mau memberi promo gratis, terapkan di harga produk pendukung (mis. biaya instalasi/modem) di bawah, bukan di sini.</p>
         @error('price')
             <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
         @enderror
@@ -121,7 +122,7 @@
 
     <div class="border-t border-gray-200 pt-4 dark:border-gray-700">
         <label for="plan_id" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Plan</label>
-        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Layanan internet (tier) yang mewakili paket ini — dipakai sistem saat membuat tagihan perpanjangan otomatis (harga katalog Plan SAAT INI yang ditagih, bukan harga di bawah ini).</p>
+        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">Layanan internet (tier) yang mewakili paket ini. "Harga Paket" di atas yang ditagih ke pelanggan saat pendaftaran; perpanjangan otomatis (H-5) selalu memakai harga katalog Plan SAAT ITU, bukan harga paket ini.</p>
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <select
@@ -139,36 +140,19 @@
                     <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
                 @enderror
             </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <input
-                        type="number"
-                        name="plan_price"
-                        min="0"
-                        step="0.01"
-                        placeholder="Harga plan di paket ini"
-                        value="{{ old('plan_price', $package?->plan_price) }}"
-                        required
-                        class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
-                    >
-                    @error('plan_price')
-                        <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div>
-                    <input
-                        type="number"
-                        name="plan_qty"
-                        min="1"
-                        placeholder="Jumlah bulan"
-                        value="{{ old('plan_qty', $package?->plan_qty) }}"
-                        required
-                        class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
-                    >
-                    @error('plan_qty')
-                        <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
-                    @enderror
-                </div>
+            <div>
+                <input
+                    type="number"
+                    name="plan_qty"
+                    min="1"
+                    placeholder="Jumlah bulan"
+                    value="{{ old('plan_qty', $package?->plan_qty) }}"
+                    required
+                    class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
+                >
+                @error('plan_qty')
+                    <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+                @enderror
             </div>
         </div>
     </div>

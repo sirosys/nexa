@@ -66,7 +66,11 @@ class SaleManagementTest extends TestCase
     public function test_totals_calculated_correctly_from_line_items_including_per_line_discount(): void
     {
         $service = Service::factory()->create();
-        $package = Package::factory()->create();
+        // price=0 — sengaja mengisolasi test ini ke perhitungan baris
+        // produk saja, tanpa kontribusi packages.price (SATU-SATUNYA acuan
+        // harga paket sejak packages.plan_price dihapus, lihat CLAUDE.md
+        // "Product & Package") yang sekarang ikut ditambahkan ke total.
+        $package = Package::factory()->create(['price' => 0]);
         $productA = Product::factory()->create();
         $productB = Product::factory()->create();
 
@@ -181,7 +185,9 @@ class SaleManagementTest extends TestCase
     public function test_totals_cannot_be_overridden_from_request(): void
     {
         $service = Service::factory()->create();
-        $package = Package::factory()->create();
+        // price=0 — isolasi dari kontribusi packages.price, lihat komentar
+        // di test_totals_calculated_correctly_from_line_items_including_per_line_discount.
+        $package = Package::factory()->create(['price' => 0]);
         $product = Product::factory()->create();
 
         $this->actingAs($this->superadmin())->post('/sales', [
@@ -202,7 +208,9 @@ class SaleManagementTest extends TestCase
     public function test_superadmin_can_update_sale_and_recalculate_totals_when_line_items_change(): void
     {
         $service = Service::factory()->create();
-        $package = Package::factory()->create();
+        // price=0 — isolasi dari kontribusi packages.price, lihat komentar
+        // di test_totals_calculated_correctly_from_line_items_including_per_line_discount.
+        $package = Package::factory()->create(['price' => 0]);
         $productA = Product::factory()->create();
         $productB = Product::factory()->create();
 
@@ -354,7 +362,7 @@ class SaleManagementTest extends TestCase
         $superadmin = $this->superadmin();
         $service = Service::factory()->create();
         $plan = Plan::factory()->create(['name' => 'Internet Detail']);
-        $package = Package::factory()->create(['plan_id' => $plan->id, 'plan_price' => 150000, 'plan_qty' => 1]);
+        $package = Package::factory()->create(['plan_id' => $plan->id, 'price' => 150000, 'plan_qty' => 1]);
         $product = Product::factory()->create();
 
         $this->actingAs($superadmin)->post('/sales', [

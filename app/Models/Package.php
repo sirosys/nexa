@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['code', 'is_starter', 'valid_until', 'plan_id', 'plan_price', 'plan_qty', 'name', 'description', 'price', 'created_by', 'updated_by'])]
+#[Fillable(['code', 'is_starter', 'valid_until', 'plan_id', 'plan_qty', 'name', 'description', 'price', 'created_by', 'updated_by'])]
 class Package extends Model
 {
     /** @use HasFactory<PackageFactory> */
@@ -27,7 +27,6 @@ class Package extends Model
             'is_starter' => 'boolean',
             'valid_until' => 'datetime',
             'price' => 'decimal:2',
-            'plan_price' => 'decimal:2',
         ];
     }
 

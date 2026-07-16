@@ -88,7 +88,10 @@ class ReceiptCreationTest extends TestCase
         $this->app->instance(XenditGateway::class, $fake);
 
         $customer = $this->customer();
-        $package = Package::factory()->create(['is_starter' => true]);
+        // price=0 — isolasi test ini ke perhitungan sale_products saja,
+        // tanpa kontribusi packages.price (lihat CLAUDE.md "Product &
+        // Package"/"Sales").
+        $package = Package::factory()->create(['is_starter' => true, 'price' => 0]);
         $product = Product::factory()->create(['price' => 150000]);
         $package->products()->attach($product->id, ['quantity' => 1, 'price' => 150000]);
 
@@ -148,7 +151,12 @@ class ReceiptCreationTest extends TestCase
         $this->app->instance(XenditGateway::class, $fake);
 
         $customer = $this->customer();
-        $package = Package::factory()->create(['is_starter' => true]);
+        // price=0 (bypass validasi PackageRequest lewat factory — sejak
+        // 2026-07-16 harga paket pendaftaran tidak boleh 0 lewat form,
+        // lihat CLAUDE.md "Product & Package") — dipaksa di sini murni
+        // untuk menjaga jalur defensif "Sale gratis" tetap teruji, bukan
+        // skenario yang bisa dicapai lewat UI staff lagi.
+        $package = Package::factory()->create(['is_starter' => true, 'price' => 0]);
         // Tidak ada produk sama sekali dibundel — grandtotal tetap 0.
 
         $this->registerService($customer, $package);

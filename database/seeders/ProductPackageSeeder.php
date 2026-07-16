@@ -75,7 +75,6 @@ class ProductPackageSeeder extends Seeder
                 'price' => 100000,
                 'is_starter' => true,
                 'plan' => 'net_basic',
-                'plan_price' => 0,
                 'plan_qty' => 1,
                 'items' => [
                     ['product' => 'install', 'quantity' => 1, 'price' => 150000],
@@ -88,7 +87,6 @@ class ProductPackageSeeder extends Seeder
                 'price' => 150000,
                 'is_starter' => true,
                 'plan' => 'net_std',
-                'plan_price' => 0,
                 'plan_qty' => 1,
                 'items' => [
                     ['product' => 'install', 'quantity' => 1, 'price' => 150000],
@@ -101,7 +99,6 @@ class ProductPackageSeeder extends Seeder
                 'price' => 250000,
                 'is_starter' => true,
                 'plan' => 'net_prm',
-                'plan_price' => 0,
                 'plan_qty' => 1,
                 'items' => [
                     ['product' => 'install', 'quantity' => 1, 'price' => 150000],
@@ -121,7 +118,6 @@ class ProductPackageSeeder extends Seeder
                 'price' => 450000,
                 'is_starter' => false,
                 'plan' => 'net_basic',
-                'plan_price' => 0,
                 'plan_qty' => 6,
                 'items' => [],
             ],
@@ -131,7 +127,6 @@ class ProductPackageSeeder extends Seeder
                 'price' => 250000,
                 'is_starter' => true,
                 'plan' => 'net_basic',
-                'plan_price' => 0,
                 'plan_qty' => 3,
                 'items' => [
                     ['product' => 'install', 'quantity' => 1, 'price' => 0],
@@ -144,7 +139,6 @@ class ProductPackageSeeder extends Seeder
             $package = Package::create([
                 'is_starter' => $data['is_starter'],
                 'plan_id' => $plans[$data['plan']]->id,
-                'plan_price' => $data['plan_price'],
                 'plan_qty' => $data['plan_qty'],
                 'name' => $data['name'],
                 'description' => $data['description'],

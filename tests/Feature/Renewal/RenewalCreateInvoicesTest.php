@@ -17,20 +17,22 @@ class RenewalCreateInvoicesTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * $bundlePrice adalah harga snapshot di packages.plan_price (mis. harga
-     * promo registrasi) — beda dari $catalogPrice (plans.price), yang
-     * seharusnya justru dipakai RenewalService saat menagih perpanjangan
-     * (lihat CLAUDE.md "Renewal"). Default keduanya sama supaya test yang
-     * tidak spesifik menguji perbedaan ini tetap sederhana.
+     * $packagePrice adalah packages.price (harga paket pendaftaran, SATU-
+     * SATUNYA acuan harga paket sejak packages.plan_price dihapus) — beda
+     * dari $catalogPrice (plans.price), yang seharusnya justru dipakai
+     * RenewalService saat menagih perpanjangan, bukan harga paket ini
+     * (lihat CLAUDE.md "Renewal"/"Product & Package"). Default keduanya
+     * sama supaya test yang tidak spesifik menguji perbedaan ini tetap
+     * sederhana.
      */
-    private function packageWithPlan(float $catalogPrice = 200000, ?float $bundlePrice = null): Package
+    private function packageWithPlan(float $catalogPrice = 200000, ?float $packagePrice = null): Package
     {
         $plan = Plan::factory()->create(['price' => $catalogPrice]);
 
         return Package::factory()->create([
             'is_starter' => false,
             'plan_id' => $plan->id,
-            'plan_price' => $bundlePrice ?? $catalogPrice,
+            'price' => $packagePrice ?? $catalogPrice,
             'plan_qty' => 1,
         ]);
     }
@@ -138,11 +140,13 @@ class RenewalCreateInvoicesTest extends TestCase
      * Bukti utama fix bug SAL000002: Sale renewal cuma menagih Plan tier
      * paket ini (tidak ada baris sale_products sama sekali — modem/instalasi
      * TIDAK ikut tertagih ulang), pada harga katalog Plan SAAT INI — bukan
-     * harga snapshot promo yang tersimpan di packages.plan_price.
+     * packages.price milik paket registrasi ini (sengaja dibuat beda jauh
+     * di bawah supaya assertion gagal tegas kalau RenewalService diam-diam
+     * memakai packages.price, bukan plans.price).
      */
     public function test_renewal_invoice_only_bills_plan_at_current_catalog_price(): void
     {
-        $package = $this->packageWithPlan(catalogPrice: 150000, bundlePrice: 0);
+        $package = $this->packageWithPlan(catalogPrice: 150000, packagePrice: 999999);
 
         $service = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,

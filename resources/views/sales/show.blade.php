@@ -121,9 +121,9 @@
                             </td>
                             <td class="px-4 py-3 text-right text-gray-500 dark:text-gray-400">{{ $sale->plan_qty }}</td>
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">bulan</td>
-                            <td class="px-4 py-3 text-right text-gray-500 dark:text-gray-400">{{ number_format((float) $sale->plan_price, 2) }}</td>
+                            <td class="px-4 py-3 text-right text-gray-500 dark:text-gray-400">—</td>
                             <td class="px-4 py-3 text-right text-gray-500 dark:text-gray-400">0,00</td>
-                            <td class="px-4 py-3 text-right text-gray-900 dark:text-white">{{ number_format((float) $sale->plan_price * (int) $sale->plan_qty, 2) }}</td>
+                            <td class="px-4 py-3 text-right text-gray-900 dark:text-white">{{ number_format((float) $sale->plan_price, 2) }}</td>
                         </tr>
                     @endif
                     @forelse ($sale->products as $product)
