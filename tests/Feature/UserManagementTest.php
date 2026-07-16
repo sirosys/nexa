@@ -2,17 +2,31 @@
 
 namespace Tests\Feature;
 
+use App\Models\Subdistrict;
 use App\Models\User;
 use App\Services\Whatsapp\WhatsappGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\CapturingWhatsappGateway;
+use Tests\Support\GeneratesValidNik;
 use Tests\TestCase;
 
 class UserManagementTest extends TestCase
 {
-    use RefreshDatabase;
+    use GeneratesValidNik, RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // NIK_MALE/NIK_FEMALE di bawah berkode wilayah 320101 — beda dari
+        // NIK hasil trait GeneratesValidNik::validNik() (yang sudah bikin
+        // baris Subdistrict cocok sendiri), dua konstanta hardcoded ini
+        // butuh baris Subdistrict yang cocok disiapkan manual supaya lolos
+        // guard district_id di App\Rules\ValidNik.
+        Subdistrict::factory()->create(['district_id' => 320101]);
+    }
 
     private function fakeGateway(): CapturingWhatsappGateway
     {
@@ -22,10 +36,10 @@ class UserManagementTest extends TestCase
         return $gateway;
     }
 
-    // Male, born 17 Jan 1990.
+    // Male, born 17 Jan 1990. Kode wilayah 320101 — lihat setUp().
     private const NIK_MALE = '3201011701900001';
 
-    // Female, born 5 May 1995.
+    // Female, born 5 May 1995. Kode wilayah 320101 — lihat setUp().
     private const NIK_FEMALE = '3201014505950002';
 
     private function superadmin(): User
@@ -44,21 +58,37 @@ class UserManagementTest extends TestCase
         return $user;
     }
 
-    public function test_superadmin_can_create_customer_with_auto_generated_code_and_nik_derived_fields(): void
+    /**
+     * Field NIK & foto KTP wajib diisi di form "Tambah Pengguna" (lihat
+     * CLAUDE.md "User") — helper ini melengkapi payload create standar
+     * supaya tiap test tidak mengulang boilerplate ini sendiri-sendiri.
+     */
+    private function validCreatePayload(array $overrides = []): array
     {
-        $response = $this->actingAs($this->superadmin())->post('/users', [
+        return array_merge([
             'name' => 'Budi Santoso',
             'phone' => '81234567890',
             'email' => 'budi.santoso@example.com',
             'role' => 'customer',
+            'nik' => $this->validNik(),
+            'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
+        ], $overrides);
+    }
+
+    public function test_superadmin_can_create_customer_with_auto_generated_code_and_nik_derived_fields(): void
+    {
+        Storage::fake('local');
+
+        $response = $this->actingAs($this->superadmin())->post('/users', $this->validCreatePayload([
             'nik' => self::NIK_MALE,
-        ]);
+        ]));
 
         $response->assertRedirect(route('users.index'));
 
         $customer = User::where('phone', '6281234567890')->firstOrFail();
         $this->assertTrue($customer->hasRole('customer'));
         $this->assertNotNull($customer->code);
+        $this->assertSame(6, strlen($customer->code));
         $this->assertDatabaseHas('user_details', [
             'id' => $customer->id,
             'nik' => self::NIK_MALE,
@@ -67,20 +97,59 @@ class UserManagementTest extends TestCase
         ]);
     }
 
-    public function test_superadmin_can_create_technician_account_without_customer_code(): void
+    /**
+     * `code` sekarang digenerate untuk SEMUA role (bukan cuma customer,
+     * lihat CLAUDE.md "User") — beda dari perilaku lama.
+     */
+    public function test_superadmin_can_create_technician_account_with_auto_generated_code(): void
     {
-        $response = $this->actingAs($this->superadmin())->post('/users', [
+        Storage::fake('local');
+
+        $response = $this->actingAs($this->superadmin())->post('/users', $this->validCreatePayload([
             'name' => 'Teknisi Jaya',
             'phone' => '81355556666',
             'email' => 'teknisi.jaya@example.com',
             'role' => 'technician',
-        ]);
+        ]));
 
         $response->assertRedirect(route('users.index'));
 
         $staff = User::where('phone', '6281355556666')->firstOrFail();
         $this->assertTrue($staff->hasRole('technician'));
-        $this->assertNull($staff->code);
+        $this->assertNotNull($staff->code);
+    }
+
+    /**
+     * Semua kolom di form "Tambah Pengguna" wajib (lihat CLAUDE.md "User")
+     * — NIK & foto KTP tidak lagi opsional saat create, terlepas dari role.
+     */
+    public function test_nik_and_ktp_photo_are_required_when_creating_a_user(): void
+    {
+        $response = $this->actingAs($this->superadmin())->post('/users', [
+            'name' => 'Budi Santoso',
+            'phone' => '81234567890',
+            'email' => 'budi.santoso@example.com',
+            'role' => 'customer',
+        ]);
+
+        $response->assertSessionHasErrors(['nik', 'ktp_photo']);
+        $this->assertDatabaseMissing('users', ['phone' => '6281234567890']);
+    }
+
+    /**
+     * URL /users/{user} (dan turunannya) memakai `code`, bukan id database
+     * — lihat CLAUDE.md "User". Id mentah tidak boleh ikut ter-resolve.
+     */
+    public function test_user_show_route_uses_code_not_raw_id(): void
+    {
+        $superadmin = $this->superadmin();
+        $customer = $this->withRole('customer');
+
+        $url = route('users.show', $customer);
+        $this->assertStringContainsString($customer->code, $url);
+
+        $this->actingAs($superadmin)->get($url)->assertOk();
+        $this->actingAs($superadmin)->get('/users/'.$customer->id)->assertNotFound();
     }
 
     public function test_listing_shows_accounts_across_roles(): void
@@ -94,6 +163,25 @@ class UserManagementTest extends TestCase
         $response->assertOk();
         $response->assertSee('Staff Satu');
         $response->assertSee('Pelanggan Satu');
+    }
+
+    /**
+     * Regression — @forelse ($users as $user) di index.blade.php membuat
+     * PHP mempertahankan $user (baris terakhir loop) di scope, walau
+     * loop-nya sudah selesai. Modal "Tambah Pengguna" mem-@include form
+     * yang sama SETELAH loop itu, jadi kalau 'user' tidak dipaksa null
+     * eksplisit di pemanggil @include, field Nama modal ikut ter-prefill
+     * dengan nama user terakhir di tabel alih-alih kosong.
+     */
+    public function test_create_modal_name_field_is_not_prefilled_from_listed_users(): void
+    {
+        $superadmin = $this->superadmin();
+        $this->withRole('technician')->update(['name' => 'Nama Yang Tidak Boleh Bocor']);
+
+        $response = $this->actingAs($superadmin)->get('/users');
+
+        $response->assertOk();
+        $this->assertMatchesRegularExpression('/id="name"[\s\S]*?value=""/', $response->getContent());
     }
 
     public function test_superadmin_can_view_user_detail(): void
@@ -112,7 +200,7 @@ class UserManagementTest extends TestCase
     {
         $superadmin = $this->superadmin();
 
-        $response = $this->actingAs($superadmin)->put("/users/{$superadmin->id}", [
+        $response = $this->actingAs($superadmin)->put(route('users.update', $superadmin), [
             'name' => $superadmin->name,
             'phone' => (string) $superadmin->phone,
             'email' => $superadmin->email,
@@ -125,34 +213,33 @@ class UserManagementTest extends TestCase
 
     public function test_invalid_nik_is_rejected(): void
     {
-        $response = $this->actingAs($this->superadmin())->post('/users', [
-            'name' => 'Budi Santoso',
-            'phone' => '81234567890',
-            'email' => 'budi.santoso@example.com',
-            'role' => 'customer',
+        Storage::fake('local');
+
+        $response = $this->actingAs($this->superadmin())->post('/users', $this->validCreatePayload([
             // Bulan 13 — tidak valid.
             'nik' => '3201011713000099',
-        ]);
+        ]));
 
         $response->assertSessionHasErrors('nik');
         $this->assertDatabaseMissing('users', ['phone' => '6281234567890']);
     }
 
+    /**
+     * Aturan wajib NIK/foto KTP hanya berlaku saat create lewat form
+     * /users (lihat CLAUDE.md "User") — akun yang sudah ada tanpa NIK
+     * (mis. dibuat sebelum aturan ini, atau lewat jalur lain seperti quick-
+     * create customer di modul Service) tetap bisa dilengkapi lewat form
+     * edit seperti sebelumnya.
+     */
     public function test_nik_can_be_set_on_first_update_when_not_provided_at_creation(): void
     {
         $superadmin = $this->superadmin();
-        $this->actingAs($superadmin)->post('/users', [
-            'name' => 'Budi Santoso',
-            'phone' => '81234567890',
-            'email' => 'budi.santoso@example.com',
-            'role' => 'customer',
-        ]);
-        $customer = User::where('phone', '6281234567890')->firstOrFail();
+        $customer = $this->withRole('customer');
 
-        $response = $this->actingAs($superadmin)->put("/users/{$customer->id}", [
+        $response = $this->actingAs($superadmin)->put(route('users.update', $customer), [
             'name' => 'Budi Santoso Update',
-            'phone' => '81234567890',
-            'email' => 'budi.santoso@example.com',
+            'phone' => (string) $customer->phone,
+            'email' => $customer->email,
             'role' => 'customer',
             'nik' => self::NIK_MALE,
         ]);
@@ -169,17 +256,15 @@ class UserManagementTest extends TestCase
 
     public function test_nik_is_locked_after_first_save(): void
     {
+        Storage::fake('local');
         $superadmin = $this->superadmin();
-        $this->actingAs($superadmin)->post('/users', [
-            'name' => 'Budi Santoso',
-            'phone' => '81234567890',
-            'email' => 'budi.santoso@example.com',
-            'role' => 'customer',
+
+        $this->actingAs($superadmin)->post('/users', $this->validCreatePayload([
             'nik' => self::NIK_MALE,
-        ]);
+        ]));
         $customer = User::where('phone', '6281234567890')->firstOrFail();
 
-        $response = $this->actingAs($superadmin)->put("/users/{$customer->id}", [
+        $response = $this->actingAs($superadmin)->put(route('users.update', $customer), [
             'name' => 'Budi Santoso',
             'phone' => '81234567890',
             'email' => 'budi.santoso@example.com',
@@ -197,16 +282,13 @@ class UserManagementTest extends TestCase
 
     public function test_superadmin_can_delete_customer(): void
     {
+        Storage::fake('local');
         $superadmin = $this->superadmin();
-        $this->actingAs($superadmin)->post('/users', [
-            'name' => 'Budi Santoso',
-            'phone' => '81234567890',
-            'email' => 'budi.santoso@example.com',
-            'role' => 'customer',
-        ]);
+
+        $this->actingAs($superadmin)->post('/users', $this->validCreatePayload());
         $customer = User::where('phone', '6281234567890')->firstOrFail();
 
-        $response = $this->actingAs($superadmin)->delete("/users/{$customer->id}");
+        $response = $this->actingAs($superadmin)->delete(route('users.destroy', $customer));
 
         $response->assertRedirect(route('users.index'));
         $this->assertDatabaseMissing('users', ['id' => $customer->id]);
@@ -215,37 +297,58 @@ class UserManagementTest extends TestCase
 
     public function test_duplicate_phone_is_rejected(): void
     {
+        Storage::fake('local');
         $superadmin = $this->superadmin();
         User::factory()->create(['phone' => '6281234567890']);
 
-        $response = $this->actingAs($superadmin)->post('/users', [
-            'name' => 'Budi Santoso',
-            'phone' => '81234567890',
-            'email' => 'budi.santoso@example.com',
-            'role' => 'customer',
-        ]);
+        $response = $this->actingAs($superadmin)->post('/users', $this->validCreatePayload());
 
         $response->assertSessionHasErrors('phone');
     }
 
+    /**
+     * Regression — sebelum `UserRequest::messages()` ditambah, pesan yang
+     * muncul cuma nama key mentah ("validation.unique") karena project ini
+     * pakai APP_LOCALE=id tanpa file bahasa `lang/id/validation.php`.
+     * Sekaligus membuktikan input yang erred tampil dengan border merah
+     * (`$fieldClasses()` di users/_form.blade.php), bukan cuma teks di
+     * bawahnya, supaya jelas kolom mana yang bermasalah.
+     */
+    public function test_duplicate_phone_shows_readable_message_and_highlights_the_field(): void
+    {
+        Storage::fake('local');
+        $superadmin = $this->superadmin();
+        User::factory()->create(['phone' => '6281234567890']);
+
+        $this->actingAs($superadmin)->post('/users', $this->validCreatePayload());
+
+        $response = $this->actingAs($superadmin)->get('/users');
+
+        $response->assertOk();
+        $response->assertDontSee('validation.unique');
+        $response->assertSee('Nomor telepon ini sudah terdaftar untuk pengguna lain.');
+        // Highlight visual sekarang lewat daisyUI: aria-invalid="true" di
+        // <input id="phone"> memicu class .validator (border merah) lewat
+        // CSS daisyUI, bukan kelas Tailwind manual lagi — lihat
+        // users/_form.blade.php & CLAUDE.md "Catatan Stack".
+        $this->assertMatchesRegularExpression('/id="phone"[\s\S]*?aria-invalid="true"/', $response->getContent());
+    }
+
     public function test_duplicate_nik_is_rejected(): void
     {
+        Storage::fake('local');
         $superadmin = $this->superadmin();
-        $this->actingAs($superadmin)->post('/users', [
-            'name' => 'Budi Santoso',
-            'phone' => '81234567890',
-            'email' => 'budi.santoso@example.com',
-            'role' => 'customer',
-            'nik' => self::NIK_MALE,
-        ]);
 
-        $response = $this->actingAs($superadmin)->post('/users', [
+        $this->actingAs($superadmin)->post('/users', $this->validCreatePayload([
+            'nik' => self::NIK_MALE,
+        ]));
+
+        $response = $this->actingAs($superadmin)->post('/users', $this->validCreatePayload([
             'name' => 'Lain Orang',
             'phone' => '81299999999',
             'email' => 'lain.orang@example.com',
-            'role' => 'customer',
             'nik' => self::NIK_MALE,
-        ]);
+        ]));
 
         $response->assertSessionHasErrors('nik');
     }
@@ -255,12 +358,7 @@ class UserManagementTest extends TestCase
         $customer = $this->withRole('customer');
 
         $this->actingAs($customer)->get('/users')->assertForbidden();
-        $this->actingAs($customer)->post('/users', [
-            'name' => 'Test',
-            'phone' => '81234567890',
-            'email' => 'test@example.com',
-            'role' => 'customer',
-        ])->assertForbidden();
+        $this->actingAs($customer)->post('/users', $this->validCreatePayload())->assertForbidden();
     }
 
     /**
@@ -281,13 +379,7 @@ class UserManagementTest extends TestCase
         Storage::fake('local');
         $superadmin = $this->superadmin();
 
-        $this->actingAs($superadmin)->post('/users', [
-            'name' => 'Budi Santoso',
-            'phone' => '81234567890',
-            'email' => 'budi.santoso@example.com',
-            'role' => 'customer',
-            'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
-        ]);
+        $this->actingAs($superadmin)->post('/users', $this->validCreatePayload());
         $customer = User::where('phone', '6281234567890')->firstOrFail();
 
         Storage::disk('local')->assertExists($customer->userDetails->ktp_photo);
@@ -301,13 +393,7 @@ class UserManagementTest extends TestCase
         Storage::fake('local');
         $superadmin = $this->superadmin();
 
-        $this->actingAs($superadmin)->post('/users', [
-            'name' => 'Budi Santoso',
-            'phone' => '81234567890',
-            'email' => 'budi.santoso@example.com',
-            'role' => 'customer',
-            'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
-        ]);
+        $this->actingAs($superadmin)->post('/users', $this->validCreatePayload());
         $owner = User::where('phone', '6281234567890')->firstOrFail();
         $stranger = $this->withRole('customer');
 
@@ -319,13 +405,7 @@ class UserManagementTest extends TestCase
         Storage::fake('local');
         $superadmin = $this->superadmin();
 
-        $this->actingAs($superadmin)->post('/users', [
-            'name' => 'Budi Santoso',
-            'phone' => '81234567890',
-            'email' => 'budi.santoso@example.com',
-            'role' => 'customer',
-            'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
-        ]);
+        $this->actingAs($superadmin)->post('/users', $this->validCreatePayload());
         $owner = User::where('phone', '6281234567890')->firstOrFail();
 
         $this->actingAs($superadmin)->get(route('secure.ktp', $owner))->assertOk();
@@ -333,12 +413,11 @@ class UserManagementTest extends TestCase
 
     public function test_name_is_normalized_to_title_case(): void
     {
-        $this->actingAs($this->superadmin())->post('/users', [
+        Storage::fake('local');
+
+        $this->actingAs($this->superadmin())->post('/users', $this->validCreatePayload([
             'name' => 'budi   SANTOSO',
-            'phone' => '81234567890',
-            'email' => 'budi.santoso@example.com',
-            'role' => 'customer',
-        ]);
+        ]));
 
         $customer = User::where('phone', '6281234567890')->firstOrFail();
         $this->assertSame('Budi Santoso', $customer->name);
@@ -346,14 +425,10 @@ class UserManagementTest extends TestCase
 
     public function test_new_user_receives_whatsapp_welcome_notification(): void
     {
+        Storage::fake('local');
         $gateway = $this->fakeGateway();
 
-        $this->actingAs($this->superadmin())->post('/users', [
-            'name' => 'Budi Santoso',
-            'phone' => '81234567890',
-            'email' => 'budi.santoso@example.com',
-            'role' => 'customer',
-        ]);
+        $this->actingAs($this->superadmin())->post('/users', $this->validCreatePayload());
 
         $customer = User::where('phone', '6281234567890')->firstOrFail();
 
@@ -373,7 +448,7 @@ class UserManagementTest extends TestCase
         $superadmin = $this->superadmin();
         $customer = $this->withRole('customer');
 
-        $response = $this->actingAs($superadmin)->postJson("/users/{$customer->id}/complete-kyc", [
+        $response = $this->actingAs($superadmin)->postJson(route('users.complete-kyc', $customer), [
             'nik' => self::NIK_MALE,
             'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
         ]);
@@ -394,7 +469,7 @@ class UserManagementTest extends TestCase
         $customer = $this->withRole('customer');
         $customer->userDetails()->create(['nik' => self::NIK_MALE, 'gender' => 'male', 'birth_date' => '1990-01-17']);
 
-        $response = $this->actingAs($superadmin)->postJson("/users/{$customer->id}/complete-kyc", [
+        $response = $this->actingAs($superadmin)->postJson(route('users.complete-kyc', $customer), [
             'nik' => self::NIK_FEMALE,
             'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
         ]);
@@ -409,7 +484,7 @@ class UserManagementTest extends TestCase
         $staff = $this->withRole('technician');
         $customer = $this->withRole('customer');
 
-        $this->actingAs($staff)->postJson("/users/{$customer->id}/complete-kyc", [
+        $this->actingAs($staff)->postJson(route('users.complete-kyc', $customer), [
             'nik' => self::NIK_MALE,
             'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
         ])->assertForbidden();
@@ -427,7 +502,7 @@ class UserManagementTest extends TestCase
         $sales = $this->withRole('sales');
         $customer = $this->withRole('customer');
 
-        $response = $this->actingAs($sales)->postJson("/users/{$customer->id}/complete-kyc", [
+        $response = $this->actingAs($sales)->postJson(route('users.complete-kyc', $customer), [
             'nik' => self::NIK_MALE,
             'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
         ]);

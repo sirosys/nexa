@@ -19,8 +19,11 @@ return new class extends Migration
             // App\Support\PhoneNumber::normalize(). Nullable karena "harus
             // terdaftar" ditegakkan di Form Request, bukan di DB.
             $table->unsignedBigInteger('phone')->nullable()->unique();
-            // Cuma digenerate untuk role customer ('CUS'+6 digit) — lihat
-            // CLAUDE.md "User".
+            // 6 karakter alphanumeric acak, digenerate otomatis untuk SEMUA
+            // role (lewat User::booted()) — juga dipakai sebagai route key
+            // URL /users/{user} supaya id database tidak bocor. Kolom tetap
+            // nullable murni supaya migration ini bisa berjalan sebelum ada
+            // baris — lihat CLAUDE.md "User".
             $table->string('code')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

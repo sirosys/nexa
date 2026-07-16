@@ -23,6 +23,12 @@ class TestRoleUserSeeder extends Seeder
     public function run(): void
     {
         foreach (self::USERS as $role => $data) {
+            // DatabaseSeeder pakai trait WithoutModelEvents — hook
+            // User::booted() yang biasanya mengisi `code` otomatis tidak
+            // pernah fire di sini, jadi dihitung manual (lihat
+            // AdminUserSeeder untuk penjelasan lengkap).
+            $existing = User::where('phone', $data['phone'])->first();
+
             $user = User::query()->updateOrCreate(
                 ['phone' => $data['phone']],
                 [
@@ -30,6 +36,7 @@ class TestRoleUserSeeder extends Seeder
                     'email' => $data['email'],
                     'password' => Hash::make('password'),
                     'email_verified_at' => now(),
+                    'code' => $existing?->code ?? User::generateUniqueCode(),
                 ]
             );
 

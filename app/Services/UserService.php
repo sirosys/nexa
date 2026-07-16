@@ -38,12 +38,8 @@ class UserService
 
             $user->assignRole($data['role']);
 
-            // `code` (buat invoicing/billing) cuma relevan untuk akun customer.
-            if ($data['role'] === 'customer') {
-                $user->update([
-                    'code' => 'CUS'.str_pad((string) $user->id, 6, '0', STR_PAD_LEFT),
-                ]);
-            }
+            // `code` sudah digenerate otomatis lewat User::booted() (semua
+            // role, lihat CLAUDE.md "User") — tidak perlu diisi di sini.
 
             $userDetails = [];
 

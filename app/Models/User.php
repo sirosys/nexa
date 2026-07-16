@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password', 'phone', 'code', 'last_login_at'])]
@@ -33,6 +34,41 @@ class User extends Authenticatable
             'phone' => 'integer',
             'last_login_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // `code` sekarang wajib untuk SEMUA role (bukan cuma customer,
+        // lihat CLAUDE.md "User") — dijamin di sini (bukan cuma di
+        // UserService) supaya SETIAP jalur pembuatan user (factory, seeder,
+        // tinker) otomatis dapat code, tanpa perlu diulang tiap pemanggil.
+        // Random (bukan turunan id) sehingga bisa digenerate sebelum insert.
+        static::creating(function (User $user) {
+            $user->code ??= self::generateUniqueCode();
+        });
+    }
+
+    /**
+     * 6 karakter alphanumeric acak, dipakai sebagai `code` (lihat
+     * booted() di atas) — juga jadi route key (getRouteKeyName()) supaya
+     * URL /users/{user} tidak membocorkan id database.
+     */
+    public static function generateUniqueCode(): string
+    {
+        do {
+            $code = Str::upper(Str::random(6));
+        } while (self::where('code', $code)->exists());
+
+        return $code;
+    }
+
+    /**
+     * URL (mis. /users/{user}, /secure/ktp/{user}) memakai `code`, bukan id
+     * database — sengaja, supaya id tidak bisa dibaca/ditebak lewat URL.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'code';
     }
 
     public function isSuperadmin(): bool

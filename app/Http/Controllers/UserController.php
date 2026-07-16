@@ -48,11 +48,6 @@ class UserController extends Controller
         ]);
     }
 
-    public function create(): View
-    {
-        return view('users.create');
-    }
-
     public function store(UserRequest $request): RedirectResponse
     {
         $this->userService->create($request->validated());

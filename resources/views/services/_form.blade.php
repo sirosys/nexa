@@ -113,13 +113,13 @@
         // pelanggan lama yang belum lengkap maupun pelanggan baru dari
         // modal di atas.
         showKycModal: false,
-        kycUser: { id: null, name: '' },
+        kycUser: { id: null, code: null, name: '' },
         kycNik: '',
         kycPhotoFile: null,
         kycErrors: {},
         kycSubmitting: false,
         openKycModalFor(item) {
-            this.kycUser = { id: item.id, name: item.name };
+            this.kycUser = { id: item.id, code: item.code, name: item.name };
             this.kycNik = '';
             this.kycPhotoFile = null;
             this.kycErrors = {};
@@ -137,7 +137,7 @@
             if (this.kycPhotoFile) {
                 formData.append('ktp_photo', this.kycPhotoFile);
             }
-            fetch('{{ route('users.complete-kyc', ['user' => '__USER_ID__']) }}'.replace('__USER_ID__', this.kycUser.id), {
+            fetch('{{ route('users.complete-kyc', ['user' => '__USER_CODE__']) }}'.replace('__USER_CODE__', this.kycUser.code), {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',

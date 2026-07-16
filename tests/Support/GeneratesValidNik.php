@@ -2,13 +2,15 @@
 
 namespace Tests\Support;
 
+use App\Models\Subdistrict;
 use App\Models\UserDetail;
 
 /**
  * NIK bukan input bebas (lihat CLAUDE.md "User") — cuma NIK yang bisa
- * di-parse UserDetail::parseNik() yang diterima. Dipakai test manapun yang
- * butuh customer dengan NIK valid (mis. gate wajib NIK+KTP sebelum
- * registrasi Service, lihat CLAUDE.md "Service").
+ * di-parse UserDetail::parseNik() DAN 6 digit pertamanya terdaftar di
+ * `subdistricts.district_id` (lihat App\Rules\ValidNik) yang diterima.
+ * Dipakai test manapun yang butuh customer dengan NIK valid (mis. gate
+ * wajib NIK+KTP sebelum registrasi Service, lihat CLAUDE.md "Service").
  */
 trait GeneratesValidNik
 {
@@ -25,6 +27,12 @@ trait GeneratesValidNik
                 .$dob->format('y')
                 .fake()->numerify('####');
         } while (UserDetail::parseNik($nik) === null);
+
+        // Region acak di atas belum tentu ada di `subdistricts` test DB
+        // (beda dari dev/prod yang sudah di-seed data Dukcapil sungguhan,
+        // lihat SubdistrictSeeder) — buat baris yang cocok supaya NIK ini
+        // lolos guard district_id di App\Rules\ValidNik.
+        Subdistrict::factory()->create(['district_id' => (int) $region]);
 
         return $nik;
     }

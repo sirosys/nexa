@@ -1,5 +1,93 @@
 @import 'tailwindcss';
 
+/* daisyUI 5 — dipasang penuh (2026-07-16, keputusan eksplisit user; lihat
+   CLAUDE.md "Catatan Stack"). `themes: false` mematikan ~35 tema bawaan
+   daisyUI (yang kalau dibiarkan aktif akan memakai palet birunya sendiri,
+   bentrok dengan warna Metronic yang sudah dibangun) — sebagai gantinya 2
+   custom theme di bawah ("nexa"/"nexa-dark") mendefinisikan ulang SEMUA
+   variabel yang dibutuhkan komponen daisyUI (warna & token struktural
+   radius/size/border/depth) memakai hex yang SAMA PERSIS dengan palet
+   Metronic di @theme di bawah — kalau warna itu diubah, ubah juga di sini
+   supaya komponen daisyUI (input/select/btn/dst) tidak diam-diam beda
+   warna dari elemen Tailwind biasa. */
+@plugin "daisyui" {
+    themes: false;
+}
+
+/* root: ":root:not(.dark)"/":root.dark" (bukan [data-theme=...] bawaan
+   daisyUI) — supaya tema daisyUI otomatis ikut toggle dark mode NEXA yang
+   sudah ada (class .dark di <html>, lihat theme-toggle.blade.php), tanpa
+   perlu infrastruktur data-theme terpisah. */
+@plugin "daisyui/theme" {
+    name: "nexa";
+    default: true;
+    root: ":root:not(.dark)";
+    color-scheme: light;
+    --color-base-100: #ffffff;
+    --color-base-200: #f9f9f9;
+    --color-base-300: #e1e3ea;
+    --color-base-content: #181c32;
+    --color-primary: #009ef7;
+    --color-primary-content: #ffffff;
+    --color-secondary: #7239ea;
+    --color-secondary-content: #ffffff;
+    --color-accent: #50cd89;
+    --color-accent-content: #ffffff;
+    --color-neutral: #3f4254;
+    --color-neutral-content: #ffffff;
+    --color-info: #7239ea;
+    --color-info-content: #ffffff;
+    --color-success: #50cd89;
+    --color-success-content: #ffffff;
+    --color-warning: #ffc700;
+    --color-warning-content: #181c32;
+    --color-error: #f1416c;
+    --color-error-content: #ffffff;
+    --radius-selector: 0.5rem;
+    --radius-field: 0.5rem;
+    --radius-box: 1rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+    name: "nexa-dark";
+    default: true;
+    root: ":root.dark";
+    color-scheme: dark;
+    --color-base-100: #3f4254;
+    --color-base-200: #181c32;
+    --color-base-300: #5e6278;
+    --color-base-content: #ffffff;
+    --color-primary: #009ef7;
+    --color-primary-content: #ffffff;
+    --color-secondary: #7239ea;
+    --color-secondary-content: #ffffff;
+    --color-accent: #50cd89;
+    --color-accent-content: #ffffff;
+    --color-neutral: #7e8299;
+    --color-neutral-content: #ffffff;
+    --color-info: #7239ea;
+    --color-info-content: #ffffff;
+    --color-success: #50cd89;
+    --color-success-content: #ffffff;
+    --color-warning: #ffc700;
+    --color-warning-content: #181c32;
+    --color-error: #f1416c;
+    --color-error-content: #ffffff;
+    --radius-selector: 0.5rem;
+    --radius-field: 0.5rem;
+    --radius-box: 1rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+}
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
@@ -67,5 +155,13 @@
     h1, h2, h3 {
         font-weight: 700;
         letter-spacing: -0.01em;
+    }
+
+    /* Tanpa ini, elemen berpenanda x-cloak (modal, dsb.) sempat kelihatan
+       sekilas saat page load sebelum Alpine selesai inisialisasi dan
+       menerapkan x-show-nya — kelihatan sebagai "modal muncul sebentar
+       lalu hilang". Alpine tidak menyuntikkan rule ini secara otomatis. */
+    [x-cloak] {
+        display: none !important;
     }
 }

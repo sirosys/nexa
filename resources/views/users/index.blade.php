@@ -11,19 +11,23 @@
 @endphp
 
 <x-app-layout :title="'Pengguna — ' . config('app.name', 'NEXA')">
+    {{-- showCreateModal auto-terbuka kalau redirect balik ke sini membawa
+        error validasi dari submit modal (lihat UserController::store()). --}}
+    <div x-data="{ showCreateModal: {{ \Illuminate\Support\Js::from($errors->any()) }} }">
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Pengguna</h1>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Seluruh akun NEXA — pelanggan maupun staff/admin.</p>
         </div>
 
-        <a
-            href="{{ route('users.create') }}"
+        <button
+            type="button"
+            @click="showCreateModal = true"
             class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98] inline-flex items-center gap-2"
         >
             <x-icon name="plus" size="4" />
             Tambah Pengguna
-        </a>
+        </button>
     </div>
 
     @if (session('status'))
@@ -126,5 +130,49 @@
                 {{ $users->links() }}
             </div>
         @endif
+    </div>
+
+    {{-- Modal "Tambah Pengguna" — menggantikan halaman /users/create
+        terpisah, lihat CLAUDE.md "User". --}}
+    <div
+        x-show="showCreateModal"
+        x-cloak
+        class="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-gray-900/50 p-4"
+        @keydown.escape.window="showCreateModal = false"
+    >
+        <div
+            x-show="showCreateModal"
+            @click.outside="showCreateModal = false"
+            class="my-8 w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800"
+        >
+            <div class="mb-4 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tambah Pengguna</h3>
+                <button type="button" @click="showCreateModal = false" class="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300">
+                    <x-icon name="x-mark" size="5" />
+                </button>
+            </div>
+
+            <form method="POST" action="{{ route('users.store') }}" enctype="multipart/form-data">
+                @csrf
+
+                {{-- 'user' => null WAJIB dipaksa eksplisit di sini — @forelse
+                    ($users as $user) di atas membuat PHP mempertahankan
+                    $user (baris terakhir loop) di scope ini walau loop-nya
+                    sudah selesai, jadi 'user ??= null' di _form.blade.php
+                    tidak cukup (variabelnya sudah terisi, bukan undefined). --}}
+                @include('users._form', ['user' => null])
+
+                <div class="mt-6 flex items-center justify-end gap-3">
+                    <button type="button" @click="showCreateModal = false" class="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">Batal</button>
+                    <button
+                        type="submit"
+                        class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary/25 transition hover:bg-primary-active hover:shadow-md active:scale-[0.98]"
+                    >
+                        Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
     </div>
 </x-app-layout>

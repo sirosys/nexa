@@ -1,6 +1,8 @@
 @php
     $user ??= null;
     $userDetails = $user?->userDetails;
+    $isCreating = $user === null;
+    $existingKtpUrl = $userDetails?->ktp_photo ? route('secure.ktp', $user) : null;
     // Kolom phone disimpan lengkap dengan kode negara (62...), tapi input
     // cuma menerima bagian lokal (badge +62 terpisah di depannya) — sama
     // seperti pola di auth/login.blade.php.
@@ -13,9 +15,19 @@
         'customer' => 'Pelanggan',
     ];
     $currentRole = $user?->getRoleNames()->first();
+
+    // 'true'/'false' string (bukan boolean PHP) — atribut HTML aria-invalid
+    // memang bernilai string, dan kehadirannya (bahkan "false") dipakai
+    // daisyUI's .validator buat tahu field ini "sudah disentuh validasi
+    // server" — lihat komponen validator daisyUI (node_modules/daisyui/
+    // components/validator.css): elemen jadi merah kalau
+    // [aria-invalid]:not([aria-invalid=false]), jadi bukan cuma live
+    // constraint browser (:user-invalid) tapi juga error hasil submit ke
+    // server (unique/ValidNik/dst, yang tidak bisa dicek client-side).
+    $ariaInvalid = fn (string $field) => $errors->has($field) ? 'true' : 'false';
 @endphp
 
-<div class="space-y-4">
+<div class="space-y-4" x-data="{ photoPreview: {{ \Illuminate\Support\Js::from($existingKtpUrl) }} }">
     <div>
         <label for="name" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama</label>
         <input
@@ -24,19 +36,25 @@
             name="name"
             value="{{ old('name', $user?->name) }}"
             required
-            class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
+            aria-invalid="{{ $ariaInvalid('name') }}"
+            class="input validator w-full"
         >
         @error('name')
-            <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+            <p class="validator-hint">{{ $message }}</p>
         @enderror
     </div>
 
     <div>
         <label for="phone" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Nomor Telepon</label>
-        <div class="flex items-center overflow-hidden rounded-lg border border-gray-300 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary dark:border-gray-600">
-            <span class="border-r border-gray-300 bg-gray-50 px-3 py-2.5 text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400">
-                +62
-            </span>
+        {{-- Pola prefix di dalam input daisyUI: class `input` di <label>
+            pembungkus (bukan di <input> itu sendiri), <input> polos di
+            dalamnya dengan class `grow` — lihat dokumentasi daisyUI
+            "Input with prefix/suffix". aria-invalid ditaruh di <input>
+            asli, otomatis kepick oleh <label class="input"> lewat
+            selector :has() di komponen daisyUI, tidak perlu diulang di
+            elemen pembungkus. --}}
+        <label class="input validator w-full">
+            <span class="text-gray-400 dark:text-gray-500">+62</span>
             <input
                 type="tel"
                 id="phone"
@@ -48,11 +66,12 @@
                 maxlength="15"
                 value="{{ old('phone', $phoneLocal) }}"
                 required
-                class="block w-full border-0 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-500"
+                aria-invalid="{{ $ariaInvalid('phone') }}"
+                class="grow"
             >
-        </div>
+        </label>
         @error('phone')
-            <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+            <p class="validator-hint">{{ $message }}</p>
         @enderror
     </div>
 
@@ -65,10 +84,11 @@
             placeholder="nama@contoh.com"
             value="{{ old('email', $user?->email) }}"
             required
-            class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
+            aria-invalid="{{ $ariaInvalid('email') }}"
+            class="input validator w-full"
         >
         @error('email')
-            <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+            <p class="validator-hint">{{ $message }}</p>
         @enderror
     </div>
 
@@ -77,14 +97,16 @@
         <select
             id="role"
             name="role"
-            class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white"
+            required
+            aria-invalid="{{ $ariaInvalid('role') }}"
+            class="select validator w-full"
         >
             @foreach ($roleLabels as $value => $label)
                 <option value="{{ $value }}" @selected(old('role', $currentRole) === $value)>{{ $label }}</option>
             @endforeach
         </select>
         @error('role')
-            <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+            <p class="validator-hint">{{ $message }}</p>
         @enderror
     </div>
 
@@ -113,7 +135,9 @@
                 pattern="[0-9]*"
                 maxlength="16"
                 value="{{ old('nik') }}"
-                class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
+                {{ $isCreating ? 'required' : '' }}
+                aria-invalid="{{ $ariaInvalid('nik') }}"
+                class="input validator w-full"
             >
             <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                 Jenis kelamin & tanggal lahir otomatis terisi dari NIK. NIK tidak bisa diubah lagi setelah disimpan.
@@ -121,27 +145,44 @@
         @endif
 
         @error('nik')
-            <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+            <p class="validator-hint">{{ $message }}</p>
         @enderror
     </div>
 
     <div>
         <label for="ktp_photo" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Foto KTP</label>
 
-        @if ($userDetails?->ktp_photo)
-            <img src="{{ route('secure.ktp', $user) }}" alt="Foto KTP" class="mb-2 h-24 rounded-lg border border-gray-300 object-cover dark:border-gray-600">
-        @endif
+        {{-- Preview — begitu file baru dipilih, langsung diganti ke file
+            terakhir yang diupload (client-side, lewat FileReader); kalau
+            belum ada pilihan baru, tampilkan foto tersimpan (mode edit). --}}
+        <template x-if="photoPreview">
+            <img :src="photoPreview" alt="Pratinjau Foto KTP" class="mb-2 h-28 w-auto rounded-lg border border-gray-300 object-cover dark:border-gray-600">
+        </template>
+        <template x-if="! photoPreview">
+            <div class="mb-2 flex h-28 w-44 items-center justify-center rounded-lg border border-dashed border-gray-300 text-xs text-gray-400 dark:border-gray-600 dark:text-gray-500">
+                Belum ada foto
+            </div>
+        </template>
 
         <input
             type="file"
             id="ktp_photo"
             name="ktp_photo"
             accept="image/*"
-            class="block w-full text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-primary-light file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary dark:text-gray-300"
+            {{ $isCreating ? 'required' : '' }}
+            aria-invalid="{{ $ariaInvalid('ktp_photo') }}"
+            @change="
+                const file = $event.target.files[0];
+                if (! file) { photoPreview = {{ \Illuminate\Support\Js::from($existingKtpUrl) }}; return; }
+                const reader = new FileReader();
+                reader.onload = (e) => { photoPreview = e.target.result; };
+                reader.readAsDataURL(file);
+            "
+            class="file-input validator w-full"
         >
         <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Disimpan privat — hanya pemilik akun dan superadmin yang bisa melihat.</p>
         @error('ktp_photo')
-            <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+            <p class="validator-hint">{{ $message }}</p>
         @enderror
     </div>
 </div>
