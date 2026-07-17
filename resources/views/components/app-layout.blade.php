@@ -10,7 +10,7 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="bg-gray-100 font-sans antialiased dark:bg-gray-900">
+    <body class="bg-gray-100 font-sans text-gray-900 antialiased dark:bg-gray-900 dark:text-gray-100">
         <div x-data="{ sidebarOpen: false }" class="min-h-screen">
             <x-sidebar />
 

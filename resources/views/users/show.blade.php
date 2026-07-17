@@ -2,6 +2,7 @@
     use App\Models\Service;
     use App\Models\ServiceTicket;
     use App\Support\Currency;
+    use App\Support\SaleStatus;
 
     $roleBadges = [
         'superadmin' => ['label' => 'Superadmin', 'class' => 'bg-danger-light text-danger dark:bg-danger/10', 'avatar' => 'bg-danger'],
@@ -32,15 +33,10 @@
     ];
 
     // Status pembayaran Sale diturunkan dari kombinasi timestamp (tidak ada
-    // kolom status eksplisit di tabel `sales`, lihat CLAUDE.md "Sales").
-    $saleStatus = function ($sale) {
-        return match (true) {
-            $sale->canceled_at !== null => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'],
-            $sale->settled_at !== null => ['label' => 'Lunas', 'class' => 'bg-success-light text-success dark:bg-success/10'],
-            $sale->invoiced_at !== null => ['label' => 'Menunggu Pembayaran', 'class' => 'bg-warning-light text-warning dark:bg-warning/10'],
-            default => ['label' => 'Draft', 'class' => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'],
-        };
-    };
+    // kolom status eksplisit di tabel `sales`, lihat CLAUDE.md "Sales") —
+    // logic-nya di App\Support\SaleStatus (reuse yang sama dipakai API
+    // customer-facing, lihat CLAUDE.md "API Customer-Facing").
+    $saleStatus = fn ($sale) => SaleStatus::resolve($sale);
 
     // Tab data-role yang relevan cuma ditentukan sekali di sini — null
     // berarti role ini tidak punya data "miliknya sendiri" untuk
@@ -67,7 +63,7 @@
         {{-- Kartu profil lebar, meniru account/overview.html Metronic:
             avatar besar + info kontak + aksi di kanan-atas, trio statistik,
             lalu tab nav underline di bagian bawah kartu yang sama. --}}
-        <div class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
             <div class="p-6 sm:p-8">
                 <div class="flex flex-wrap items-start gap-6">
                     <span class="flex h-24 w-24 shrink-0 items-center justify-center rounded-full {{ $roleBadges[$role]['avatar'] ?? 'bg-gray-400' }} text-3xl font-bold text-white sm:h-28 sm:w-28">
@@ -188,7 +184,7 @@
         {{-- Konten tab. --}}
         <div class="mt-6">
             {{-- Detail Akun --}}
-            <div x-show="tab === 'account'" class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+            <div x-show="tab === 'account'" class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                 <div class="border-b border-gray-100 px-6 py-4 dark:border-gray-700">
                     <h3 class="text-base font-bold text-gray-900 dark:text-white">Detail Akun</h3>
                 </div>
@@ -217,7 +213,7 @@
 
             @if ($tabSet === 'customer')
                 {{-- Layanan --}}
-                <div x-show="tab === 'services'" style="display: none;" class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                <div x-show="tab === 'services'" style="display: none;" class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                     @if ($services->isEmpty())
                         <p class="px-6 py-6 text-sm text-gray-500 dark:text-gray-400">Belum ada layanan yang terdaftar atas nama pelanggan ini.</p>
                     @else
@@ -251,7 +247,7 @@
                 </div>
 
                 {{-- Tagihan & Pembayaran --}}
-                <div x-show="tab === 'billing'" style="display: none;" class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                <div x-show="tab === 'billing'" style="display: none;" class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                     @if ($sales->isEmpty())
                         <p class="px-6 py-6 text-sm text-gray-500 dark:text-gray-400">Belum ada tagihan untuk pelanggan ini.</p>
                     @else
@@ -289,7 +285,7 @@
                 </div>
 
                 {{-- Tiket --}}
-                <div x-show="tab === 'tickets'" style="display: none;" class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                <div x-show="tab === 'tickets'" style="display: none;" class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                     @if ($tickets->isEmpty())
                         <p class="px-6 py-6 text-sm text-gray-500 dark:text-gray-400">Belum ada tiket keluhan/permintaan dari pelanggan ini.</p>
                     @else
@@ -323,7 +319,7 @@
                 </div>
             @elseif ($tabSet === 'technician')
                 {{-- Instalasi --}}
-                <div x-show="tab === 'installations'" style="display: none;" class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                <div x-show="tab === 'installations'" style="display: none;" class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                     @if ($installations->isEmpty())
                         <p class="px-6 py-6 text-sm text-gray-500 dark:text-gray-400">Belum ada job instalasi yang ditangani teknisi ini.</p>
                     @else
@@ -361,7 +357,7 @@
                 </div>
 
                 {{-- Dismantle --}}
-                <div x-show="tab === 'dismantles'" style="display: none;" class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                <div x-show="tab === 'dismantles'" style="display: none;" class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                     @if ($dismantles->isEmpty())
                         <p class="px-6 py-6 text-sm text-gray-500 dark:text-gray-400">Belum ada job dismantle yang ditangani teknisi ini.</p>
                     @else
@@ -399,7 +395,7 @@
                 </div>
 
                 {{-- Tiket Ditangani --}}
-                <div x-show="tab === 'assignedTickets'" style="display: none;" class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                <div x-show="tab === 'assignedTickets'" style="display: none;" class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                     @if ($assignedTickets->isEmpty())
                         <p class="px-6 py-6 text-sm text-gray-500 dark:text-gray-400">Belum ada tiket teknis yang ditugaskan ke teknisi ini.</p>
                     @else

@@ -1,14 +1,10 @@
 @php
     use App\Support\Currency;
+    use App\Support\SaleStatus;
 
-    $saleStatus = function ($sale) {
-        return match (true) {
-            $sale->canceled_at !== null => ['label' => 'Dibatalkan', 'class' => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'],
-            $sale->settled_at !== null => ['label' => 'Lunas', 'class' => 'bg-success-light text-success dark:bg-success/10'],
-            $sale->invoiced_at !== null => ['label' => 'Menunggu Pembayaran', 'class' => 'bg-warning-light text-warning dark:bg-warning/10'],
-            default => ['label' => 'Draft', 'class' => 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'],
-        };
-    };
+    // Reuse App\Support\SaleStatus — dipakai juga oleh API customer-facing
+    // (lihat CLAUDE.md "API Customer-Facing"), bukan lagi closure lokal.
+    $saleStatus = fn ($sale) => SaleStatus::resolve($sale);
 
     // Kelas badge/aksen ditulis literal (bukan interpolasi) supaya terdeteksi
     // content-scanner Tailwind v4 saat build — pola sama dashboard.blade.php.
@@ -31,7 +27,7 @@
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         @foreach ($cards as $card)
-            <div class="relative overflow-hidden rounded-2xl border border-gray-300 bg-white p-5 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+            <div class="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                 <span class="absolute inset-x-0 top-0 h-1 {{ $card['accent'] }}"></span>
                 <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl {{ $card['badge'] }}">
                     <x-icon :name="$card['icon']" size="6" />
@@ -42,7 +38,7 @@
         @endforeach
     </div>
 
-    <div class="mt-6 rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+    <div class="mt-6 rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
         <div class="border-b border-gray-100 px-6 py-4 dark:border-gray-700">
             <h2 class="text-base font-bold text-gray-900 dark:text-white">Riwayat Tagihan</h2>
         </div>

@@ -27,7 +27,7 @@
 
     <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         @foreach ($snapshotCards as $card)
-            <div class="relative overflow-hidden rounded-2xl border border-gray-300 bg-white p-5 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+            <div class="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                 <span class="absolute inset-x-0 top-0 h-1 {{ $card['accent'] }}"></span>
                 <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl {{ $card['badge'] }}">
                     <x-icon :name="$card['icon']" size="6" />
@@ -42,7 +42,7 @@
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         @foreach ($summaryCards as $card)
-            <div class="relative overflow-hidden rounded-2xl border border-gray-300 bg-white p-5 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+            <div class="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                 <span class="absolute inset-x-0 top-0 h-1 {{ $card['accent'] }}"></span>
                 <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl {{ $card['badge'] }}">
                     <x-icon :name="$card['icon']" size="6" />
@@ -53,7 +53,7 @@
         @endforeach
     </div>
 
-    <div class="mt-6 rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+    <div class="mt-6 rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
         <div class="border-b border-gray-100 px-6 py-4 dark:border-gray-700">
             <h2 class="text-base font-bold text-gray-900 dark:text-white">Instalasi Selesai</h2>
         </div>
@@ -92,7 +92,7 @@
         @endif
     </div>
 
-    <div class="mt-6 rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+    <div class="mt-6 rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
         <div class="border-b border-gray-100 px-6 py-4 dark:border-gray-700">
             <h2 class="text-base font-bold text-gray-900 dark:text-white">Dismantle Selesai</h2>
         </div>
@@ -133,7 +133,7 @@
         @endif
     </div>
 
-    <div class="mt-6 rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+    <div class="mt-6 rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
         <div class="border-b border-gray-100 px-6 py-4 dark:border-gray-700">
             <h2 class="text-base font-bold text-gray-900 dark:text-white">Tiket Diselesaikan</h2>
         </div>

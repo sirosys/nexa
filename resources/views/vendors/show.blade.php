@@ -35,7 +35,7 @@
     @endif
 
     <div class="space-y-6">
-        <div class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
             <dl>
                 <x-detail-row label="Kode">{{ $vendor->code }}</x-detail-row>
                 <x-detail-row label="Nama">{{ $vendor->name }}</x-detail-row>
@@ -48,7 +48,7 @@
             </dl>
         </div>
 
-        <div class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
             <div class="border-b border-gray-300 p-4 dark:border-gray-700">
                 <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Riwayat Purchase Order</h2>
             </div>

@@ -1,7 +1,7 @@
 {{-- Filter tanggal, dipakai sama di keempat halaman laporan. $from/$to
     selalu sudah terisi (default awal bulan berjalan s/d hari ini kalau
     query string kosong — lihat ReportController::resolveRange()). --}}
-<form method="GET" action="{{ route(request()->route()->getName()) }}" class="mb-6 flex flex-wrap items-end gap-3 rounded-2xl border border-gray-300 bg-white p-4 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+<form method="GET" action="{{ route(request()->route()->getName()) }}" class="mb-6 flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
     <div>
         <label for="from" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-400">Dari Tanggal</label>
         <input

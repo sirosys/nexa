@@ -36,7 +36,7 @@
         </div>
     @endif
 
-    <div class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+    <div class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
         <div class="flex flex-wrap items-center gap-3 border-b border-gray-300 p-4 dark:border-gray-700">
             <form method="GET" action="{{ route('users.index') }}" class="flex flex-1 flex-wrap items-center gap-3">
                 <div class="relative flex-1 sm:max-w-xs">

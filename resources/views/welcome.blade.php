@@ -9,7 +9,7 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="bg-white font-sans antialiased dark:bg-gray-900">
+    <body class="bg-white font-sans text-gray-900 antialiased dark:bg-gray-900 dark:text-gray-100">
         <header class="relative z-10 flex items-center justify-between bg-gray-900 px-4 py-4 sm:px-6 lg:px-8">
             <a href="{{ url('/') }}" class="flex items-center gap-2">
                 {{-- Nav bar selalu gelap (bg-gray-900) terlepas dari mode terang/gelap app, jadi selalu pakai varian logo-black-bg (X putih) --}}
@@ -73,19 +73,19 @@
                 </div>
 
                 <div class="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-3">
-                    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                         <h3 class="text-base font-semibold text-gray-900 dark:text-white">Jaringan Fiber</h3>
                         <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
                             Koneksi stabil berbasis fiber optik hingga ke rumah pelanggan.
                         </p>
                     </div>
-                    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                         <h3 class="text-base font-semibold text-gray-900 dark:text-white">Billing Transparan</h3>
                         <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
                             Tagihan dan riwayat pembayaran yang jelas, terintegrasi dengan Xendit.
                         </p>
                     </div>
-                    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                         <h3 class="text-base font-semibold text-gray-900 dark:text-white">Dukungan Pelanggan</h3>
                         <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
                             Tim dukungan siap membantu lewat tiket layanan.

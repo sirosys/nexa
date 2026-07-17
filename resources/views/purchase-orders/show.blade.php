@@ -63,7 +63,7 @@
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
-            <div class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+            <div class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                 <dl>
                     <x-detail-row label="Kode">{{ $purchaseOrder->code }}</x-detail-row>
                     <x-detail-row label="Vendor">
@@ -82,7 +82,7 @@
                 </dl>
             </div>
 
-            <div class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+            <div class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                 <div class="border-b border-gray-300 p-4 dark:border-gray-700">
                     <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Barang Dipesan</h2>
                 </div>
@@ -122,7 +122,7 @@
         @if ($purchaseOrder->status === PurchaseOrder::STATUS_ORDERED)
             @can('receive', $purchaseOrder)
                 <div class="space-y-6">
-                    <div class="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                    <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                         <h2 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Terima Barang</h2>
                         <form method="POST" action="{{ route('purchase-orders.receive', $purchaseOrder) }}" class="space-y-4">
                             @csrf

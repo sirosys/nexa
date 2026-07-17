@@ -3,7 +3,7 @@
         <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Tambah Item Inventaris</h1>
     </div>
 
-    <div class="max-w-xl rounded-2xl border border-gray-300 bg-white p-6 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+    <div class="max-w-xl rounded-2xl border border-gray-200 bg-white p-6 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
         <form method="POST" action="{{ route('inventory-items.store') }}">
             @csrf
 

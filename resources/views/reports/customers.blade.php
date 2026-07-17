@@ -25,7 +25,7 @@
 
     @include('reports._nav')
 
-    <div class="mb-6 rounded-2xl border border-gray-300 bg-white p-6 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+    <div class="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
         <div class="flex items-center gap-3">
             <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary dark:bg-primary/10">
                 <x-icon name="wifi" size="5" />
@@ -52,7 +52,7 @@
     @include('reports._filter')
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="relative overflow-hidden rounded-2xl border border-gray-300 bg-white p-5 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+        <div class="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
             <span class="absolute inset-x-0 top-0 h-1 bg-primary"></span>
             <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary dark:bg-primary/10">
                 <x-icon name="users" size="6" />
@@ -62,7 +62,7 @@
         </div>
     </div>
 
-    <div class="mt-6 rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+    <div class="mt-6 rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
         <div class="border-b border-gray-100 px-6 py-4 dark:border-gray-700">
             <h2 class="text-base font-bold text-gray-900 dark:text-white">Layanan Baru Terdaftar</h2>
         </div>

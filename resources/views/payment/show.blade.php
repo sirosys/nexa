@@ -23,7 +23,7 @@
             Pembayaran sudah <strong>kami terima</strong>. Terima kasih! Tim kami akan segera menghubungi Anda untuk proses instalasi.
         </div>
     @elseif ($receipt->xendit_payment_request_id)
-        <div class="mt-6 space-y-3 rounded-xl border border-gray-200 bg-white px-4 py-5 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+        <div class="mt-6 space-y-3 rounded-xl border border-gray-200 bg-white px-4 py-5 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
             <p class="text-sm font-medium text-gray-900 dark:text-white">Selesaikan pembayaran Anda ({{ $receipt->channel_code }})</p>
 
             @if ($qrAction)

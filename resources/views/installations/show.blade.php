@@ -30,7 +30,7 @@
     @endif
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02] lg:col-span-2">
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
             <dl>
                 <x-detail-row label="Status">
                     <span class="inline-flex items-center rounded-full {{ $badge['class'] }} px-3 py-1 text-[13px] font-semibold">{{ $badge['label'] }}</span>
@@ -65,7 +65,7 @@
 
         <div class="space-y-6">
             @if ($service->status === \App\Models\Service::STATUS_PENDING_INSTALLATION && $viewer->isSuperadmin())
-                <div class="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                     <h2 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Tugaskan Teknisi</h2>
                     <form method="POST" action="{{ route('installations.assign', $service) }}" class="space-y-3">
                         @csrf
@@ -84,7 +84,7 @@
             @endif
 
             @if ($service->status === \App\Models\Service::STATUS_PENDING_INSTALLATION && $viewer->isTechnician())
-                <div class="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                     <h2 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Klaim Job</h2>
                     <form method="POST" action="{{ route('installations.claim', $service) }}">
                         @csrf
@@ -94,7 +94,7 @@
             @endif
 
             @if ($service->status === \App\Models\Service::STATUS_INSTALLING && $viewer->isTechnician() && $activation?->installer_id === $viewer->id)
-                <div class="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                     <h2 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Selesaikan Instalasi</h2>
                     <form
                         method="POST"

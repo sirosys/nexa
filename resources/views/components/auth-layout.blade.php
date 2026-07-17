@@ -9,7 +9,7 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="min-h-screen bg-gray-100 font-sans antialiased dark:bg-gray-900">
+    <body class="min-h-screen bg-gray-100 font-sans text-gray-900 antialiased dark:bg-gray-900 dark:text-gray-100">
         <div class="absolute right-4 top-4">
             <x-theme-toggle />
         </div>
@@ -29,7 +29,7 @@
                 >
             </a>
 
-            <div class="w-full max-w-md rounded-2xl border border-gray-300 bg-white p-8 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+            <div class="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                 {{ $slot }}
             </div>
 

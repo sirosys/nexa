@@ -43,7 +43,7 @@
     @endif
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div class="rounded-2xl border border-gray-300 bg-white shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02] lg:col-span-2">
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
             <dl>
                 <x-detail-row label="Status">
                     <span class="inline-flex items-center rounded-full {{ $statusClasses[$ticket->status] ?? 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' }} px-3 py-1 text-[13px] font-semibold">
@@ -80,7 +80,7 @@
         <div class="space-y-6">
             @if ($requiresTechnician && $ticket->status === \App\Models\ServiceTicket::STATUS_OPEN && $ticket->assigned_technician_id === null)
                 @can('assignTicket', $ticket)
-                    <div class="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                    <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                         <h2 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Tugaskan Teknisi</h2>
                         <form method="POST" action="{{ route('tickets.assign', $ticket) }}" class="space-y-3">
                             @csrf
@@ -99,7 +99,7 @@
                 @endcan
 
                 @can('claimTicket', $ticket)
-                    <div class="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                    <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                         <h2 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Klaim Tiket</h2>
                         <form method="POST" action="{{ route('tickets.claim', $ticket) }}">
                             @csrf
@@ -111,7 +111,7 @@
 
             @if ($canBeResolvedNow)
                 @can('resolveTicket', $ticket)
-                    <div class="rounded-2xl border border-gray-300 bg-white p-4 shadow-sm ring-1 ring-black/[0.03] dark:border-gray-700 dark:bg-gray-800 dark:ring-white/[0.02]">
+                    <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
                         <h2 class="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Selesaikan Tiket</h2>
                         <form method="POST" action="{{ route('tickets.resolve', $ticket) }}" class="space-y-3">
                             @csrf
