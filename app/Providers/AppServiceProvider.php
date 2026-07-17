@@ -30,6 +30,31 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by($request->ip());
         });
 
+        // Bucket terpisah dari otp-request/otp-verify (admin) — API
+        // customer-facing /api/v1 punya alur OTP sendiri (lihat CLAUDE.md
+        // "API Customer-Facing"), limit sama tapi diisolasi supaya trafik
+        // salah satu sisi tidak ikut menghabiskan kuota sisi lain.
+        RateLimiter::for('api-otp-request', function (Request $request) {
+            return Limit::perMinute(3)->by($request->ip().'|'.$request->input('phone'));
+        });
+
+        RateLimiter::for('api-otp-verify', function (Request $request) {
+            return Limit::perMinute(10)->by($request->ip());
+        });
+
+        // Registrasi mandiri pelanggan (lihat CLAUDE.md "API
+        // Customer-Facing" — RegistrationOtpService) — bucket terpisah lagi
+        // dari api-otp-request/api-otp-verify (itu untuk LOGIN nomor yang
+        // sudah terdaftar, ini untuk memverifikasi nomor BARU sebelum akun
+        // dibuat).
+        RateLimiter::for('api-register-otp-request', function (Request $request) {
+            return Limit::perMinute(3)->by($request->ip().'|'.$request->input('phone'));
+        });
+
+        RateLimiter::for('api-register', function (Request $request) {
+            return Limit::perMinute(10)->by($request->ip());
+        });
+
         // Satu limiter untuk seluruh aksi POST /pay/{receipt} (kirim ulang
         // OTP, verifikasi OTP, pilih channel) - route-nya disatukan (lihat
         // docblock PaymentController::update()), jadi tidak bisa dipisah

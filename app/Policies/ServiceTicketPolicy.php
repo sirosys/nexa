@@ -2,9 +2,16 @@
 
 namespace App\Policies;
 
+use App\Models\Service;
 use App\Models\ServiceTicket;
 use App\Models\User;
 
+// `$user->can('tickets.*')` di seluruh method di bawah ini resolve lewat
+// guard Spatie `guard_name='web'` (config('auth.defaults.guard') = 'web',
+// User tidak override guard_name) — tetap berlaku walau request datang dari
+// auth:sanctum (API customer-facing), karena Spatie tidak terikat ke guard
+// autentikasi request, cuma ke guard_name row Role/Permission. Kalau
+// AUTH_GUARD berubah nanti, verifikasi ulang asumsi ini.
 class ServiceTicketPolicy
 {
     public function viewAny(User $user): bool
@@ -17,9 +24,21 @@ class ServiceTicketPolicy
         return $user->can('tickets.view');
     }
 
-    public function create(User $user): bool
+    /**
+     * `$service` opsional dipakai API customer-facing (lihat CLAUDE.md "API
+     * Customer-Facing") — pelanggan boleh buat tiket untuk Service miliknya
+     * sendiri tanpa permission `tickets.create` (yang cuma dipegang staff).
+     * Call site admin (`authorizeResource()` di ServiceTicketController)
+     * tetap memanggil `create` cuma dengan `User`, jadi `$service` selalu
+     * null di situ — tidak ada perubahan perilaku untuk staff.
+     */
+    public function create(User $user, ?Service $service = null): bool
     {
-        return $user->can('tickets.create');
+        if ($user->can('tickets.create')) {
+            return true;
+        }
+
+        return $service !== null && $service->user_id === $user->id;
     }
 
     public function update(User $user): bool
