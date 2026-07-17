@@ -146,7 +146,7 @@ class DismantleManagementTest extends TestCase
     {
         $service = $this->serviceWithActivation(Service::STATUS_ACTIVE);
 
-        foreach (['finance', 'sales', 'customer', 'technician'] as $role) {
+        foreach (['finance', 'customer', 'technician'] as $role) {
             $staff = $this->withRole($role);
 
             $this->actingAs($staff)->post("/dismantles/{$service->id}/queue")->assertForbidden();
@@ -334,7 +334,7 @@ class DismantleManagementTest extends TestCase
     {
         $service = $this->queuedForDismantleService();
 
-        foreach (['finance', 'sales', 'customer'] as $role) {
+        foreach (['finance', 'customer'] as $role) {
             $staff = $this->withRole($role);
 
             $this->actingAs($staff)->get('/dismantles')->assertForbidden();

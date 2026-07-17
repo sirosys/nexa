@@ -14,10 +14,11 @@ class TestRoleUserSeeder extends Seeder
      * telepon berurutan dari superadmin (6280000000001) supaya gampang
      * dihafal staff saat testing manual lintas role.
      */
+    // Role 'sales' dihapus total 2026-07-17 (lihat CLAUDE.md "Authorization
+    // / Role & Permission") — tidak ada lagi akun uji coba untuk role itu.
     private const USERS = [
         'technician' => ['phone' => '6280000000002', 'name' => 'Teknisi Uji Coba', 'email' => 'technician@nexa.test'],
         'finance' => ['phone' => '6280000000003', 'name' => 'Finance Uji Coba', 'email' => 'finance@nexa.test'],
-        'sales' => ['phone' => '6280000000004', 'name' => 'Sales Uji Coba', 'email' => 'sales@nexa.test'],
     ];
 
     public function run(): void

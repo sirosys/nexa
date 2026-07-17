@@ -39,19 +39,23 @@ class PermissionSeeder extends Seeder
      * supaya permission baru otomatis ikut tanpa perlu update daftar ini).
      */
     private const ROLE_PERMISSIONS = [
+        // Role 'sales' sudah dihapus total (2026-07-17) — semua role staff
+        // yang tersisa (di luar superadmin) sekarang ikut dapat permission
+        // registrasi pelanggan (services.*/sales.*/users.complete-kyc) di
+        // bawah ini, bukan cuma dimiliki satu role eksklusif. Lihat
+        // CLAUDE.md "Authorization / Role & Permission".
         'technician' => [
             'installations.view', 'installations.claim', 'installations.complete',
             'dismantles.view', 'dismantles.claim', 'dismantles.complete',
             'tickets.view', 'tickets.claim', 'tickets.resolve',
             'inventory.view',
-        ],
-        'finance' => [
-            'sales.view', 'sales.retry-receipt',
-            'services.view',
-        ],
-        'sales' => [
             'services.view', 'services.create', 'services.update',
             'sales.view', 'sales.create', 'sales.update',
+            'users.complete-kyc',
+        ],
+        'finance' => [
+            'sales.view', 'sales.retry-receipt', 'sales.create', 'sales.update',
+            'services.view', 'services.create', 'services.update',
             'users.complete-kyc',
         ],
         'customer' => [],

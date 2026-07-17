@@ -1,15 +1,15 @@
 @php
     // Setiap item wajib punya 'permission' (atau null kalau memang harus selalu
     // tampil untuk siapa pun yang bisa login, mis. Dashboard) supaya role yang
-    // tidak berwenang (technician/finance/sales) tidak melihat menu yang kalau
+    // tidak berwenang (technician/finance) tidak melihat menu yang kalau
     // diklik cuma akan 403 — permission sama persis dengan yang dipakai Policy
     // masing-masing modul (lihat CLAUDE.md "Authorization / Role & Permission").
-    // Item TANPA 'route' (placeholder, mis. "Billing") sengaja tidak diberi
-    // permission — modulnya belum ada, jadi belum ada yang bisa digate. Item
-    // yang route-nya salah satu dari beberapa sub-halaman (mis. "Laporan",
+    // Item yang route-nya salah satu dari beberapa sub-halaman (mis. "Laporan",
     // 4 kategori) pakai 'active' terpisah (route pattern wildcard) supaya
     // menu tetap ter-highlight di semua sub-halamannya, bukan cuma yang
-    // persis sama dengan 'route'.
+    // persis sama dengan 'route'. Tidak ada lagi item placeholder tanpa
+    // 'route' (mis. "Billing" yang dihapus 2026-07-17 — tidak pernah py
+    // halaman admin sendiri, status/link pembayaran cukup di sales.show).
     //
     // Dikelompokkan per area kerja (bukan lagi daftar flat 17 item) supaya lebih
     // gampang dipindai — meniru pengelompokan menu ala Metronic. Label grup
@@ -27,7 +27,6 @@
                 ['label' => 'Pengguna', 'route' => 'users.index', 'icon' => 'users', 'permission' => 'users.view'],
                 ['label' => 'Layanan', 'route' => 'services.index', 'icon' => 'wifi', 'permission' => 'services.view'],
                 ['label' => 'Penjualan', 'route' => 'sales.index', 'icon' => 'shopping-cart', 'permission' => 'sales.view'],
-                ['label' => 'Billing', 'icon' => 'credit-card', 'permission' => null],
                 ['label' => 'Tiket', 'route' => 'tickets.index', 'icon' => 'ticket', 'permission' => 'tickets.view'],
             ],
         ],

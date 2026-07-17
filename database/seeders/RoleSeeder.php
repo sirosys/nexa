@@ -7,7 +7,11 @@ use Spatie\Permission\Models\Role;
 
 class RoleSeeder extends Seeder
 {
-    private const ROLES = ['superadmin', 'technician', 'finance', 'sales', 'customer'];
+    // Role 'sales' dihapus total 2026-07-17 — semua role staff yang tersisa
+    // sekarang bisa mendaftarkan pelanggan baru (lihat CLAUDE.md
+    // "Authorization / Role & Permission"), jadi tidak perlu role
+    // eksklusif "sales" lagi.
+    private const ROLES = ['superadmin', 'technician', 'finance', 'customer'];
 
     public function run(): void
     {

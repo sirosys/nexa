@@ -124,7 +124,7 @@ class SettingManagementTest extends TestCase
             'dismantle.suspended_months_threshold' => 2,
         ]);
 
-        foreach (['technician', 'finance', 'sales', 'customer'] as $role) {
+        foreach (['technician', 'finance', 'customer'] as $role) {
             $user = $this->withRole($role);
 
             $this->actingAs($user)->get('/settings')->assertForbidden();

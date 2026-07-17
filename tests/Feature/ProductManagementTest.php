@@ -126,7 +126,7 @@ class ProductManagementTest extends TestCase
      */
     public function test_non_superadmin_roles_cannot_access_product_routes(): void
     {
-        foreach (['technician', 'finance', 'sales', 'customer'] as $role) {
+        foreach (['technician', 'finance', 'customer'] as $role) {
             $staff = $this->withRole($role);
 
             $this->actingAs($staff)->get('/products')->assertForbidden();

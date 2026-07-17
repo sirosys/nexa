@@ -11,7 +11,6 @@
         'superadmin' => 'Superadmin',
         'technician' => 'Teknisi',
         'finance' => 'Finance',
-        'sales' => 'Sales',
         'customer' => 'Pelanggan',
     ];
     $currentRole = $user?->getRoleNames()->first();

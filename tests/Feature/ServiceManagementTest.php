@@ -143,17 +143,19 @@ class ServiceManagementTest extends TestCase
     }
 
     /**
-     * services.create dibuka untuk role sales — alur registrasi pelanggan
-     * baru end-to-end (lihat CLAUDE.md "Authorization / Role & Permission").
+     * services.create dibuka untuk semua role staff (bukan lagi eksklusif
+     * role 'sales', yang sudah dihapus total 2026-07-17) — alur registrasi
+     * pelanggan baru end-to-end (lihat CLAUDE.md "Authorization / Role &
+     * Permission").
      */
-    public function test_sales_role_can_create_service(): void
+    public function test_technician_role_can_create_service(): void
     {
         $customer = $this->customer();
         $subdistrict = Subdistrict::factory()->create();
         $coverage = Coverage::factory()->create();
         $package = Package::factory()->create(['is_starter' => true]);
 
-        $response = $this->actingAs($this->withRole('sales'))->post('/services', [
+        $response = $this->actingAs($this->withRole('technician'))->post('/services', [
             'user_id' => $customer->id,
             'package_id' => $package->id,
             'address' => 'Jl. Contoh No. 10',
@@ -520,21 +522,20 @@ class ServiceManagementTest extends TestCase
 
     public function test_non_superadmin_roles_cannot_access_service_routes(): void
     {
-        foreach (['technician', 'customer'] as $role) {
-            $staff = $this->withRole($role);
+        $customer = $this->withRole('customer');
 
-            $this->actingAs($staff)->get('/services')->assertForbidden();
-        }
+        $this->actingAs($customer)->get('/services')->assertForbidden();
     }
 
     /**
-     * finance dan sales dapat services.view (finance: konteks tagihan;
-     * sales: alur registrasi pelanggan) — lihat CLAUDE.md "Authorization /
-     * Role & Permission".
+     * Role 'sales' dihapus total 2026-07-17 — finance & technician sekarang
+     * sama-sama dapat services.view (finance: konteks tagihan; technician:
+     * alur registrasi pelanggan) — lihat CLAUDE.md "Authorization / Role &
+     * Permission".
      */
-    public function test_finance_and_sales_roles_can_view_service_routes(): void
+    public function test_finance_and_technician_roles_can_view_service_routes(): void
     {
-        foreach (['finance', 'sales'] as $role) {
+        foreach (['finance', 'technician'] as $role) {
             $staff = $this->withRole($role);
 
             $this->actingAs($staff)->get('/services')->assertOk();
@@ -672,11 +673,17 @@ class ServiceManagementTest extends TestCase
         $response->assertJsonValidationErrors(['nik', 'ktp_photo']);
     }
 
-    public function test_quick_create_customer_endpoint_forbidden_for_non_superadmin(): void
+    /**
+     * Role 'sales' dihapus total 2026-07-17 — technician & finance sekarang
+     * ikut dapat services.view (dan lolos gate ini), jadi role tanpa akses
+     * yang masih relevan diuji di sini tinggal 'customer' (lihat CLAUDE.md
+     * "Authorization / Role & Permission").
+     */
+    public function test_quick_create_customer_endpoint_forbidden_for_customer_role(): void
     {
-        $staff = $this->withRole('technician');
+        $customer = $this->withRole('customer');
 
-        $this->actingAs($staff)->post('/services/customers', [
+        $this->actingAs($customer)->post('/services/customers', [
             'name' => 'Pelanggan Baru',
             'phone' => '81234000333',
             'email' => 'pelanggan.lain@example.com',

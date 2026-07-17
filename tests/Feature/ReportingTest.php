@@ -238,7 +238,7 @@ class ReportingTest extends TestCase
 
     public function test_non_superadmin_roles_get_403_on_all_report_routes(): void
     {
-        foreach (['technician', 'finance', 'sales', 'customer'] as $role) {
+        foreach (['technician', 'finance', 'customer'] as $role) {
             $user = $this->withRole($role);
 
             foreach (['/reports/finance', '/reports/operations', '/reports/customers', '/reports/inventory'] as $route) {

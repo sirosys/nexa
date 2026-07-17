@@ -238,7 +238,7 @@ class AuditLogTest extends TestCase
 
     public function test_non_superadmin_roles_are_forbidden_from_audit_log(): void
     {
-        foreach (['technician', 'finance', 'sales', 'customer'] as $role) {
+        foreach (['technician', 'finance', 'customer'] as $role) {
             $this->actingAs($this->withRole($role))->get('/audit-logs')->assertForbidden();
         }
     }

@@ -5,7 +5,6 @@
         'superadmin' => ['label' => 'Superadmin', 'class' => 'bg-danger-light text-danger dark:bg-danger/10', 'avatar' => 'bg-danger'],
         'technician' => ['label' => 'Teknisi', 'class' => 'bg-warning-light text-warning dark:bg-warning/10', 'avatar' => 'bg-warning'],
         'finance' => ['label' => 'Finance', 'class' => 'bg-success-light text-success dark:bg-success/10', 'avatar' => 'bg-success'],
-        'sales' => ['label' => 'Sales', 'class' => 'bg-info-light text-info dark:bg-info/10', 'avatar' => 'bg-info'],
         'customer' => ['label' => 'Pelanggan', 'class' => 'bg-primary-light text-primary dark:bg-primary/10', 'avatar' => 'bg-primary'],
     ];
 @endphp

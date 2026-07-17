@@ -27,6 +27,13 @@ class PermissionSeederTest extends TestCase
         );
     }
 
+    /**
+     * Role 'sales' dihapus total 2026-07-17 — semua permission registrasi
+     * pelanggan yang tadinya eksklusif miliknya (services.create/update,
+     * sales.create/update, users.complete-kyc) sekarang ikut dimiliki
+     * technician & finance juga (lihat CLAUDE.md "Authorization / Role &
+     * Permission").
+     */
     public function test_technician_permissions_match_matrix(): void
     {
         $expected = [
@@ -34,6 +41,9 @@ class PermissionSeederTest extends TestCase
             'dismantles.view', 'dismantles.claim', 'dismantles.complete',
             'tickets.view', 'tickets.claim', 'tickets.resolve',
             'inventory.view',
+            'services.view', 'services.create', 'services.update',
+            'sales.view', 'sales.create', 'sales.update',
+            'users.complete-kyc',
         ];
 
         $this->assertSameArrays($expected, $this->permissionsFor('technician'));
@@ -41,20 +51,13 @@ class PermissionSeederTest extends TestCase
 
     public function test_finance_permissions_match_matrix(): void
     {
-        $expected = ['sales.view', 'sales.retry-receipt', 'services.view'];
-
-        $this->assertSameArrays($expected, $this->permissionsFor('finance'));
-    }
-
-    public function test_sales_permissions_match_matrix(): void
-    {
         $expected = [
+            'sales.view', 'sales.retry-receipt', 'sales.create', 'sales.update',
             'services.view', 'services.create', 'services.update',
-            'sales.view', 'sales.create', 'sales.update',
             'users.complete-kyc',
         ];
 
-        $this->assertSameArrays($expected, $this->permissionsFor('sales'));
+        $this->assertSameArrays($expected, $this->permissionsFor('finance'));
     }
 
     public function test_customer_has_no_permission(): void

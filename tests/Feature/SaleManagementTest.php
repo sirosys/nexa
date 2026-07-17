@@ -394,20 +394,19 @@ class SaleManagementTest extends TestCase
 
     public function test_non_superadmin_roles_cannot_access_sale_routes(): void
     {
-        foreach (['technician', 'customer'] as $role) {
-            $staff = $this->withRole($role);
+        $customer = $this->withRole('customer');
 
-            $this->actingAs($staff)->get('/sales')->assertForbidden();
-        }
+        $this->actingAs($customer)->get('/sales')->assertForbidden();
     }
 
     /**
-     * finance dan sales dapat sales.view — lihat CLAUDE.md "Authorization /
-     * Role & Permission".
+     * Role 'sales' dihapus total 2026-07-17 — finance & technician sekarang
+     * sama-sama dapat sales.view (permission registrasi pelanggan dibagikan
+     * ke semua staff, lihat CLAUDE.md "Authorization / Role & Permission").
      */
-    public function test_finance_and_sales_roles_can_view_sale_routes(): void
+    public function test_finance_and_technician_roles_can_view_sale_routes(): void
     {
-        foreach (['finance', 'sales'] as $role) {
+        foreach (['finance', 'technician'] as $role) {
             $staff = $this->withRole($role);
 
             $this->actingAs($staff)->get('/sales')->assertOk();

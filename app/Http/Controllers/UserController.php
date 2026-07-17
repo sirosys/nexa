@@ -62,7 +62,7 @@ class UserController extends Controller
      * DashboardService. Customer: layanan miliknya + tagihan/receipt +
      * tiket yang mereka buat (lewat layanan). Technician: job instalasi/
      * dismantle yang ditangani + tiket teknis yang di-assign ke mereka.
-     * Role lain (superadmin/finance/sales) tidak punya data "milik pribadi"
+     * Role lain (superadmin/finance) tidak punya data "milik pribadi"
      * yang natural selain identitas dasar, jadi tidak ada query tambahan.
      */
     public function show(User $user): View

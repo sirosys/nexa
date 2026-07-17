@@ -107,12 +107,19 @@ class DashboardTest extends TestCase
 
     public function test_dashboard_is_accessible_to_every_authenticated_role(): void
     {
-        foreach (['superadmin', 'technician', 'finance', 'sales'] as $role) {
+        foreach (['superadmin', 'technician', 'finance'] as $role) {
             $this->actingAs($this->withRole($role))->get('/dashboard')->assertOk();
         }
     }
 
-    public function test_technician_only_sees_installation_and_dismantle_stats_without_financial_data(): void
+    /**
+     * Role 'sales' dihapus total 2026-07-17 — technician sekarang ikut
+     * dapat services.view/sales.view (permission registrasi pelanggan
+     * dibagikan ke semua staff, lihat CLAUDE.md "Authorization / Role &
+     * Permission"), jadi dashboard-nya ikut menampilkan data layanan/tagihan
+     * di samping antrean instalasi/dismantle — bukan lagi cuma dua stat itu.
+     */
+    public function test_technician_sees_installation_dismantle_and_service_sales_stats(): void
     {
         Service::factory()->create(['status' => Service::STATUS_ACTIVE]);
         Sale::factory()->create(['settled_at' => now(), 'grandtotal' => 100000]);
@@ -120,10 +127,12 @@ class DashboardTest extends TestCase
         $response = $this->actingAs($this->withRole('technician'))->get('/dashboard');
 
         $response->assertOk();
-        $response->assertViewHas('stats', fn (array $stats) => array_keys($stats) === ['installation_queue', 'dismantle_queue']);
-        $response->assertViewHas('statusDistribution', fn ($value) => $value === null);
-        $response->assertViewHas('monthlyRevenue', fn ($value) => $value === null);
-        $response->assertViewHas('recentServices', fn ($value) => $value === null);
+        $response->assertViewHas('stats', fn (array $stats) => array_keys($stats) === [
+            'active_services', 'unpaid_invoices', 'revenue_this_month', 'installation_queue', 'dismantle_queue',
+        ]);
+        $response->assertViewHas('statusDistribution', fn ($value) => $value !== null);
+        $response->assertViewHas('monthlyRevenue', fn ($value) => $value !== null);
+        $response->assertViewHas('recentServices', fn ($value) => $value !== null);
     }
 
     public function test_finance_sees_financial_and_service_data_but_not_installation_dismantle_queues(): void

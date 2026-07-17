@@ -33,8 +33,9 @@ class UserPolicy
 
     // Aksi terpisah dari update() penuh — dipakai gate endpoint
     // POST /users/{user}/complete-kyc (dipicu dari modal "Lengkapi NIK &
-    // Foto KTP" di form Service), supaya role sales bisa menyelesaikan KYC
-    // pelanggan yang baru dibuat tanpa diberi akses users.update penuh.
+    // Foto KTP" di form Service), supaya role staff non-superadmin
+    // (technician/finance) bisa menyelesaikan KYC pelanggan yang baru
+    // dibuat tanpa diberi akses users.update penuh.
     public function completeKyc(User $user): bool
     {
         return $user->can('users.complete-kyc');

@@ -11,7 +11,10 @@ use Illuminate\Validation\Validator;
 
 class UserRequest extends FormRequest
 {
-    public const ROLES = ['superadmin', 'technician', 'finance', 'sales', 'customer'];
+    // Role 'sales' dihapus total 2026-07-17 (lihat CLAUDE.md "Authorization
+    // / Role & Permission") — kemampuan registrasi pelanggan sekarang
+    // dibagikan ke seluruh role staff, bukan lagi eksklusif satu role.
+    public const ROLES = ['superadmin', 'technician', 'finance', 'customer'];
 
     public function authorize(): bool
     {

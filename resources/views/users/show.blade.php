@@ -8,7 +8,6 @@
         'superadmin' => ['label' => 'Superadmin', 'class' => 'bg-danger-light text-danger dark:bg-danger/10', 'avatar' => 'bg-danger'],
         'technician' => ['label' => 'Teknisi', 'class' => 'bg-warning-light text-warning dark:bg-warning/10', 'avatar' => 'bg-warning'],
         'finance' => ['label' => 'Finance', 'class' => 'bg-success-light text-success dark:bg-success/10', 'avatar' => 'bg-success'],
-        'sales' => ['label' => 'Sales', 'class' => 'bg-info-light text-info dark:bg-info/10', 'avatar' => 'bg-info'],
         'customer' => ['label' => 'Pelanggan', 'class' => 'bg-primary-light text-primary dark:bg-primary/10', 'avatar' => 'bg-primary'],
     ];
     $role = $user->getRoleNames()->first();
@@ -40,7 +39,7 @@
 
     // Tab data-role yang relevan cuma ditentukan sekali di sini — null
     // berarti role ini tidak punya data "miliknya sendiri" untuk
-    // ditampilkan (superadmin/finance/sales), jadi cuma tab "Detail Akun".
+    // ditampilkan (superadmin/finance), jadi cuma tab "Detail Akun".
     $tabSet = match (true) {
         $services !== null => 'customer',
         $installations !== null => 'technician',

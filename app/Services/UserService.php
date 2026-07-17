@@ -17,7 +17,6 @@ class UserService
         'superadmin' => 'Superadmin',
         'technician' => 'Teknisi',
         'finance' => 'Finance',
-        'sales' => 'Sales',
         'customer' => 'Pelanggan',
     ];
 

@@ -172,7 +172,7 @@ class InventoryManagementTest extends TestCase
 
     public function test_non_superadmin_non_technician_roles_forbidden(): void
     {
-        foreach (['finance', 'sales', 'customer'] as $role) {
+        foreach (['finance', 'customer'] as $role) {
             $this->actingAs($this->withRole($role))->get('/inventory-items')->assertForbidden();
         }
     }

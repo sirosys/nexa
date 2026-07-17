@@ -362,12 +362,12 @@ class UserManagementTest extends TestCase
     }
 
     /**
-     * Gate `/users` masih sengaja cuma untuk superadmin — technician/finance/sales
+     * Gate `/users` masih sengaja cuma untuk superadmin — technician/finance
      * belum dapat akses apa pun di iterasi ini (lihat CLAUDE.md "Authorization").
      */
     public function test_non_superadmin_staff_roles_cannot_access_user_routes(): void
     {
-        foreach (['technician', 'finance', 'sales'] as $role) {
+        foreach (['technician', 'finance'] as $role) {
             $staff = $this->withRole($role);
 
             $this->actingAs($staff)->get('/users')->assertForbidden();
@@ -479,35 +479,50 @@ class UserManagementTest extends TestCase
         $this->assertSame(self::NIK_MALE, $customer->fresh()->userDetails->nik);
     }
 
-    public function test_complete_kyc_endpoint_forbidden_for_non_superadmin(): void
+    /**
+     * Role 'sales' dihapus total 2026-07-17 — technician & finance sekarang
+     * ikut dapat users.complete-kyc, jadi satu-satunya role yang masih
+     * relevan diuji "forbidden" di sini tinggal 'customer' (tidak pernah
+     * dapat permission apa pun, lihat CLAUDE.md "Authorization / Role &
+     * Permission").
+     */
+    public function test_complete_kyc_endpoint_forbidden_for_customer_role(): void
     {
-        $staff = $this->withRole('technician');
+        $actor = $this->withRole('customer');
         $customer = $this->withRole('customer');
 
-        $this->actingAs($staff)->postJson(route('users.complete-kyc', $customer), [
+        $this->actingAs($actor)->postJson(route('users.complete-kyc', $customer), [
             'nik' => self::NIK_MALE,
             'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
         ])->assertForbidden();
     }
 
     /**
-     * users.complete-kyc dibuka untuk role sales — supaya alur registrasi
-     * pelanggan baru (modal "Lengkapi NIK & Foto KTP" di form Service) tidak
-     * terblokir walau sales tidak punya users.update penuh (lihat CLAUDE.md
-     * "Authorization / Role & Permission").
+     * users.complete-kyc dibuka untuk seluruh role staff (technician &
+     * finance, bukan lagi eksklusif role 'sales' yang sudah dihapus total)
+     * — supaya alur registrasi pelanggan baru (modal "Lengkapi NIK & Foto
+     * KTP" di form Service) tidak terblokir walau staff itu tidak punya
+     * users.update penuh (lihat CLAUDE.md "Authorization / Role &
+     * Permission").
      */
-    public function test_complete_kyc_endpoint_allowed_for_sales(): void
+    public function test_complete_kyc_endpoint_allowed_for_staff_roles(): void
     {
         Storage::fake('local');
-        $sales = $this->withRole('sales');
-        $customer = $this->withRole('customer');
 
-        $response = $this->actingAs($sales)->postJson(route('users.complete-kyc', $customer), [
-            'nik' => self::NIK_MALE,
-            'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
-        ]);
+        // NIK harus beda per iterasi (unique constraint di user_details.nik
+        // — keduanya benar-benar tersimpan, beda dari test forbidden di
+        // atas yang gagal sebelum sempat menyimpan apa pun).
+        foreach (['technician' => self::NIK_MALE, 'finance' => self::NIK_FEMALE] as $role => $nik) {
+            $staff = $this->withRole($role);
+            $customer = $this->withRole('customer');
 
-        $response->assertOk();
-        $this->assertSame(self::NIK_MALE, $customer->fresh()->userDetails->nik);
+            $response = $this->actingAs($staff)->postJson(route('users.complete-kyc', $customer), [
+                'nik' => $nik,
+                'ktp_photo' => UploadedFile::fake()->image('ktp.jpg'),
+            ]);
+
+            $response->assertOk();
+            $this->assertSame($nik, $customer->fresh()->userDetails->nik);
+        }
     }
 }
