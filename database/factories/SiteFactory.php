@@ -2,14 +2,14 @@
 
 namespace Database\Factories;
 
-use App\Models\Pop;
+use App\Models\Site;
 use App\Models\Subdistrict;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Pop>
+ * @extends Factory<Site>
  */
-class PopFactory extends Factory
+class SiteFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -19,8 +19,8 @@ class PopFactory extends Factory
     public function definition(): array
     {
         return [
-            'code' => 'POP'.fake()->unique()->numerify('######'),
-            'name' => 'PoP '.fake()->city(),
+            'code' => 'SIT'.fake()->unique()->numerify('######'),
+            'name' => 'Site '.fake()->city(),
             'subdistrict_id' => Subdistrict::factory(),
             'serial' => fake()->bothify('SN-########'),
             'model' => fake()->randomElement(['MikroTik RB1100', 'MikroTik CCR2004', 'Huawei MA5800']),

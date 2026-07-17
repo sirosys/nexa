@@ -9,8 +9,10 @@ use Illuminate\Http\Request;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        apiPrefix: 'api/v1',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo('/login');
@@ -57,6 +59,6 @@ return Application::configure(basePath: dirname(__DIR__))
         // per-5-menit (bukan per-hari seperti Renewal/Dismantle), status
         // online/offline router adalah kondisi yang berubah cepat, beda
         // dari siklus billing/suspend yang berbasis hari.
-        $schedule->command('monitoring:check-pop-status')->everyFiveMinutes();
+        $schedule->command('monitoring:check-site-status')->everyFiveMinutes();
     })
     ->create();

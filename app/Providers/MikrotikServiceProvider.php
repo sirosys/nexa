@@ -15,7 +15,7 @@ class MikrotikServiceProvider extends ServiceProvider
         // diuji ke router sungguhan — lihat CLAUDE.md "Integrasi MikroTik".
         // Default tetap 'log' sampai ada perangkat untuk divalidasi;
         // kredensial/alamat koneksi tidak dibaca dari config di sini sama
-        // sekali karena per-Pop (lihat HttpMikrotikGateway), bukan global
+        // sekali karena per-Site (lihat HttpMikrotikGateway), bukan global
         // seperti WhatsApp/Xendit.
         $this->app->bind(MikrotikGateway::class, function () {
             return match (config('services.mikrotik.driver', 'log')) {

@@ -2,44 +2,44 @@
 
 namespace Tests\Support;
 
-use App\Models\Pop;
+use App\Models\Site;
 use App\Services\Mikrotik\MikrotikGateway;
 use RuntimeException;
 
 class CapturingMikrotikGateway implements MikrotikGateway
 {
-    /** @var array<int, array{action: string, pop_id: int, username: string, password: ?string, profile: ?string}> */
+    /** @var array<int, array{action: string, site_id: int, username: string, password: ?string, profile: ?string}> */
     public array $calls = [];
 
     public bool $shouldFail = false;
 
     public bool $reachable = true;
 
-    public function createPppoeSecret(Pop $pop, string $username, string $password, ?string $profile = null): bool
+    public function createPppoeSecret(Site $site, string $username, string $password, ?string $profile = null): bool
     {
-        return $this->record('createPppoeSecret', $pop, $username, $password, $profile);
+        return $this->record('createPppoeSecret', $site, $username, $password, $profile);
     }
 
-    public function enablePppoeSecret(Pop $pop, string $username): bool
+    public function enablePppoeSecret(Site $site, string $username): bool
     {
-        return $this->record('enablePppoeSecret', $pop, $username);
+        return $this->record('enablePppoeSecret', $site, $username);
     }
 
-    public function disablePppoeSecret(Pop $pop, string $username): bool
+    public function disablePppoeSecret(Site $site, string $username): bool
     {
-        return $this->record('disablePppoeSecret', $pop, $username);
+        return $this->record('disablePppoeSecret', $site, $username);
     }
 
-    public function deletePppoeSecret(Pop $pop, string $username): bool
+    public function deletePppoeSecret(Site $site, string $username): bool
     {
-        return $this->record('deletePppoeSecret', $pop, $username);
+        return $this->record('deletePppoeSecret', $site, $username);
     }
 
-    public function isReachable(Pop $pop): bool
+    public function isReachable(Site $site): bool
     {
         $this->calls[] = [
             'action' => 'isReachable',
-            'pop_id' => $pop->id,
+            'site_id' => $site->id,
             'username' => '',
             'password' => null,
             'profile' => null,
@@ -52,11 +52,11 @@ class CapturingMikrotikGateway implements MikrotikGateway
         return $this->reachable;
     }
 
-    private function record(string $action, Pop $pop, string $username, ?string $password = null, ?string $profile = null): bool
+    private function record(string $action, Site $site, string $username, ?string $password = null, ?string $profile = null): bool
     {
         $this->calls[] = [
             'action' => $action,
-            'pop_id' => $pop->id,
+            'site_id' => $site->id,
             'username' => $username,
             'password' => $password,
             'profile' => $profile,

@@ -1,8 +1,8 @@
 @php
-    $pop ??= null;
+    $site ??= null;
 
-    $selectedSubdistrictLabel = $pop?->subdistrict
-        ? "{$pop->subdistrict->name}, {$pop->subdistrict->district_name}, {$pop->subdistrict->city_name}, {$pop->subdistrict->province_name}"
+    $selectedSubdistrictLabel = $site?->subdistrict
+        ? "{$site->subdistrict->name}, {$site->subdistrict->district_name}, {$site->subdistrict->city_name}, {$site->subdistrict->province_name}"
         : '';
 @endphp
 
@@ -10,7 +10,7 @@
     class="space-y-4"
     x-data="{
         query: {{ \Illuminate\Support\Js::from(old('subdistrict_label', $selectedSubdistrictLabel)) }},
-        subdistrictId: {{ \Illuminate\Support\Js::from(old('subdistrict_id', $pop?->subdistrict_id)) }},
+        subdistrictId: {{ \Illuminate\Support\Js::from(old('subdistrict_id', $site?->subdistrict_id)) }},
         results: [],
         open: false,
         debounceTimer: null,
@@ -40,12 +40,12 @@
     }"
 >
     <div>
-        <label for="name" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama PoP</label>
+        <label for="name" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Site</label>
         <input
             type="text"
             id="name"
             name="name"
-            value="{{ old('name', $pop?->name) }}"
+            value="{{ old('name', $site?->name) }}"
             required
             class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
         >
@@ -95,7 +95,7 @@
                 type="text"
                 id="serial"
                 name="serial"
-                value="{{ old('serial', $pop?->serial) }}"
+                value="{{ old('serial', $site?->serial) }}"
                 class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
             >
             @error('serial')
@@ -109,7 +109,7 @@
                 type="text"
                 id="model"
                 name="model"
-                value="{{ old('model', $pop?->model) }}"
+                value="{{ old('model', $site?->model) }}"
                 class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
             >
             @error('model')
@@ -125,7 +125,7 @@
             id="location"
             name="location"
             placeholder="Alamat/deskripsi lokasi fisik"
-            value="{{ old('location', $pop?->location) }}"
+            value="{{ old('location', $site?->location) }}"
             class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
         >
         @error('location')
@@ -161,7 +161,7 @@
                     id="host"
                     name="host"
                     placeholder="mis. 172.16.0.1 (IP WireGuard, bukan IP public)"
-                    value="{{ old('host', $pop?->host) }}"
+                    value="{{ old('host', $site?->host) }}"
                     class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
                 >
                 @error('host')
@@ -178,7 +178,7 @@
                     min="1"
                     max="65535"
                     placeholder="443"
-                    value="{{ old('api_port', $pop?->api_port) }}"
+                    value="{{ old('api_port', $site?->api_port) }}"
                     class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
                 >
                 @error('api_port')
@@ -194,7 +194,7 @@
                 id="api_username"
                 name="api_username"
                 placeholder="mis. api"
-                value="{{ old('api_username', $pop?->api_username) }}"
+                value="{{ old('api_username', $site?->api_username) }}"
                 class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
             >
             @error('api_username')

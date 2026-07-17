@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Coverage;
-use App\Models\Pop;
+use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -31,10 +31,10 @@ class CoverageManagementTest extends TestCase
     public function test_superadmin_can_create_coverage_with_auto_generated_code(): void
     {
         $superadmin = $this->superadmin();
-        $pop = Pop::factory()->create();
+        $site = Site::factory()->create();
 
         $response = $this->actingAs($superadmin)->post('/coverages', [
-            'pop_id' => $pop->id,
+            'site_id' => $site->id,
             'name' => 'Cakupan Blok A',
             'description' => 'RW 01-05.',
         ]);
@@ -44,17 +44,17 @@ class CoverageManagementTest extends TestCase
         $coverage = Coverage::where('name', 'Cakupan Blok A')->firstOrFail();
         $this->assertNotNull($coverage->code);
         $this->assertStringStartsWith('COV', $coverage->code);
-        $this->assertSame($pop->id, $coverage->pop_id);
+        $this->assertSame($site->id, $coverage->site_id);
     }
 
-    public function test_pop_id_must_exist(): void
+    public function test_site_id_must_exist(): void
     {
         $response = $this->actingAs($this->superadmin())->post('/coverages', [
-            'pop_id' => 999999,
+            'site_id' => 999999,
             'name' => 'Cakupan Tidak Valid',
         ]);
 
-        $response->assertSessionHasErrors('pop_id');
+        $response->assertSessionHasErrors('site_id');
     }
 
     public function test_superadmin_can_update_coverage(): void
@@ -63,7 +63,7 @@ class CoverageManagementTest extends TestCase
         $coverage = Coverage::factory()->create(['name' => 'Cakupan Lama']);
 
         $response = $this->actingAs($superadmin)->put("/coverages/{$coverage->id}", [
-            'pop_id' => $coverage->pop_id,
+            'site_id' => $coverage->site_id,
             'name' => 'Cakupan Baru',
         ]);
 
@@ -96,14 +96,14 @@ class CoverageManagementTest extends TestCase
     public function test_superadmin_can_view_coverage_detail(): void
     {
         $superadmin = $this->superadmin();
-        $pop = Pop::factory()->create(['name' => 'PoP Induk']);
-        $coverage = Coverage::factory()->create(['pop_id' => $pop->id, 'name' => 'Cakupan Detail']);
+        $site = Site::factory()->create(['name' => 'Site Induk']);
+        $coverage = Coverage::factory()->create(['site_id' => $site->id, 'name' => 'Cakupan Detail']);
 
         $response = $this->actingAs($superadmin)->get(route('coverages.show', $coverage));
 
         $response->assertOk();
         $response->assertSee('Cakupan Detail');
-        $response->assertSee('PoP Induk');
+        $response->assertSee('Site Induk');
     }
 
     public function test_create_and_edit_pages_render(): void

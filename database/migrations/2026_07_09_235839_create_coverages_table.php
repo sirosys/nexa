@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('coverages', function (Blueprint $table) {
             $table->id();
             $table->string('code')->nullable()->unique();
-            $table->foreignId('pop_id')->constrained('pops')->restrictOnDelete();
+            $table->foreignId('site_id')->constrained('sites')->restrictOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();

@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class PopRequest extends FormRequest
+class SiteRequest extends FormRequest
 {
     public function authorize(): bool
     {

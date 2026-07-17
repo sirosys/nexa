@@ -18,7 +18,7 @@ class PermissionSeeder extends Seeder
         'plans' => ['view', 'create', 'update', 'delete'],
         'products' => ['view', 'create', 'update', 'delete'],
         'packages' => ['view', 'create', 'update', 'delete'],
-        'pops' => ['view', 'create', 'update', 'delete'],
+        'sites' => ['view', 'create', 'update', 'delete'],
         'coverages' => ['view', 'create', 'update', 'delete'],
         'services' => ['view', 'create', 'update', 'delete'],
         'installations' => ['view', 'assign', 'claim', 'complete', 'complete-any'],

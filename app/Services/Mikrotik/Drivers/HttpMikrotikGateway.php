@@ -2,7 +2,7 @@
 
 namespace App\Services\Mikrotik\Drivers;
 
-use App\Models\Pop;
+use App\Models\Site;
 use App\Services\Mikrotik\MikrotikGateway;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
@@ -20,9 +20,9 @@ use Throwable;
  * payload di sini best-effort berdasarkan dokumentasi resmi MikroTik,
  * BUKAN hasil percobaan langsung. Revisit begitu ada router sungguhan.
  *
- * Kredensial & alamat koneksi diambil PER-Pop (host/api_port/api_username
- * dari kolom pops, password dari pops.token) — BUKAN dari config global
- * seperti HttpXenditGateway/HttpWhatsappGateway, karena tiap PoP adalah
+ * Kredensial & alamat koneksi diambil PER-Site (host/api_port/api_username
+ * dari kolom sites, password dari sites.token) — BUKAN dari config global
+ * seperti HttpXenditGateway/HttpWhatsappGateway, karena tiap Site adalah
  * router yang berbeda.
  *
  * Skema URL diasumsikan HTTP polos (bukan HTTPS) — keputusan sadar:
@@ -34,7 +34,7 @@ use Throwable;
  */
 class HttpMikrotikGateway implements MikrotikGateway
 {
-    public function createPppoeSecret(Pop $pop, string $username, string $password, ?string $profile = null): bool
+    public function createPppoeSecret(Site $site, string $username, string $password, ?string $profile = null): bool
     {
         $payload = array_filter([
             'name' => $username,
@@ -43,30 +43,30 @@ class HttpMikrotikGateway implements MikrotikGateway
             'profile' => $profile,
         ], fn ($value) => $value !== null);
 
-        $response = $this->client($pop)->put('/rest/ppp/secret', $payload);
+        $response = $this->client($site)->put('/rest/ppp/secret', $payload);
 
         if ($response->failed()) {
-            $this->logFailure($pop, 'createPppoeSecret', $response);
+            $this->logFailure($site, 'createPppoeSecret', $response);
 
-            throw new RuntimeException("Gagal membuat PPPoE secret di MikroTik ({$pop->code}): HTTP {$response->status()}");
+            throw new RuntimeException("Gagal membuat PPPoE secret di MikroTik ({$site->code}): HTTP {$response->status()}");
         }
 
         return true;
     }
 
-    public function enablePppoeSecret(Pop $pop, string $username): bool
+    public function enablePppoeSecret(Site $site, string $username): bool
     {
-        return $this->setDisabled($pop, $username, false);
+        return $this->setDisabled($site, $username, false);
     }
 
-    public function disablePppoeSecret(Pop $pop, string $username): bool
+    public function disablePppoeSecret(Site $site, string $username): bool
     {
-        return $this->setDisabled($pop, $username, true);
+        return $this->setDisabled($site, $username, true);
     }
 
-    public function deletePppoeSecret(Pop $pop, string $username): bool
+    public function deletePppoeSecret(Site $site, string $username): bool
     {
-        $id = $this->findSecretId($pop, $username);
+        $id = $this->findSecretId($site, $username);
 
         // Secret sudah tidak ada — dianggap sukses (idempotent), bukan
         // error. Pemanggil (MikrotikService::remove()) tidak perlu tahu
@@ -75,12 +75,12 @@ class HttpMikrotikGateway implements MikrotikGateway
             return true;
         }
 
-        $response = $this->client($pop)->delete("/rest/ppp/secret/{$id}");
+        $response = $this->client($site)->delete("/rest/ppp/secret/{$id}");
 
         if ($response->failed()) {
-            $this->logFailure($pop, 'deletePppoeSecret', $response);
+            $this->logFailure($site, 'deletePppoeSecret', $response);
 
-            throw new RuntimeException("Gagal menghapus PPPoE secret di MikroTik ({$pop->code}): HTTP {$response->status()}");
+            throw new RuntimeException("Gagal menghapus PPPoE secret di MikroTik ({$site->code}): HTTP {$response->status()}");
         }
 
         return true;
@@ -93,37 +93,37 @@ class HttpMikrotikGateway implements MikrotikGateway
      * (info resource router) dan tidak mengubah state apa pun di router,
      * cocok untuk polling berkala.
      */
-    public function isReachable(Pop $pop): bool
+    public function isReachable(Site $site): bool
     {
-        if (blank($pop->host)) {
+        if (blank($site->host)) {
             return false;
         }
 
         try {
-            return $this->client($pop)->get('/rest/system/resource')->successful();
+            return $this->client($site)->get('/rest/system/resource')->successful();
         } catch (Throwable $exception) {
-            Log::warning("MikroTik isReachable gagal ({$pop->code})", ['exception' => $exception->getMessage()]);
+            Log::warning("MikroTik isReachable gagal ({$site->code})", ['exception' => $exception->getMessage()]);
 
             return false;
         }
     }
 
-    private function setDisabled(Pop $pop, string $username, bool $disabled): bool
+    private function setDisabled(Site $site, string $username, bool $disabled): bool
     {
-        $id = $this->findSecretId($pop, $username);
+        $id = $this->findSecretId($site, $username);
 
         if ($id === null) {
-            throw new RuntimeException("PPPoE secret \"{$username}\" tidak ditemukan di MikroTik ({$pop->code}).");
+            throw new RuntimeException("PPPoE secret \"{$username}\" tidak ditemukan di MikroTik ({$site->code}).");
         }
 
-        $response = $this->client($pop)->patch("/rest/ppp/secret/{$id}", [
+        $response = $this->client($site)->patch("/rest/ppp/secret/{$id}", [
             'disabled' => $disabled ? 'true' : 'false',
         ]);
 
         if ($response->failed()) {
-            $this->logFailure($pop, $disabled ? 'disablePppoeSecret' : 'enablePppoeSecret', $response);
+            $this->logFailure($site, $disabled ? 'disablePppoeSecret' : 'enablePppoeSecret', $response);
 
-            throw new RuntimeException("Gagal mengubah status PPPoE secret di MikroTik ({$pop->code}): HTTP {$response->status()}");
+            throw new RuntimeException("Gagal mengubah status PPPoE secret di MikroTik ({$site->code}): HTTP {$response->status()}");
         }
 
         return true;
@@ -134,14 +134,14 @@ class HttpMikrotikGateway implements MikrotikGateway
      * (mis. "*1") dipakai RouterOS sebagai identifier di endpoint
      * PATCH/DELETE, BUKAN nama secret itu sendiri.
      */
-    private function findSecretId(Pop $pop, string $username): ?string
+    private function findSecretId(Site $site, string $username): ?string
     {
-        $response = $this->client($pop)->get('/rest/ppp/secret', ['name' => $username]);
+        $response = $this->client($site)->get('/rest/ppp/secret', ['name' => $username]);
 
         if ($response->failed()) {
-            $this->logFailure($pop, 'findSecretId', $response);
+            $this->logFailure($site, 'findSecretId', $response);
 
-            throw new RuntimeException("Gagal mencari PPPoE secret di MikroTik ({$pop->code}): HTTP {$response->status()}");
+            throw new RuntimeException("Gagal mencari PPPoE secret di MikroTik ({$site->code}): HTTP {$response->status()}");
         }
 
         $results = (array) $response->json();
@@ -149,24 +149,24 @@ class HttpMikrotikGateway implements MikrotikGateway
         return $results[0]['.id'] ?? null;
     }
 
-    private function client(Pop $pop): PendingRequest
+    private function client(Site $site): PendingRequest
     {
-        if (blank($pop->host)) {
-            throw new RuntimeException("PoP {$pop->code} belum punya host/IP router yang dikonfigurasi.");
+        if (blank($site->host)) {
+            throw new RuntimeException("Site {$site->code} belum punya host/IP router yang dikonfigurasi.");
         }
 
-        $port = $pop->api_port ?? 80;
+        $port = $site->api_port ?? 80;
 
-        return Http::baseUrl("http://{$pop->host}:{$port}")
-            ->withBasicAuth((string) $pop->api_username, (string) $pop->token)
+        return Http::baseUrl("http://{$site->host}:{$port}")
+            ->withBasicAuth((string) $site->api_username, (string) $site->token)
             ->acceptJson()
             ->timeout(10);
     }
 
-    private function logFailure(Pop $pop, string $action, Response $response): void
+    private function logFailure(Site $site, string $action, Response $response): void
     {
         Log::error("MikroTik REST API gagal ({$action})", [
-            'pop_code' => $pop->code,
+            'site_code' => $site->code,
             'status' => $response->status(),
             'body' => $response->body(),
         ]);

@@ -25,9 +25,9 @@
         <dl>
             <x-detail-row label="Kode">{{ $coverage->code }}</x-detail-row>
             <x-detail-row label="Nama">{{ $coverage->name }}</x-detail-row>
-            <x-detail-row label="PoP">
-                @if ($coverage->pop)
-                    <a href="{{ route('pops.show', $coverage->pop) }}" class="font-medium text-primary hover:underline">{{ $coverage->pop->name }}</a>
+            <x-detail-row label="Site">
+                @if ($coverage->site)
+                    <a href="{{ route('sites.show', $coverage->site) }}" class="font-medium text-primary hover:underline">{{ $coverage->site->name }}</a>
                 @else
                     —
                 @endif

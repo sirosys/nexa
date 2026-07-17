@@ -4,18 +4,18 @@
 
 <div class="space-y-4">
     <div>
-        <label for="pop_id" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">PoP</label>
+        <label for="site_id" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Site</label>
         <select
-            id="pop_id"
-            name="pop_id"
+            id="site_id"
+            name="site_id"
             class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white"
         >
-            <option value="">Pilih PoP</option>
-            @foreach ($pops as $pop)
-                <option value="{{ $pop->id }}" @selected((int) old('pop_id', $coverage?->pop_id) === $pop->id)>{{ $pop->name }} ({{ $pop->code }})</option>
+            <option value="">Pilih Site</option>
+            @foreach ($sites as $site)
+                <option value="{{ $site->id }}" @selected((int) old('site_id', $coverage?->site_id) === $site->id)>{{ $site->name }} ({{ $site->code }})</option>
             @endforeach
         </select>
-        @error('pop_id')
+        @error('site_id')
             <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
         @enderror
     </div>

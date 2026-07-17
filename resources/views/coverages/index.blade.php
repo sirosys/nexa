@@ -2,7 +2,7 @@
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Coverage</h1>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Area cakupan layanan per PoP.</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Area cakupan layanan per Site.</p>
         </div>
 
         <a
@@ -39,7 +39,7 @@
                     <tr>
                         <th class="px-4 py-3">Kode</th>
                         <th class="px-4 py-3">Nama</th>
-                        <th class="px-4 py-3">PoP</th>
+                        <th class="px-4 py-3">Site</th>
                         <th class="px-4 py-3 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -48,7 +48,7 @@
                         <tr>
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $coverage->code }}</td>
                             <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $coverage->name }}</td>
-                            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $coverage->pop?->name }}</td>
+                            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $coverage->site?->name }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-end gap-1">
                                     <x-row-action :href="route('coverages.show', $coverage)" icon="eye" label="Detail" />

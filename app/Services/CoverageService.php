@@ -12,7 +12,7 @@ class CoverageService
     {
         return DB::transaction(function () use ($data) {
             $coverage = Coverage::create([
-                'pop_id' => $data['pop_id'],
+                'site_id' => $data['site_id'],
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
                 'created_by' => Auth::id(),
@@ -30,7 +30,7 @@ class CoverageService
     public function update(Coverage $coverage, array $data): Coverage
     {
         $coverage->update([
-            'pop_id' => $data['pop_id'],
+            'site_id' => $data['site_id'],
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
             'updated_by' => Auth::id(),

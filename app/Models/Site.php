@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Database\Factories\PopFactory;
+use Database\Factories\SiteFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,9 +10,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['code', 'name', 'subdistrict_id', 'serial', 'model', 'location', 'token', 'host', 'api_port', 'api_username', 'last_online_at', 'status', 'created_by', 'updated_by'])]
-class Pop extends Model
+class Site extends Model
 {
-    /** @use HasFactory<PopFactory> */
+    /** @use HasFactory<SiteFactory> */
     use HasFactory;
 
     protected $hidden = ['token'];

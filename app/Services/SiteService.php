@@ -2,16 +2,16 @@
 
 namespace App\Services;
 
-use App\Models\Pop;
+use App\Models\Site;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
-class PopService
+class SiteService
 {
-    public function create(array $data): Pop
+    public function create(array $data): Site
     {
         return DB::transaction(function () use ($data) {
-            $pop = Pop::create([
+            $site = Site::create([
                 'name' => $data['name'],
                 'subdistrict_id' => $data['subdistrict_id'],
                 'serial' => $data['serial'] ?? null,
@@ -25,34 +25,34 @@ class PopService
                 'updated_by' => Auth::id(),
             ]);
 
-            $pop->update([
-                'code' => 'POP'.str_pad((string) $pop->id, 6, '0', STR_PAD_LEFT),
+            $site->update([
+                'code' => 'SIT'.str_pad((string) $site->id, 6, '0', STR_PAD_LEFT),
             ]);
 
-            return $pop;
+            return $site;
         });
     }
 
-    public function update(Pop $pop, array $data): Pop
+    public function update(Site $site, array $data): Site
     {
-        $pop->update([
+        $site->update([
             'name' => $data['name'],
             'subdistrict_id' => $data['subdistrict_id'],
             'serial' => $data['serial'] ?? null,
             'model' => $data['model'] ?? null,
             'location' => $data['location'] ?? null,
-            'token' => $data['token'] ?? $pop->token,
+            'token' => $data['token'] ?? $site->token,
             'host' => $data['host'] ?? null,
             'api_port' => $data['api_port'] ?? null,
             'api_username' => $data['api_username'] ?? null,
             'updated_by' => Auth::id(),
         ]);
 
-        return $pop;
+        return $site;
     }
 
-    public function delete(Pop $pop): void
+    public function delete(Site $site): void
     {
-        $pop->delete();
+        $site->delete();
     }
 }

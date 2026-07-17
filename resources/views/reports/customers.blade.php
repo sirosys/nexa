@@ -91,7 +91,7 @@
                                 </td>
                                 <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $service->user?->name ?? '—' }}</td>
                                 <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $service->package?->name ?? '—' }}</td>
-                                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $service->coverage?->name ?? '—' }}{{ $service->coverage?->pop ? ' — '.$service->coverage->pop->name : '' }}</td>
+                                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $service->coverage?->name ?? '—' }}{{ $service->coverage?->site ? ' — '.$service->coverage->site->name : '' }}</td>
                                 <td class="px-4 py-3">
                                     <span class="inline-flex items-center rounded-full {{ $badge['class'] }} px-3 py-1 text-[13px] font-semibold">{{ $badge['label'] }}</span>
                                 </td>

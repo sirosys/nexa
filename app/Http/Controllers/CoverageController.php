@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CoverageRequest;
 use App\Models\Coverage;
-use App\Models\Pop;
+use App\Models\Site;
 use App\Services\CoverageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,7 +20,7 @@ class CoverageController extends Controller
     public function index(Request $request): View
     {
         $coverages = Coverage::query()
-            ->with('pop')
+            ->with('site')
             ->when($request->string('q')->trim()->isNotEmpty(), function ($query) use ($request) {
                 $q = $request->string('q')->trim()->value();
                 $query->where(function ($query) use ($q) {
@@ -37,7 +37,7 @@ class CoverageController extends Controller
 
     public function create(): View
     {
-        return view('coverages.create', ['pops' => Pop::orderBy('name')->get()]);
+        return view('coverages.create', ['sites' => Site::orderBy('name')->get()]);
     }
 
     public function store(CoverageRequest $request): RedirectResponse
@@ -49,14 +49,14 @@ class CoverageController extends Controller
 
     public function show(Coverage $coverage): View
     {
-        $coverage->load('pop');
+        $coverage->load('site');
 
         return view('coverages.show', ['coverage' => $coverage]);
     }
 
     public function edit(Coverage $coverage): View
     {
-        return view('coverages.edit', ['coverage' => $coverage, 'pops' => Pop::orderBy('name')->get()]);
+        return view('coverages.edit', ['coverage' => $coverage, 'sites' => Site::orderBy('name')->get()]);
     }
 
     public function update(CoverageRequest $request, Coverage $coverage): RedirectResponse

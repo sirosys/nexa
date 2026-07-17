@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Coverage;
-use App\Models\Pop;
+use App\Models\Site;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,7 +20,7 @@ class CoverageFactory extends Factory
     {
         return [
             'code' => 'COV'.fake()->unique()->numerify('######'),
-            'pop_id' => Pop::factory(),
+            'site_id' => Site::factory(),
             'name' => 'Cakupan '.fake()->streetName(),
             'description' => fake()->sentence(),
         ];

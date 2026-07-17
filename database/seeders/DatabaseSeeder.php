@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             TestRoleUserSeeder::class,
             SubdistrictSeeder::class,
-            PopCoverageSeeder::class,
+            SiteCoverageSeeder::class,
             ProductPackageSeeder::class,
         ]);
     }

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pops', function (Blueprint $table) {
+        Schema::create('sites', function (Blueprint $table) {
             $table->id();
             $table->string('code')->nullable()->unique();
             $table->string('name');
@@ -28,7 +28,7 @@ return new class extends Migration
             $table->string('api_username')->nullable();
             $table->timestamp('last_online_at')->nullable();
             // Kolom enum eksplisit (bukan disimpulkan dari last_online_at),
-            // diisi scheduled command monitoring:check-pop-status.
+            // diisi scheduled command monitoring:check-site-status.
             $table->string('status')->default('unknown');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
@@ -41,6 +41,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pops');
+        Schema::dropIfExists('sites');
     }
 };

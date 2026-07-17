@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Mikrotik;
 
-use App\Models\Pop;
+use App\Models\Site;
 use App\Services\Mikrotik\Drivers\HttpMikrotikGateway;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -17,26 +17,26 @@ use Tests\TestCase;
  */
 class HttpMikrotikGatewayTest extends TestCase
 {
-    private function pop(): Pop
+    private function site(): Site
     {
-        $pop = new Pop([
-            'code' => 'POP000001',
+        $site = new Site([
+            'code' => 'SIT000001',
             'host' => '172.16.0.1',
             'api_port' => 443,
             'api_username' => 'api',
             'token' => 'rahasia',
         ]);
-        $pop->exists = true;
-        $pop->id = 1;
+        $site->exists = true;
+        $site->id = 1;
 
-        return $pop;
+        return $site;
     }
 
     public function test_create_pppoe_secret_sends_put_with_basic_auth(): void
     {
         Http::fake(['*' => Http::response([], 200)]);
 
-        (new HttpMikrotikGateway)->createPppoeSecret($this->pop(), 'SRV000001', '123456', 'default-profile');
+        (new HttpMikrotikGateway)->createPppoeSecret($this->site(), 'SRV000001', '123456', 'default-profile');
 
         Http::assertSent(function ($request) {
             return $request->url() === 'http://172.16.0.1:443/rest/ppp/secret'
@@ -55,7 +55,7 @@ class HttpMikrotikGatewayTest extends TestCase
 
         $this->expectException(RuntimeException::class);
 
-        (new HttpMikrotikGateway)->createPppoeSecret($this->pop(), 'SRV000001', '123456');
+        (new HttpMikrotikGateway)->createPppoeSecret($this->site(), 'SRV000001', '123456');
     }
 
     public function test_enable_and_disable_patch_using_resolved_id(): void
@@ -65,7 +65,7 @@ class HttpMikrotikGatewayTest extends TestCase
             '*/rest/ppp/secret/*7' => Http::response([], 200),
         ]);
 
-        (new HttpMikrotikGateway)->disablePppoeSecret($this->pop(), 'SRV000001');
+        (new HttpMikrotikGateway)->disablePppoeSecret($this->site(), 'SRV000001');
 
         Http::assertSent(function ($request) {
             return $request->method() === 'PATCH'
@@ -78,43 +78,43 @@ class HttpMikrotikGatewayTest extends TestCase
     {
         Http::fake(['*/rest/ppp/secret?*' => Http::response([], 200)]);
 
-        $result = (new HttpMikrotikGateway)->deletePppoeSecret($this->pop(), 'SRV000001');
+        $result = (new HttpMikrotikGateway)->deletePppoeSecret($this->site(), 'SRV000001');
 
         $this->assertTrue($result);
         Http::assertNotSent(fn ($request) => $request->method() === 'DELETE');
     }
 
-    public function test_throws_when_pop_has_no_host_configured(): void
+    public function test_throws_when_site_has_no_host_configured(): void
     {
-        $pop = new Pop(['code' => 'POP000002']);
-        $pop->exists = true;
-        $pop->id = 2;
+        $site = new Site(['code' => 'SIT000002']);
+        $site->exists = true;
+        $site->id = 2;
 
         $this->expectException(RuntimeException::class);
 
-        (new HttpMikrotikGateway)->createPppoeSecret($pop, 'SRV000002', '123456');
+        (new HttpMikrotikGateway)->createPppoeSecret($site, 'SRV000002', '123456');
     }
 
     public function test_is_reachable_returns_true_on_successful_response(): void
     {
         Http::fake(['*/rest/system/resource' => Http::response(['board-name' => 'RB1100'], 200)]);
 
-        $this->assertTrue((new HttpMikrotikGateway)->isReachable($this->pop()));
+        $this->assertTrue((new HttpMikrotikGateway)->isReachable($this->site()));
     }
 
     public function test_is_reachable_returns_false_on_failed_response_without_throwing(): void
     {
         Http::fake(['*/rest/system/resource' => Http::response([], 500)]);
 
-        $this->assertFalse((new HttpMikrotikGateway)->isReachable($this->pop()));
+        $this->assertFalse((new HttpMikrotikGateway)->isReachable($this->site()));
     }
 
-    public function test_is_reachable_returns_false_when_pop_has_no_host_configured(): void
+    public function test_is_reachable_returns_false_when_site_has_no_host_configured(): void
     {
-        $pop = new Pop(['code' => 'POP000003']);
-        $pop->exists = true;
-        $pop->id = 3;
+        $site = new Site(['code' => 'SIT000003']);
+        $site->exists = true;
+        $site->id = 3;
 
-        $this->assertFalse((new HttpMikrotikGateway)->isReachable($pop));
+        $this->assertFalse((new HttpMikrotikGateway)->isReachable($site));
     }
 }

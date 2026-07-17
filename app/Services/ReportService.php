@@ -135,7 +135,7 @@ class ReportService
         $newServicesBase = fn () => Service::query()->whereBetween('created_at', [$from, $to]);
 
         $services = $newServicesBase()
-            ->with(['user', 'package', 'coverage.pop'])
+            ->with(['user', 'package', 'coverage.site'])
             ->latest('created_at')
             ->paginate(25, ['*'], 'services_page')
             ->withQueryString();

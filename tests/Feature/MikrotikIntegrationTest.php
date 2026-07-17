@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Package;
-use App\Models\Pop;
 use App\Models\Sale;
 use App\Models\Service;
 use App\Models\ServiceActivation;
+use App\Models\Site;
 use App\Models\User;
 use App\Services\DismantleService;
 use App\Services\InstallationService;
@@ -73,10 +73,10 @@ class MikrotikIntegrationTest extends TestCase
             'notes' => null,
         ]);
 
-        $service->refresh()->loadMissing('coverage.pop');
+        $service->refresh()->loadMissing('coverage.site');
         $this->assertCount(1, $gateway->calls);
         $this->assertSame('createPppoeSecret', $gateway->calls[0]['action']);
-        $this->assertSame($service->coverage->pop_id, $gateway->calls[0]['pop_id']);
+        $this->assertSame($service->coverage->site_id, $gateway->calls[0]['site_id']);
         $this->assertSame($service->code, $gateway->calls[0]['username']);
         $this->assertSame($service->pin, $gateway->calls[0]['password']);
     }
@@ -173,9 +173,9 @@ class MikrotikIntegrationTest extends TestCase
     {
         $gateway = $this->fakeGateway();
         $gateway->reachable = true;
-        $pop = Pop::factory()->create();
+        $site = Site::factory()->create();
 
-        $this->assertTrue(app(MikrotikService::class)->checkStatus($pop));
+        $this->assertTrue(app(MikrotikService::class)->checkStatus($site));
         $this->assertSame('isReachable', $gateway->calls[0]['action']);
     }
 
@@ -183,8 +183,8 @@ class MikrotikIntegrationTest extends TestCase
     {
         $gateway = $this->fakeGateway();
         $gateway->shouldFail = true;
-        $pop = Pop::factory()->create();
+        $site = Site::factory()->create();
 
-        $this->assertFalse(app(MikrotikService::class)->checkStatus($pop));
+        $this->assertFalse(app(MikrotikService::class)->checkStatus($site));
     }
 }

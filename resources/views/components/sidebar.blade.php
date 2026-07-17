@@ -41,7 +41,7 @@
         [
             'label' => 'Jaringan',
             'items' => [
-                ['label' => 'PoP', 'route' => 'pops.index', 'icon' => 'server', 'permission' => 'pops.view'],
+                ['label' => 'Site', 'route' => 'sites.index', 'icon' => 'server', 'permission' => 'sites.view'],
                 ['label' => 'Coverage', 'route' => 'coverages.index', 'icon' => 'map', 'permission' => 'coverages.view'],
             ],
         ],

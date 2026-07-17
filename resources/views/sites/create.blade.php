@@ -1,13 +1,13 @@
-<x-app-layout :title="'Tambah PoP — ' . config('app.name', 'NEXA')">
+<x-app-layout :title="'Tambah Site — ' . config('app.name', 'NEXA')">
     <div class="mb-6">
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Tambah PoP</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Tambah Site</h1>
     </div>
 
     <div class="max-w-xl rounded-2xl border border-gray-200 bg-white p-6 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
-        <form method="POST" action="{{ route('pops.store') }}">
+        <form method="POST" action="{{ route('sites.store') }}">
             @csrf
 
-            @include('pops._form')
+            @include('sites._form')
 
             <div class="mt-6 flex items-center gap-3">
                 <button
@@ -16,7 +16,7 @@
                 >
                     Simpan
                 </button>
-                <a href="{{ route('pops.index') }}" class="text-sm font-medium text-gray-600 hover:underline dark:text-gray-300">Batal</a>
+                <a href="{{ route('sites.index') }}" class="text-sm font-medium text-gray-600 hover:underline dark:text-gray-300">Batal</a>
             </div>
         </form>
     </div>

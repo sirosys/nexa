@@ -2,7 +2,7 @@
 
 namespace App\Services\Mikrotik\Drivers;
 
-use App\Models\Pop;
+use App\Models\Site;
 use App\Services\Mikrotik\MikrotikGateway;
 use Illuminate\Support\Facades\Log;
 
@@ -15,46 +15,46 @@ use Illuminate\Support\Facades\Log;
  */
 class LogMikrotikGateway implements MikrotikGateway
 {
-    public function createPppoeSecret(Pop $pop, string $username, string $password, ?string $profile = null): bool
+    public function createPppoeSecret(Site $site, string $username, string $password, ?string $profile = null): bool
     {
-        $this->log('createPppoeSecret', $pop, ['username' => $username, 'profile' => $profile]);
+        $this->log('createPppoeSecret', $site, ['username' => $username, 'profile' => $profile]);
 
         return true;
     }
 
-    public function enablePppoeSecret(Pop $pop, string $username): bool
+    public function enablePppoeSecret(Site $site, string $username): bool
     {
-        $this->log('enablePppoeSecret', $pop, ['username' => $username]);
+        $this->log('enablePppoeSecret', $site, ['username' => $username]);
 
         return true;
     }
 
-    public function disablePppoeSecret(Pop $pop, string $username): bool
+    public function disablePppoeSecret(Site $site, string $username): bool
     {
-        $this->log('disablePppoeSecret', $pop, ['username' => $username]);
+        $this->log('disablePppoeSecret', $site, ['username' => $username]);
 
         return true;
     }
 
-    public function deletePppoeSecret(Pop $pop, string $username): bool
+    public function deletePppoeSecret(Site $site, string $username): bool
     {
-        $this->log('deletePppoeSecret', $pop, ['username' => $username]);
+        $this->log('deletePppoeSecret', $site, ['username' => $username]);
 
         return true;
     }
 
-    public function isReachable(Pop $pop): bool
+    public function isReachable(Site $site): bool
     {
-        $this->log('isReachable', $pop, []);
+        $this->log('isReachable', $site, []);
 
         return true;
     }
 
-    private function log(string $action, Pop $pop, array $context): void
+    private function log(string $action, Site $site, array $context): void
     {
         Log::channel(config('services.mikrotik.log_channel', 'stack'))->info(
             "[MikroTik {$action} - LOG DRIVER] aksi tidak benar-benar dikirim ke router",
-            array_merge(['pop_code' => $pop->code, 'pop_name' => $pop->name], $context)
+            array_merge(['site_code' => $site->code, 'site_name' => $site->name], $context)
         );
     }
 }

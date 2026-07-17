@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Pop;
 use App\Models\Service;
+use App\Models\Site;
 use App\Services\Mikrotik\MikrotikGateway;
 use Closure;
 use Illuminate\Support\Facades\Log;
@@ -31,47 +31,47 @@ class MikrotikService
     public function provision(Service $service): void
     {
         $this->safeCall('provision', $service, function () use ($service) {
-            $pop = $this->popFor($service);
+            $site = $this->siteFor($service);
 
-            return $this->gateway->createPppoeSecret($pop, $service->code, $service->pin);
+            return $this->gateway->createPppoeSecret($site, $service->code, $service->pin);
         });
     }
 
     public function enable(Service $service): void
     {
         $this->safeCall('enable', $service, function () use ($service) {
-            return $this->gateway->enablePppoeSecret($this->popFor($service), $service->code);
+            return $this->gateway->enablePppoeSecret($this->siteFor($service), $service->code);
         });
     }
 
     public function disable(Service $service): void
     {
         $this->safeCall('disable', $service, function () use ($service) {
-            return $this->gateway->disablePppoeSecret($this->popFor($service), $service->code);
+            return $this->gateway->disablePppoeSecret($this->siteFor($service), $service->code);
         });
     }
 
     public function remove(Service $service): void
     {
         $this->safeCall('remove', $service, function () use ($service) {
-            return $this->gateway->deletePppoeSecret($this->popFor($service), $service->code);
+            return $this->gateway->deletePppoeSecret($this->siteFor($service), $service->code);
         });
     }
 
     /**
-     * Dipakai command monitoring:check-pop-status (lihat CLAUDE.md
+     * Dipakai command monitoring:check-site-status (lihat CLAUDE.md
      * "Monitoring") — beda dari provision/enable/disable/remove di atas,
      * method ini punya nilai balik yang dipakai pemanggil (bukan cuma
      * efek samping), jadi kegagalan gateway ditelan jadi `false`, bukan
      * dilempar/diabaikan diam-diam.
      */
-    public function checkStatus(Pop $pop): bool
+    public function checkStatus(Site $site): bool
     {
         try {
-            return $this->gateway->isReachable($pop);
+            return $this->gateway->isReachable($site);
         } catch (Throwable $exception) {
-            Log::warning("MikroTik checkStatus gagal untuk PoP {$pop->code}", [
-                'pop_id' => $pop->id,
+            Log::warning("MikroTik checkStatus gagal untuk Site {$site->code}", [
+                'site_id' => $site->id,
                 'exception' => $exception->getMessage(),
             ]);
 
@@ -79,11 +79,11 @@ class MikrotikService
         }
     }
 
-    private function popFor(Service $service): Pop
+    private function siteFor(Service $service): Site
     {
-        $service->loadMissing('coverage.pop');
+        $service->loadMissing('coverage.site');
 
-        return $service->coverage->pop;
+        return $service->coverage->site;
     }
 
     private function safeCall(string $action, Service $service, Closure $callback): void

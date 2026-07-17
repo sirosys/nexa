@@ -14,7 +14,7 @@ class CoverageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'pop_id' => ['required', 'integer', 'exists:pops,id'],
+            'site_id' => ['required', 'integer', 'exists:sites,id'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
         ];
