@@ -65,6 +65,7 @@
             'label' => 'Sistem',
             'items' => [
                 ['label' => 'Pengaturan', 'route' => 'settings.index', 'icon' => 'cog-6-tooth', 'permission' => 'settings.view'],
+                ['label' => 'Role & Permission', 'route' => 'roles.index', 'active' => 'roles.*', 'icon' => 'identification', 'permission' => 'roles.view'],
                 ['label' => 'Log Aktivitas', 'route' => 'audit-logs.index', 'icon' => 'shield-check', 'permission' => 'audit_logs.view'],
             ],
         ],

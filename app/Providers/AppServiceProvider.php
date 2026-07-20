@@ -2,10 +2,13 @@
 
 namespace App\Providers;
 
+use App\Policies\RolePolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Permission\Models\Role;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,6 +25,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Spatie\Permission\Models\Role bukan model App\Models\*, jadi
+        // konvensi auto-discovery Policy bawaan Laravel (menebak
+        // App\Policies\{Basename}Policy berdasar namespace model) tidak
+        // pernah menemukan RolePolicy secara otomatis — harus didaftarkan
+        // eksplisit di sini. Lihat CLAUDE.md "Authorization / Role &
+        // Permission" (modul Role & Permission Management, /roles).
+        Gate::policy(Role::class, RolePolicy::class);
+
         RateLimiter::for('otp-request', function (Request $request) {
             return Limit::perMinute(3)->by($request->ip().'|'.$request->input('phone'));
         });

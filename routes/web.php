@@ -17,6 +17,7 @@ use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceTicketController;
@@ -151,6 +152,12 @@ Route::middleware('auth')->group(function () {
     // create/update/delete lewat UI (append-only, dicatat lewat
     // AuditLogService::record() di titik-titik aksi sensitif).
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+    // Modul Role & Permission Management — lihat CLAUDE.md "Authorization /
+    // Role & Permission". reset-to-default didaftarkan sebelum
+    // Route::resource supaya tidak tertelan wildcard {role}.
+    Route::post('/roles/{role}/reset-to-default', [RoleController::class, 'resetToDefault'])->name('roles.reset-to-default');
+    Route::resource('roles', RoleController::class)->except(['show', 'create']);
 
     // Modul Reporting — lihat CLAUDE.md "Reporting". Murni agregasi
     // read-only lintas modul, tidak melekat ke satu Eloquent model, jadi

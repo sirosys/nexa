@@ -74,8 +74,12 @@
                             <div>
                                 <div class="flex flex-wrap items-center gap-2">
                                     <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ $user->name }}</h1>
-                                    @if ($role && isset($roleBadges[$role]))
-                                        <span class="inline-flex items-center rounded-full {{ $roleBadges[$role]['class'] }} px-3 py-1 text-[13px] font-semibold">{{ $roleBadges[$role]['label'] }}</span>
+                                    @if ($role)
+                                        {{-- Role custom (dibuat lewat /roles) tidak ada di $roleBadges —
+                                            tetap tampilkan badge netral abu-abu + label Str::headline(). --}}
+                                        <span class="inline-flex items-center rounded-full {{ $roleBadges[$role]['class'] ?? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300' }} px-3 py-1 text-[13px] font-semibold">
+                                            {{ $roleBadges[$role]['label'] ?? \Illuminate\Support\Str::headline($role) }}
+                                        </span>
                                     @endif
                                 </div>
 

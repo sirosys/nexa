@@ -8,14 +8,10 @@ use App\Support\TitleCase;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
+use Spatie\Permission\Models\Role;
 
 class UserRequest extends FormRequest
 {
-    // Role 'sales' dihapus total 2026-07-17 (lihat CLAUDE.md "Authorization
-    // / Role & Permission") — kemampuan registrasi pelanggan sekarang
-    // dibagikan ke seluruh role staff, bukan lagi eksklusif satu role.
-    public const ROLES = ['superadmin', 'technician', 'finance', 'customer'];
-
     public function authorize(): bool
     {
         return true;
@@ -44,7 +40,11 @@ class UserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'digits_between:9,15', Rule::unique('users', 'phone')->ignore($userId)],
             'email' => ['required', 'email:rfc', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
-            'role' => ['required', Rule::in(self::ROLES)],
+            // Daftar role sekarang dinamis (bukan 4 role hardcoded) — sejak
+            // modul Role & Permission Management (/roles), superadmin bisa
+            // membuat role custom baru yang harus otomatis ikut jadi pilihan
+            // valid di sini. Lihat CLAUDE.md "Authorization / Role & Permission".
+            'role' => ['required', Rule::in(Role::pluck('name'))],
             'nik' => [$isCreating ? 'required' : 'nullable', 'digits:16', new ValidNik, Rule::unique('user_details', 'nik')->ignore($userId, 'id')],
             'ktp_photo' => [$isCreating ? 'required' : 'nullable', 'image', 'max:4096'],
         ];

@@ -7,6 +7,10 @@
     // cuma menerima bagian lokal (badge +62 terpisah di depannya) — sama
     // seperti pola di auth/login.blade.php.
     $phoneLocal = $user ? preg_replace('/^62/', '', (string) $user->phone) : null;
+    // Label Indonesia rapi cuma untuk 4 role bawaan sistem — role custom yang
+    // dibuat superadmin lewat /roles otomatis pakai fallback Str::headline()
+    // (mis. "warehouse_staff" -> "Warehouse Staff"), tidak perlu update di
+    // sini tiap kali ada role baru. $roles dikirim dari UserController.
     $roleLabels = [
         'superadmin' => 'Superadmin',
         'technician' => 'Teknisi',
@@ -100,8 +104,10 @@
             aria-invalid="{{ $ariaInvalid('role') }}"
             class="select validator w-full"
         >
-            @foreach ($roleLabels as $value => $label)
-                <option value="{{ $value }}" @selected(old('role', $currentRole) === $value)>{{ $label }}</option>
+            @foreach ($roles as $roleOption)
+                <option value="{{ $roleOption->name }}" @selected(old('role', $currentRole) === $roleOption->name)>
+                    {{ $roleLabels[$roleOption->name] ?? \Illuminate\Support\Str::headline($roleOption->name) }}
+                </option>
             @endforeach
         </select>
         @error('role')

@@ -11,7 +11,12 @@ class RoleSeeder extends Seeder
     // sekarang bisa mendaftarkan pelanggan baru (lihat CLAUDE.md
     // "Authorization / Role & Permission"), jadi tidak perlu role
     // eksklusif "sales" lagi.
-    private const ROLES = ['superadmin', 'technician', 'finance', 'customer'];
+    //
+    // Public (bukan private) — dipakai RoleService/RoleRequest/roles/edit
+    // (modul Role & Permission Management di /roles) untuk mengenali "role
+    // bawaan sistem" yang tidak boleh di-rename/dihapus lewat UI itu, tanpa
+    // duplikasi daftar ini di tempat lain.
+    public const ROLES = ['superadmin', 'technician', 'finance', 'customer'];
 
     public function run(): void
     {

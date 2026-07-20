@@ -57,8 +57,10 @@
                     class="rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                 >
                     <option value="">Semua Role</option>
-                    @foreach ($roleBadges as $value => $data)
-                        <option value="{{ $value }}" @selected($role === $value)>{{ $data['label'] }}</option>
+                    @foreach ($roles as $roleOption)
+                        <option value="{{ $roleOption->name }}" @selected($role === $roleOption->name)>
+                            {{ $roleBadges[$roleOption->name]['label'] ?? \Illuminate\Support\Str::headline($roleOption->name) }}
+                        </option>
                     @endforeach
                 </select>
 
@@ -97,8 +99,13 @@
                                 </div>
                             </td>
                             <td class="px-4 py-3">
-                                @if ($userRole && isset($roleBadges[$userRole]))
-                                    <span class="inline-flex items-center rounded-full {{ $roleBadges[$userRole]['class'] }} px-3 py-1 text-[13px] font-semibold">{{ $roleBadges[$userRole]['label'] }}</span>
+                                @if ($userRole)
+                                    {{-- Role custom (dibuat lewat /roles) tidak ada di $roleBadges —
+                                        tetap tampilkan badge netral abu-abu + label Str::headline(),
+                                        jangan sembunyikan badge-nya sama sekali. --}}
+                                    <span class="inline-flex items-center rounded-full {{ $roleBadges[$userRole]['class'] ?? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300' }} px-3 py-1 text-[13px] font-semibold">
+                                        {{ $roleBadges[$userRole]['label'] ?? \Illuminate\Support\Str::headline($userRole) }}
+                                    </span>
                                 @else
                                     <span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-[13px] font-semibold text-gray-500 dark:bg-gray-700 dark:text-gray-400">—</span>
                                 @endif

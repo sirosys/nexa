@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -45,6 +46,11 @@ class UserController extends Controller
             'users' => $users,
             'q' => $request->string('q')->value(),
             'role' => $role,
+            // Daftar role dinamis (bukan lagi 4 hardcoded) — dipakai filter
+            // di sini DAN diteruskan ke modal "Tambah Pengguna" (lihat
+            // @include('users._form', [...]) di bawah), supaya role custom
+            // baru dari /roles otomatis muncul di keduanya.
+            'roles' => Role::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -131,7 +137,10 @@ class UserController extends Controller
     {
         $user->load(['userDetails', 'roles']);
 
-        return view('users.edit', ['user' => $user]);
+        return view('users.edit', [
+            'user' => $user,
+            'roles' => Role::orderBy('name')->get(['id', 'name']),
+        ]);
     }
 
     public function update(UserRequest $request, User $user): RedirectResponse

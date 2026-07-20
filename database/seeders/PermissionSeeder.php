@@ -31,6 +31,7 @@ class PermissionSeeder extends Seeder
         'settings' => ['view', 'update'],
         'audit_logs' => ['view'],
         'reports' => ['view'],
+        'roles' => ['view', 'create', 'update', 'delete'],
     ];
 
     /**
@@ -70,12 +71,24 @@ class PermissionSeeder extends Seeder
         }
 
         foreach (self::ROLE_PERMISSIONS as $role => $permissions) {
-            Role::findByName($role, 'web')->syncPermissions($permissions);
+            $roleModel = Role::findByName($role, 'web');
+
+            // Kalau permission role ini sudah pernah diedit manual lewat UI
+            // /roles (RoleService::updatePermissions() mematikan flag ini
+            // begitu superadmin menyimpan perubahan untuk role bawaan),
+            // JANGAN ditimpa balik ke matrix hardcoded di sini — role itu
+            // sudah lepas dari sinkronisasi otomatis, dikelola penuh lewat
+            // UI. Lihat CLAUDE.md "Authorization / Role & Permission".
+            if ($roleModel->permissions_managed_by_seeder) {
+                $roleModel->syncPermissions($permissions);
+            }
         }
 
         // Superadmin selalu dapat SEMUA permission, diambil dinamis (bukan
         // daftar hardcoded) supaya permission baru dari modul berikutnya
-        // otomatis ikut tanpa risiko lupa update daftar ini.
+        // otomatis ikut tanpa risiko lupa update daftar ini. Tidak digerbang
+        // oleh permissions_managed_by_seeder — superadmin sengaja tidak
+        // pernah bisa diedit lewat UI /roles sama sekali.
         Role::findByName('superadmin', 'web')->syncPermissions(Permission::all());
     }
 }
