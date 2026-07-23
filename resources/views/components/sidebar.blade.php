@@ -89,10 +89,13 @@
 ></div>
 
 <aside
-    class="fixed inset-y-0 left-0 z-40 w-64 transform bg-gray-900 transition-transform duration-200 ease-in-out lg:translate-x-0"
+    class="fixed inset-y-0 left-0 z-40 w-64 transform bg-aside transition-transform duration-200 ease-in-out lg:translate-x-0"
     :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
 >
-    <div class="flex h-16 items-center justify-center gap-2 border-b border-white/10 px-4">
+    {{-- "Brand" area — warna sedikit lebih gelap dari badan sidebar (bg-aside),
+         meniru pemisahan visual brand/aside-menu ala Metronic v7.0.0 dark aside
+         (lihat CLAUDE.md "Referensi Desain UI"). --}}
+    <div class="flex h-16 items-center justify-center gap-2 bg-brand px-4">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
             {{-- Sidebar selalu gelap terlepas dari mode terang/gelap app, jadi selalu pakai varian logo-black-bg (X putih) --}}
             <img src="{{ asset('images/logo/logo-black-bg.png') }}" alt="{{ config('app.name', 'NEXA') }}" class="h-9 w-9 rounded-lg">
@@ -103,7 +106,7 @@
     <nav class="h-[calc(100%-4rem)] overflow-y-auto px-3 py-4">
         @foreach ($visibleGroups as $group)
             @if ($group['label'])
-                <p class="mb-2 mt-5 px-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 first:mt-0">
+                <p class="mb-2 mt-5 px-3 text-[11px] font-bold uppercase tracking-wider text-aside-section first:mt-0">
                     {{ $group['label'] }}
                 </p>
             @endif
@@ -115,14 +118,14 @@
                             href="{{ isset($item['route']) ? route($item['route']) : '#' }}"
                             @class([
                                 'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition',
-                                'bg-primary text-white shadow-sm shadow-primary/30' => $active,
-                                'text-gray-400 hover:bg-white/5 hover:text-white' => ! $active,
+                                'bg-aside-active text-white' => $active,
+                                'text-aside-muted hover:bg-aside-active hover:text-white' => ! $active,
                             ])
                         >
                             <x-icon
                                 :name="$item['icon']"
                                 size="5"
-                                :class="$active ? 'text-white' : 'text-gray-500 transition group-hover:text-white'"
+                                :class="$active ? 'text-primary' : 'text-aside-icon transition group-hover:text-primary'"
                             />
                             <span>{{ $item['label'] }}</span>
                         </a>

@@ -18,14 +18,20 @@
     ];
     $sizeClass = $sizes[$size] ?? $sizes[5];
 @endphp
+{{--
+    Ikon "Stockholm Icons" (Metronic v7.0.0 demo1) — dua-lapis (duotone): tiap
+    file punya 1-2 <path> ber-fill="#000000" literal, salah satunya opacity 0.3
+    untuk lapisan bayangan. Warna sebenarnya TIDAK ditentukan di sini, tapi lewat
+    CSS global `.nexa-icon [fill]:not([fill="none"]) { fill: currentColor; }`
+    (resources/css/app.css) — jadi ikon otomatis ikut warna teks (text-*) di
+    elemen manapun, sambil tetap mempertahankan efek duotone dari opacity yang
+    sudah ditulis di file aslinya. Jangan hardcode warna lewat `fill=` di sini.
+--}}
 @if ($path)
     <svg
         xmlns="http://www.w3.org/2000/svg"
-        fill="none"
         viewBox="0 0 24 24"
-        stroke-width="1.5"
-        stroke="currentColor"
         aria-hidden="true"
-        {{ $attributes->class([$sizeClass, 'shrink-0']) }}
+        {{ $attributes->class(['nexa-icon', $sizeClass, 'shrink-0']) }}
     >{!! $path !!}</svg>
 @endif
