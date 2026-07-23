@@ -54,10 +54,24 @@ class PermissionSeeder extends Seeder
             'sales.view', 'sales.create', 'sales.update',
             'users.complete-kyc',
         ],
+        // 'finance' diperluas jadi peran operator harian "Admin/NOC" (2026-07-23)
+        // — identifier database TETAP 'finance' (dirujuk literal di banyak
+        // test & label map), cuma cakupan permission-nya yang diperluas dan
+        // label UI-nya diganti "Admin/NOC". Sebelumnya cuma pegang
+        // sales.*/services.*/users.complete-kyc (murni transaksi), sekarang
+        // ditambah akses dispatch operasional (assign/queue/resolve-any)
+        // supaya NOC tidak wajib pakai akun superadmin untuk kerja
+        // sehari-hari. Lihat CLAUDE.md "Authorization / Role & Permission".
         'finance' => [
             'sales.view', 'sales.retry-receipt', 'sales.create', 'sales.update',
             'services.view', 'services.create', 'services.update',
-            'users.complete-kyc',
+            'users.view', 'users.complete-kyc',
+            'installations.view', 'installations.assign', 'installations.complete-any',
+            'dismantles.view', 'dismantles.queue', 'dismantles.assign', 'dismantles.complete-any',
+            'tickets.view', 'tickets.create', 'tickets.assign', 'tickets.resolve-any',
+            'sites.view', 'coverages.view',
+            'inventory.view',
+            'reports.view',
         ],
         'customer' => [],
     ];

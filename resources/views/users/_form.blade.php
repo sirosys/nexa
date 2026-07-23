@@ -14,7 +14,7 @@
     $roleLabels = [
         'superadmin' => 'Superadmin',
         'technician' => 'Teknisi',
-        'finance' => 'Finance',
+        'finance' => 'Admin/NOC',
         'customer' => 'Pelanggan',
     ];
     $currentRole = $user?->getRoleNames()->first();
