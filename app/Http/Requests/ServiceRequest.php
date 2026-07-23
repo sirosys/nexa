@@ -50,20 +50,22 @@ class ServiceRequest extends FormRequest
 
             $user = User::with('userDetails')->find($userId);
 
-            if ($user && ! $user->hasRole('customer')) {
-                $validator->errors()->add('user_id', 'User yang dipilih harus berrole customer.');
-            }
+            // Semua role (customer maupun staff) boleh didaftarkan Service —
+            // keputusan eksplisit user 2026-07-23, lihat CLAUDE.md "Service".
+            // Sebelumnya dibatasi harus role customer.
 
             // Gate ini cuma berlaku saat MENDAFTARKAN Service baru (POST),
             // bukan saat edit (PUT/PATCH) — kalau tidak, Service lama yang
-            // customer-nya belum lengkap (dibuat sebelum gate ini ada) jadi
+            // user-nya belum lengkap (dibuat sebelum gate ini ada) jadi
             // tidak bisa diedit sama sekali. Pertahanan sisi server — UI
             // form Service sudah menggerbang ini lewat modal "Lengkapi NIK
             // & Foto KTP" saat create, tapi tetap ditegakkan ulang di sini
             // kalau ada yang submit request langsung tanpa lewat UI (lihat
-            // CLAUDE.md "Service").
-            if ($this->isMethod('post') && $user && $user->hasRole('customer') && (blank($user->userDetails?->nik) || blank($user->userDetails?->ktp_photo))) {
-                $validator->errors()->add('user_id', 'Pelanggan ini belum melengkapi NIK & foto KTP.');
+            // CLAUDE.md "Service"). Berlaku untuk SIAPA PUN yang dipilih,
+            // bukan cuma role customer — identitas KYC dibutuhkan terlepas
+            // dari role user yang berlangganan.
+            if ($this->isMethod('post') && $user && (blank($user->userDetails?->nik) || blank($user->userDetails?->ktp_photo))) {
+                $validator->errors()->add('user_id', 'Pengguna ini belum melengkapi NIK & foto KTP.');
             }
 
             $packageId = $this->input('package_id');

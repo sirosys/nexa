@@ -36,9 +36,8 @@ class ServiceService
                 'updated_by' => Auth::id(),
             ]);
 
-            $service->update([
-                'code' => 'SRV'.str_pad((string) $service->id, 6, '0', STR_PAD_LEFT),
-            ]);
+            // `code` sudah digenerate otomatis lewat Service::booted() —
+            // tidak perlu diisi di sini (lihat CLAUDE.md "Service").
 
             // Sale (tagihan pendaftaran) untuk paket starter yang dipilih
             // dibuat otomatis di sini — staff tidak input manual ke /sales

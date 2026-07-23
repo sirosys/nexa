@@ -98,7 +98,7 @@ class DismantleManagementTest extends TestCase
         $service = $this->serviceWithActivation(Service::STATUS_ACTIVE);
         $superadmin = $this->superadmin();
 
-        $response = $this->actingAs($superadmin)->post("/dismantles/{$service->id}/queue");
+        $response = $this->actingAs($superadmin)->post("/dismantles/{$service->code}/queue");
 
         $response->assertRedirect(route('dismantles.show', $service));
 
@@ -114,7 +114,7 @@ class DismantleManagementTest extends TestCase
     {
         $service = $this->serviceWithActivation(Service::STATUS_SUSPENDED, ['suspended_at' => now()->subMonths(3)]);
 
-        $response = $this->actingAs($this->superadmin())->post("/dismantles/{$service->id}/queue");
+        $response = $this->actingAs($this->superadmin())->post("/dismantles/{$service->code}/queue");
 
         $response->assertRedirect(route('dismantles.show', $service));
         $this->assertSame(Service::STATUS_PENDING_DISMANTLE, $service->fresh()->status);
@@ -124,7 +124,7 @@ class DismantleManagementTest extends TestCase
     {
         $service = $this->serviceWithActivation(Service::STATUS_INSTALLING);
 
-        $response = $this->actingAs($this->superadmin())->post("/dismantles/{$service->id}/queue");
+        $response = $this->actingAs($this->superadmin())->post("/dismantles/{$service->code}/queue");
 
         $response->assertRedirect();
         $response->assertSessionHas('error');
@@ -135,7 +135,7 @@ class DismantleManagementTest extends TestCase
     {
         $service = $this->queuedForDismantleService();
 
-        $response = $this->actingAs($this->superadmin())->post("/dismantles/{$service->id}/queue");
+        $response = $this->actingAs($this->superadmin())->post("/dismantles/{$service->code}/queue");
 
         $response->assertRedirect();
         $response->assertSessionHas('error');
@@ -153,7 +153,7 @@ class DismantleManagementTest extends TestCase
         foreach (['customer', 'technician'] as $role) {
             $staff = $this->withRole($role);
 
-            $this->actingAs($staff)->post("/dismantles/{$service->id}/queue")->assertForbidden();
+            $this->actingAs($staff)->post("/dismantles/{$service->code}/queue")->assertForbidden();
         }
     }
 
@@ -162,7 +162,7 @@ class DismantleManagementTest extends TestCase
         $finance = $this->withRole('finance');
         $service = $this->serviceWithActivation(Service::STATUS_ACTIVE);
 
-        $response = $this->actingAs($finance)->post("/dismantles/{$service->id}/queue");
+        $response = $this->actingAs($finance)->post("/dismantles/{$service->code}/queue");
 
         $response->assertRedirect();
         $this->assertSame(Service::STATUS_PENDING_DISMANTLE, $service->fresh()->status);
@@ -174,7 +174,7 @@ class DismantleManagementTest extends TestCase
         $service = $this->queuedForDismantleService();
         $technician = $this->withRole('technician');
 
-        $response = $this->actingAs($this->superadmin())->post("/dismantles/{$service->id}/assign", [
+        $response = $this->actingAs($this->superadmin())->post("/dismantles/{$service->code}/assign", [
             'technician_id' => $technician->id,
         ]);
 
@@ -200,7 +200,7 @@ class DismantleManagementTest extends TestCase
         $service = Service::factory()->create(['status' => Service::STATUS_ACTIVE]);
         $technician = $this->withRole('technician');
 
-        $response = $this->actingAs($this->superadmin())->post("/dismantles/{$service->id}/assign", [
+        $response = $this->actingAs($this->superadmin())->post("/dismantles/{$service->code}/assign", [
             'technician_id' => $technician->id,
         ]);
 
@@ -214,7 +214,7 @@ class DismantleManagementTest extends TestCase
         $service = $this->queuedForDismantleService();
         $notTechnician = $this->withRole('finance');
 
-        $response = $this->actingAs($this->superadmin())->post("/dismantles/{$service->id}/assign", [
+        $response = $this->actingAs($this->superadmin())->post("/dismantles/{$service->code}/assign", [
             'technician_id' => $notTechnician->id,
         ]);
 
@@ -226,7 +226,7 @@ class DismantleManagementTest extends TestCase
         $service = $this->queuedForDismantleService();
         $technician = $this->withRole('technician');
 
-        $response = $this->actingAs($technician)->post("/dismantles/{$service->id}/claim");
+        $response = $this->actingAs($technician)->post("/dismantles/{$service->code}/claim");
 
         $response->assertRedirect(route('dismantles.show', $service));
 
@@ -244,9 +244,9 @@ class DismantleManagementTest extends TestCase
         $first = $this->withRole('technician');
         $second = $this->withRole('technician');
 
-        $this->actingAs($first)->post("/dismantles/{$service->id}/claim");
+        $this->actingAs($first)->post("/dismantles/{$service->code}/claim");
 
-        $response = $this->actingAs($second)->post("/dismantles/{$service->id}/claim");
+        $response = $this->actingAs($second)->post("/dismantles/{$service->code}/claim");
 
         $response->assertRedirect();
         $response->assertSessionHas('error');
@@ -261,9 +261,9 @@ class DismantleManagementTest extends TestCase
         $gateway = $this->fakeGateway();
         $service = $this->queuedForDismantleService();
         $technician = $this->withRole('technician');
-        $this->actingAs($technician)->post("/dismantles/{$service->id}/claim");
+        $this->actingAs($technician)->post("/dismantles/{$service->code}/claim");
 
-        $response = $this->actingAs($technician)->post("/dismantles/{$service->id}/complete", [
+        $response = $this->actingAs($technician)->post("/dismantles/{$service->code}/complete", [
             'photo' => UploadedFile::fake()->image('bukti.jpg'),
             'notes' => 'Perangkat berhasil diambil kembali.',
         ]);
@@ -293,9 +293,9 @@ class DismantleManagementTest extends TestCase
         $service = $this->queuedForDismantleService();
         $assigned = $this->withRole('technician');
         $other = $this->withRole('technician');
-        $this->actingAs($assigned)->post("/dismantles/{$service->id}/claim");
+        $this->actingAs($assigned)->post("/dismantles/{$service->code}/claim");
 
-        $response = $this->actingAs($other)->post("/dismantles/{$service->id}/complete", [
+        $response = $this->actingAs($other)->post("/dismantles/{$service->code}/complete", [
             'photo' => UploadedFile::fake()->image('bukti.jpg'),
         ]);
 
@@ -306,9 +306,9 @@ class DismantleManagementTest extends TestCase
     {
         $service = $this->queuedForDismantleService();
         $technician = $this->withRole('technician');
-        $this->actingAs($technician)->post("/dismantles/{$service->id}/claim");
+        $this->actingAs($technician)->post("/dismantles/{$service->code}/claim");
 
-        $response = $this->actingAs($technician)->post("/dismantles/{$service->id}/complete", []);
+        $response = $this->actingAs($technician)->post("/dismantles/{$service->code}/complete", []);
 
         $response->assertSessionHasErrors(['photo']);
     }
@@ -321,7 +321,7 @@ class DismantleManagementTest extends TestCase
         // Klaim tetap aksi fieldwork khusus technician — superadmin sengaja
         // tidak ikut kebagian walau punya seluruh permission lain (lihat
         // CLAUDE.md "Authorization / Role & Permission").
-        $this->actingAs($superadmin)->post("/dismantles/{$service->id}/claim")->assertForbidden();
+        $this->actingAs($superadmin)->post("/dismantles/{$service->code}/claim")->assertForbidden();
     }
 
     public function test_superadmin_can_complete_dismantle_via_override(): void
@@ -337,7 +337,7 @@ class DismantleManagementTest extends TestCase
         // dismantles.complete-any: jalur darurat kalau teknisi yang
         // di-assign resign/tidak aktif — menutup gap "job stuck permanen"
         // (lihat CLAUDE.md "Authorization / Role & Permission").
-        $response = $this->actingAs($superadmin)->post("/dismantles/{$service->id}/complete", [
+        $response = $this->actingAs($superadmin)->post("/dismantles/{$service->code}/complete", [
             'photo' => UploadedFile::fake()->image('bukti.jpg'),
         ]);
 
@@ -355,7 +355,7 @@ class DismantleManagementTest extends TestCase
         $customer = $this->withRole('customer');
 
         $this->actingAs($customer)->get('/dismantles')->assertForbidden();
-        $this->actingAs($customer)->get("/dismantles/{$service->id}")->assertForbidden();
+        $this->actingAs($customer)->get("/dismantles/{$service->code}")->assertForbidden();
     }
 
     public function test_finance_can_view_dismantle_queue(): void
@@ -364,7 +364,7 @@ class DismantleManagementTest extends TestCase
         $service = $this->queuedForDismantleService();
 
         $this->actingAs($finance)->get('/dismantles')->assertOk();
-        $this->actingAs($finance)->get("/dismantles/{$service->id}")->assertOk();
+        $this->actingAs($finance)->get("/dismantles/{$service->code}")->assertOk();
     }
 
     public function test_index_and_show_render_for_superadmin_and_technician(): void
@@ -372,11 +372,11 @@ class DismantleManagementTest extends TestCase
         $service = $this->queuedForDismantleService();
 
         $this->actingAs($this->superadmin())->get('/dismantles')->assertOk();
-        $this->actingAs($this->superadmin())->get("/dismantles/{$service->id}")->assertOk();
+        $this->actingAs($this->superadmin())->get("/dismantles/{$service->code}")->assertOk();
 
         $technician = $this->withRole('technician');
         $this->actingAs($technician)->get('/dismantles')->assertOk();
-        $this->actingAs($technician)->get("/dismantles/{$service->id}")->assertOk();
+        $this->actingAs($technician)->get("/dismantles/{$service->code}")->assertOk();
     }
 
     public function test_dismantle_photo_accessible_by_assigned_technician_and_superadmin_only(): void
@@ -385,21 +385,21 @@ class DismantleManagementTest extends TestCase
         $service = $this->queuedForDismantleService();
         $technician = $this->withRole('technician');
         $other = $this->withRole('technician');
-        $this->actingAs($technician)->post("/dismantles/{$service->id}/claim");
-        $this->actingAs($technician)->post("/dismantles/{$service->id}/complete", [
+        $this->actingAs($technician)->post("/dismantles/{$service->code}/claim");
+        $this->actingAs($technician)->post("/dismantles/{$service->code}/complete", [
             'photo' => UploadedFile::fake()->image('bukti.jpg'),
         ]);
 
-        $this->actingAs($technician)->get("/secure/dismantle-photo/{$service->id}")->assertOk();
-        $this->actingAs($this->superadmin())->get("/secure/dismantle-photo/{$service->id}")->assertOk();
-        $this->actingAs($other)->get("/secure/dismantle-photo/{$service->id}")->assertForbidden();
+        $this->actingAs($technician)->get("/secure/dismantle-photo/{$service->code}")->assertOk();
+        $this->actingAs($this->superadmin())->get("/secure/dismantle-photo/{$service->code}")->assertOk();
+        $this->actingAs($other)->get("/secure/dismantle-photo/{$service->code}")->assertForbidden();
     }
 
     public function test_dismantle_photo_returns_404_when_not_yet_uploaded(): void
     {
         $service = $this->queuedForDismantleService();
 
-        $response = $this->actingAs($this->superadmin())->get("/secure/dismantle-photo/{$service->id}");
+        $response = $this->actingAs($this->superadmin())->get("/secure/dismantle-photo/{$service->code}");
 
         $response->assertNotFound();
     }

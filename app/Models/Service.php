@@ -65,6 +65,52 @@ class Service extends Model
         self::STATUS_DISMANTLED => 'Dibongkar',
     ];
 
+    protected static function booted(): void
+    {
+        // `code` digenerate sebelum insert (independen dari id) — pola sama
+        // User::booted(), direplikasi dari logic ~/Webapp/xnet/app (lihat
+        // Service::generateUniqueCode() di bawah), bukan lagi turunan id
+        // ('SRV'+6digit) yang diisi belakangan lewat update() di
+        // ServiceService::create().
+        static::creating(function (Service $service) {
+            $service->code ??= self::generateUniqueCode();
+        });
+    }
+
+    /**
+     * 8 karakter alphanumeric acak (alfabet tanpa I/O/0/1 supaya tidak
+     * ambigu dibaca staff/teknisi di lapangan), dipakai sebagai `code` —
+     * juga jadi route key (getRouteKeyName()) supaya URL /services/{service}
+     * (dan Installation/Dismantle yang route-model-binding di atas Service
+     * yang sama) memakai code, bukan id database. `withTrashed()` karena
+     * Service pakai SoftDeletes — code tidak boleh dipakai ulang oleh baris
+     * yang sudah soft-deleted.
+     */
+    public static function generateUniqueCode(): string
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+        do {
+            $code = '';
+            for ($i = 0; $i < 8; $i++) {
+                $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+            }
+        } while (self::withTrashed()->where('code', $code)->exists());
+
+        return $code;
+    }
+
+    /**
+     * URL (mis. /services/{service}, /installations/{service},
+     * /dismantles/{service}) memakai `code`, bukan id database — sengaja,
+     * supaya id tidak bisa dibaca/ditebak lewat URL. Pola sama
+     * User::getRouteKeyName().
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'code';
+    }
+
     /**
      * Get the attributes that should be cast.
      *

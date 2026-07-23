@@ -22,7 +22,6 @@ class ServiceFactory extends Factory
     public function definition(): array
     {
         return [
-            'code' => 'SRV'.fake()->unique()->numerify('######'),
             'pin' => fake()->numerify('######'),
             'user_id' => User::factory()->afterCreating(fn (User $user) => $user->assignRole('customer')),
             'address' => fake()->address(),

@@ -71,7 +71,7 @@ class InstallationManagementTest extends TestCase
         $service = $this->pendingInstallationService();
         $technician = $this->withRole('technician');
 
-        $response = $this->actingAs($this->superadmin())->post("/installations/{$service->id}/assign", [
+        $response = $this->actingAs($this->superadmin())->post("/installations/{$service->code}/assign", [
             'installer_id' => $technician->id,
         ]);
 
@@ -97,7 +97,7 @@ class InstallationManagementTest extends TestCase
         $service = Service::factory()->create(['status' => Service::STATUS_ACTIVE]);
         $technician = $this->withRole('technician');
 
-        $response = $this->actingAs($this->superadmin())->post("/installations/{$service->id}/assign", [
+        $response = $this->actingAs($this->superadmin())->post("/installations/{$service->code}/assign", [
             'installer_id' => $technician->id,
         ]);
 
@@ -111,7 +111,7 @@ class InstallationManagementTest extends TestCase
         $service = $this->pendingInstallationService();
         $notTechnician = $this->withRole('finance');
 
-        $response = $this->actingAs($this->superadmin())->post("/installations/{$service->id}/assign", [
+        $response = $this->actingAs($this->superadmin())->post("/installations/{$service->code}/assign", [
             'installer_id' => $notTechnician->id,
         ]);
 
@@ -123,7 +123,7 @@ class InstallationManagementTest extends TestCase
         $service = $this->pendingInstallationService();
         $technician = $this->withRole('technician');
 
-        $response = $this->actingAs($technician)->post("/installations/{$service->id}/claim");
+        $response = $this->actingAs($technician)->post("/installations/{$service->code}/claim");
 
         $response->assertRedirect(route('installations.show', $service));
 
@@ -141,9 +141,9 @@ class InstallationManagementTest extends TestCase
         $first = $this->withRole('technician');
         $second = $this->withRole('technician');
 
-        $this->actingAs($first)->post("/installations/{$service->id}/claim");
+        $this->actingAs($first)->post("/installations/{$service->code}/claim");
 
-        $response = $this->actingAs($second)->post("/installations/{$service->id}/claim");
+        $response = $this->actingAs($second)->post("/installations/{$service->code}/claim");
 
         $response->assertRedirect();
         $response->assertSessionHas('error');
@@ -159,9 +159,9 @@ class InstallationManagementTest extends TestCase
         $package = Package::factory()->create(['is_starter' => true, 'plan_qty' => 3]);
         $service = $this->pendingInstallationService($package);
         $technician = $this->withRole('technician');
-        $this->actingAs($technician)->post("/installations/{$service->id}/claim");
+        $this->actingAs($technician)->post("/installations/{$service->code}/claim");
 
-        $response = $this->actingAs($technician)->post("/installations/{$service->id}/complete", [
+        $response = $this->actingAs($technician)->post("/installations/{$service->code}/complete", [
             'odp_port' => 'ODP-01-02',
             'cable_length' => '25.5',
             'photo' => UploadedFile::fake()->image('bukti.jpg'),
@@ -200,9 +200,9 @@ class InstallationManagementTest extends TestCase
         $service = $this->pendingInstallationService();
         $assigned = $this->withRole('technician');
         $other = $this->withRole('technician');
-        $this->actingAs($assigned)->post("/installations/{$service->id}/claim");
+        $this->actingAs($assigned)->post("/installations/{$service->code}/claim");
 
-        $response = $this->actingAs($other)->post("/installations/{$service->id}/complete", [
+        $response = $this->actingAs($other)->post("/installations/{$service->code}/complete", [
             'odp_port' => 'ODP-01-02',
             'photo' => UploadedFile::fake()->image('bukti.jpg'),
         ]);
@@ -214,9 +214,9 @@ class InstallationManagementTest extends TestCase
     {
         $service = $this->pendingInstallationService();
         $technician = $this->withRole('technician');
-        $this->actingAs($technician)->post("/installations/{$service->id}/claim");
+        $this->actingAs($technician)->post("/installations/{$service->code}/claim");
 
-        $response = $this->actingAs($technician)->post("/installations/{$service->id}/complete", []);
+        $response = $this->actingAs($technician)->post("/installations/{$service->code}/complete", []);
 
         $response->assertSessionHasErrors(['odp_port', 'photo']);
     }
@@ -229,7 +229,7 @@ class InstallationManagementTest extends TestCase
         // Klaim tetap aksi fieldwork khusus technician — superadmin sengaja
         // tidak ikut kebagian walau punya seluruh permission lain (lihat
         // CLAUDE.md "Authorization / Role & Permission").
-        $this->actingAs($superadmin)->post("/installations/{$service->id}/claim")->assertForbidden();
+        $this->actingAs($superadmin)->post("/installations/{$service->code}/claim")->assertForbidden();
     }
 
     public function test_superadmin_can_complete_installation_via_override(): void
@@ -248,7 +248,7 @@ class InstallationManagementTest extends TestCase
         // installations.complete-any: jalur darurat kalau teknisi yang
         // di-assign resign/tidak aktif — menutup gap "job stuck permanen"
         // (lihat CLAUDE.md "Authorization / Role & Permission").
-        $response = $this->actingAs($superadmin)->post("/installations/{$service->id}/complete", [
+        $response = $this->actingAs($superadmin)->post("/installations/{$service->code}/complete", [
             'odp_port' => 'ODP-01-02',
             'photo' => UploadedFile::fake()->image('bukti.jpg'),
         ]);
@@ -267,7 +267,7 @@ class InstallationManagementTest extends TestCase
         $customer = $this->withRole('customer');
 
         $this->actingAs($customer)->get('/installations')->assertForbidden();
-        $this->actingAs($customer)->get("/installations/{$service->id}")->assertForbidden();
+        $this->actingAs($customer)->get("/installations/{$service->code}")->assertForbidden();
     }
 
     public function test_finance_can_view_installation_queue(): void
@@ -276,7 +276,7 @@ class InstallationManagementTest extends TestCase
         $service = $this->pendingInstallationService();
 
         $this->actingAs($finance)->get('/installations')->assertOk();
-        $this->actingAs($finance)->get("/installations/{$service->id}")->assertOk();
+        $this->actingAs($finance)->get("/installations/{$service->code}")->assertOk();
     }
 
     public function test_index_and_show_render_for_superadmin_and_technician(): void
@@ -284,11 +284,11 @@ class InstallationManagementTest extends TestCase
         $service = $this->pendingInstallationService();
 
         $this->actingAs($this->superadmin())->get('/installations')->assertOk();
-        $this->actingAs($this->superadmin())->get("/installations/{$service->id}")->assertOk();
+        $this->actingAs($this->superadmin())->get("/installations/{$service->code}")->assertOk();
 
         $technician = $this->withRole('technician');
         $this->actingAs($technician)->get('/installations')->assertOk();
-        $this->actingAs($technician)->get("/installations/{$service->id}")->assertOk();
+        $this->actingAs($technician)->get("/installations/{$service->code}")->assertOk();
     }
 
     public function test_installation_photo_accessible_by_assigned_installer_and_superadmin_only(): void
@@ -297,22 +297,22 @@ class InstallationManagementTest extends TestCase
         $service = $this->pendingInstallationService();
         $technician = $this->withRole('technician');
         $other = $this->withRole('technician');
-        $this->actingAs($technician)->post("/installations/{$service->id}/claim");
-        $this->actingAs($technician)->post("/installations/{$service->id}/complete", [
+        $this->actingAs($technician)->post("/installations/{$service->code}/claim");
+        $this->actingAs($technician)->post("/installations/{$service->code}/complete", [
             'odp_port' => 'ODP-01-02',
             'photo' => UploadedFile::fake()->image('bukti.jpg'),
         ]);
 
-        $this->actingAs($technician)->get("/secure/installation-photo/{$service->id}")->assertOk();
-        $this->actingAs($this->superadmin())->get("/secure/installation-photo/{$service->id}")->assertOk();
-        $this->actingAs($other)->get("/secure/installation-photo/{$service->id}")->assertForbidden();
+        $this->actingAs($technician)->get("/secure/installation-photo/{$service->code}")->assertOk();
+        $this->actingAs($this->superadmin())->get("/secure/installation-photo/{$service->code}")->assertOk();
+        $this->actingAs($other)->get("/secure/installation-photo/{$service->code}")->assertForbidden();
     }
 
     public function test_installation_photo_returns_404_when_not_yet_uploaded(): void
     {
         $service = $this->pendingInstallationService();
 
-        $response = $this->actingAs($this->superadmin())->get("/secure/installation-photo/{$service->id}");
+        $response = $this->actingAs($this->superadmin())->get("/secure/installation-photo/{$service->code}");
 
         $response->assertNotFound();
     }

@@ -108,7 +108,10 @@ class ServiceController extends Controller
 
         $q = $request->string('q')->trim()->value();
 
-        $customers = User::role('customer')
+        // Semua role bisa didaftarkan Service (bukan cuma customer) —
+        // keputusan eksplisit user 2026-07-23, lihat CLAUDE.md "Service".
+        // Tidak lagi di-scope ->role('customer').
+        $customers = User::query()
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($query) use ($q) {
                     $query->where('name', 'like', "%{$q}%")

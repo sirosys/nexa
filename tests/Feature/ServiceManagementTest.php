@@ -96,7 +96,7 @@ class ServiceManagementTest extends TestCase
 
         $service = Service::where('address', 'Jl. Contoh No. 10')->firstOrFail();
         $this->assertNotNull($service->code);
-        $this->assertStringStartsWith('SRV', $service->code);
+        $this->assertMatchesRegularExpression('/^[A-Z0-9]{8}$/', $service->code);
         $this->assertMatchesRegularExpression('/^\d{6}$/', $service->pin);
         $this->assertSame($customer->id, $service->user_id);
         $this->assertSame($package->id, $service->package_id);
@@ -270,9 +270,21 @@ class ServiceManagementTest extends TestCase
         ]);
     }
 
-    public function test_user_id_must_have_customer_role(): void
+    /**
+     * Sebelumnya user_id dibatasi harus role customer — dilonggarkan
+     * 2026-07-23 (keputusan eksplisit user, lihat CLAUDE.md "Service"):
+     * staff (technician/finance/superadmin) sekarang juga boleh didaftarkan
+     * Service, selama NIK & foto KTP-nya sudah lengkap (gate KYC tetap
+     * berlaku untuk semua role, lihat test gate di bawah).
+     */
+    public function test_any_role_including_staff_can_be_registered_for_a_service(): void
     {
         $staff = $this->withRole('technician');
+        $nik = $this->validNik();
+        $staff->userDetails()->create(array_merge(
+            ['nik' => $nik, 'ktp_photo' => 'ktp/fake-test-photo.jpg'],
+            UserDetail::parseNik($nik)
+        ));
         $subdistrict = Subdistrict::factory()->create();
         $coverage = Coverage::factory()->create();
         $package = Package::factory()->create(['is_starter' => true]);
@@ -285,7 +297,8 @@ class ServiceManagementTest extends TestCase
             'coverage_id' => $coverage->id,
         ]);
 
-        $response->assertSessionHasErrors('user_id');
+        $response->assertRedirect(route('services.index'));
+        $this->assertDatabaseHas('services', ['user_id' => $staff->id, 'address' => 'Jl. Contoh No. 11']);
     }
 
     public function test_package_must_be_selectable_at_registration(): void
@@ -388,7 +401,7 @@ class ServiceManagementTest extends TestCase
         $superadmin = $this->superadmin();
         $service = Service::factory()->create(['pin' => '111111']);
 
-        $response = $this->actingAs($superadmin)->put("/services/{$service->id}", [
+        $response = $this->actingAs($superadmin)->put("/services/{$service->code}", [
             'user_id' => $service->user_id,
             'package_id' => $service->package_id,
             'address' => 'Alamat Baru',
@@ -408,7 +421,7 @@ class ServiceManagementTest extends TestCase
         $superadmin = $this->superadmin();
         $service = Service::factory()->create();
 
-        $response = $this->actingAs($superadmin)->put("/services/{$service->id}", [
+        $response = $this->actingAs($superadmin)->put("/services/{$service->code}", [
             'user_id' => $service->user_id,
             'package_id' => $service->package_id,
             'address' => $service->address,
@@ -425,7 +438,7 @@ class ServiceManagementTest extends TestCase
         $superadmin = $this->superadmin();
         $service = Service::factory()->create();
 
-        $response = $this->actingAs($superadmin)->delete("/services/{$service->id}");
+        $response = $this->actingAs($superadmin)->delete("/services/{$service->code}");
 
         $response->assertRedirect(route('services.index'));
         $this->assertSoftDeleted('services', ['id' => $service->id]);
@@ -477,6 +490,18 @@ class ServiceManagementTest extends TestCase
         $response->assertSee($service->code);
     }
 
+    public function test_service_show_route_uses_code_not_raw_id(): void
+    {
+        $superadmin = $this->superadmin();
+        $service = Service::factory()->create();
+
+        $url = route('services.show', $service);
+        $this->assertStringContainsString($service->code, $url);
+
+        $this->actingAs($superadmin)->get($url)->assertOk();
+        $this->actingAs($superadmin)->get('/services/'.$service->id)->assertNotFound();
+    }
+
     public function test_create_and_edit_pages_render(): void
     {
         $superadmin = $this->superadmin();
@@ -485,10 +510,16 @@ class ServiceManagementTest extends TestCase
         // "Tambah Service" sekarang modal wizard di halaman index, bukan
         // halaman /services/create terpisah — lihat CLAUDE.md "Service".
         $this->actingAs($superadmin)->get('/services')->assertOk();
-        $this->actingAs($superadmin)->get("/services/{$service->id}/edit")->assertOk();
+        $this->actingAs($superadmin)->get("/services/{$service->code}/edit")->assertOk();
     }
 
-    public function test_customer_search_endpoint_only_returns_customer_role(): void
+    /**
+     * Semua role bisa dipilih untuk didaftarkan Service (bukan cuma
+     * customer) — keputusan eksplisit user 2026-07-23, lihat CLAUDE.md
+     * "Service". Picker sebelumnya di-scope ->role('customer') sehingga
+     * staff tidak pernah muncul di hasil pencarian.
+     */
+    public function test_customer_search_endpoint_returns_users_of_any_role(): void
     {
         $superadmin = $this->superadmin();
         $customer = $this->customer();
@@ -499,14 +530,17 @@ class ServiceManagementTest extends TestCase
         $response = $this->actingAs($superadmin)->getJson('/services/customers/search?q=Budi');
 
         $response->assertOk();
-        $response->assertJsonCount(1);
+        $response->assertJsonCount(2);
         $response->assertJsonFragment(['name' => 'Budi Santoso']);
+        $response->assertJsonFragment(['name' => 'Budi Teknisi']);
     }
 
     /**
      * Query kosong (klik pertama kali di kolom pencarian, belum mengetik
      * apa-apa) tetap mengembalikan daftar browse — bukan array kosong —
-     * supaya picker pelanggan di form Service bisa dibuka lewat klik.
+     * supaya picker pengguna di form Service bisa dibuka lewat klik. Daftar
+     * ini sekarang lintas role (bukan cuma customer), jadi turut menghitung
+     * superadmin yang login di test ini.
      */
     public function test_customer_search_endpoint_returns_browse_list_when_query_is_empty(): void
     {
@@ -517,7 +551,7 @@ class ServiceManagementTest extends TestCase
         $response = $this->actingAs($superadmin)->getJson('/services/customers/search');
 
         $response->assertOk();
-        $response->assertJsonCount(2);
+        $response->assertJsonCount(3);
     }
 
     public function test_non_superadmin_roles_cannot_access_service_routes(): void
@@ -586,6 +620,31 @@ class ServiceManagementTest extends TestCase
     }
 
     /**
+     * Gate NIK/KTP berlaku untuk SIAPA PUN yang dipilih, bukan cuma role
+     * customer — sejak user_id dilonggarkan menerima semua role
+     * (2026-07-23, lihat CLAUDE.md "Service"), staff yang belum lengkap
+     * KYC-nya juga tetap ditolak, konsisten dengan customer.
+     */
+    public function test_service_registration_is_blocked_for_staff_missing_nik_or_ktp(): void
+    {
+        $incompleteStaff = $this->withRole('technician');
+        $subdistrict = Subdistrict::factory()->create();
+        $coverage = Coverage::factory()->create();
+        $package = Package::factory()->create(['is_starter' => true]);
+
+        $response = $this->actingAs($this->superadmin())->post('/services', [
+            'user_id' => $incompleteStaff->id,
+            'package_id' => $package->id,
+            'address' => 'Jl. Contoh No. 31',
+            'subdistrict_id' => $subdistrict->id,
+            'coverage_id' => $coverage->id,
+        ]);
+
+        $response->assertSessionHasErrors('user_id');
+        $this->assertDatabaseMissing('services', ['address' => 'Jl. Contoh No. 31']);
+    }
+
+    /**
      * Gate NIK/KTP cuma berlaku saat mendaftarkan Service BARU — Service
      * lama yang customer-nya belum lengkap (dibuat sebelum gate ini ada)
      * tetap harus bisa diedit, bukan terkunci total.
@@ -596,7 +655,7 @@ class ServiceManagementTest extends TestCase
         $incomplete = $this->withRole('customer');
         $service = Service::factory()->create(['user_id' => $incomplete->id]);
 
-        $response = $this->actingAs($superadmin)->put("/services/{$service->id}", [
+        $response = $this->actingAs($superadmin)->put("/services/{$service->code}", [
             'user_id' => $service->user_id,
             'package_id' => $service->package_id,
             'address' => 'Alamat Baru Tanpa Data Lengkap',

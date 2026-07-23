@@ -187,9 +187,9 @@ class AuditLogTest extends TestCase
         $this->fakeGateway();
         $service = $this->pendingInstallationService();
         $technician = $this->withRole('technician');
-        $this->actingAs($technician)->post("/installations/{$service->id}/claim");
+        $this->actingAs($technician)->post("/installations/{$service->code}/claim");
 
-        $this->actingAs($technician)->post("/installations/{$service->id}/complete", [
+        $this->actingAs($technician)->post("/installations/{$service->code}/complete", [
             'odp_port' => 'ODP-01-02',
             'photo' => UploadedFile::fake()->image('bukti.jpg'),
         ]);
