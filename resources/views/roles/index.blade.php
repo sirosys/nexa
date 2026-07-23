@@ -1,3 +1,16 @@
+@php
+    // Label Indonesia rapi cuma untuk 4 role bawaan sistem — pola & isi SAMA
+    // PERSIS $roleLabels di users/_form.blade.php (lihat CLAUDE.md
+    // "Authorization / Role & Permission" — wajib diupdate berbarengan kalau
+    // label role berubah lagi). Role custom fallback ke Str::headline().
+    $roleLabels = [
+        'superadmin' => 'Superadmin',
+        'technician' => 'Teknisi',
+        'finance' => 'NOC',
+        'customer' => 'Pelanggan',
+    ];
+@endphp
+
 <x-app-layout :title="'Role &amp; Permission — ' . config('app.name', 'NEXA')">
     <div x-data="{ showCreateModal: {{ \Illuminate\Support\Js::from($errors->any()) }} }">
         <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -46,7 +59,7 @@
                             <tr class="transition hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                 <td class="px-6 py-3">
                                     <div class="flex items-center gap-2">
-                                        <span class="font-semibold text-gray-900 dark:text-white">{{ $role->name }}</span>
+                                        <span class="font-semibold text-gray-900 dark:text-white">{{ $roleLabels[$role->name] ?? \Illuminate\Support\Str::headline($role->name) }}</span>
                                         @if ($role->is_system)
                                             <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500 dark:bg-gray-700 dark:text-gray-400">Sistem</span>
                                         @endif

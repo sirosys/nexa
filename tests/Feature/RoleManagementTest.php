@@ -37,8 +37,13 @@ class RoleManagementTest extends TestCase
         $response = $this->actingAs($this->superadmin())->get('/roles');
 
         $response->assertOk();
-        $response->assertSee('superadmin');
-        $response->assertSee('technician');
+        // Halaman merender label Indonesia (via $roleLabels), bukan nama
+        // role mentah — kolom "Nama Role" cuma menampilkan "NOC", bukan
+        // "finance" (sidebar punya link tak terkait "/reports/finance" jadi
+        // tidak bisa assertDontSee blanket di seluruh halaman).
+        $response->assertSee('Superadmin');
+        $response->assertSee('Teknisi');
+        $response->assertSee('NOC');
     }
 
     public function test_superadmin_can_create_a_custom_role(): void
@@ -144,6 +149,20 @@ class RoleManagementTest extends TestCase
         $response->assertRedirect(route('roles.index'));
         $response->assertSessionHas('error');
         $this->assertNotNull(Role::find($finance->id));
+    }
+
+    public function test_finance_role_edit_page_shows_noc_label_not_raw_name(): void
+    {
+        $admin = $this->superadmin();
+        $finance = Role::findByName('finance', 'web');
+
+        $response = $this->actingAs($admin)->get("/roles/{$finance->id}/edit");
+
+        $response->assertOk();
+        // Sidebar punya link tak terkait "/reports/finance" (Laporan
+        // Keuangan), jadi assertDontSee blanket di seluruh halaman tidak
+        // reliable — cukup buktikan label "NOC" benar-benar dirender.
+        $response->assertSee('NOC');
     }
 
     public function test_superadmin_permissions_cannot_be_edited(): void

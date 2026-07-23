@@ -20,6 +20,18 @@
         'reports' => 'Laporan',
         'roles' => 'Role & Permission',
     ];
+
+    // Label Indonesia rapi cuma untuk 4 role bawaan sistem — pola & isi SAMA
+    // PERSIS $roleLabels di users/_form.blade.php dan roles/index.blade.php
+    // (lihat CLAUDE.md "Authorization / Role & Permission" — wajib diupdate
+    // berbarengan kalau label role berubah lagi). Role custom fallback ke
+    // Str::headline().
+    $roleLabels = [
+        'superadmin' => 'Superadmin',
+        'technician' => 'Teknisi',
+        'finance' => 'NOC',
+        'customer' => 'Pelanggan',
+    ];
 @endphp
 
 <x-app-layout :title="'Ubah Role — ' . config('app.name', 'NEXA')">
@@ -29,7 +41,7 @@
     </a>
 
     <div class="mb-6">
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ $role->name }}</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ $roleLabels[$role->name] ?? \Illuminate\Support\Str::headline($role->name) }}</h1>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Atur permission untuk role ini.</p>
     </div>
 
@@ -78,7 +90,7 @@
                     type="text"
                     id="name"
                     name="name"
-                    value="{{ old('name', $role->name) }}"
+                    value="{{ old('name', $isBuiltInRole ? ($roleLabels[$role->name] ?? $role->name) : $role->name) }}"
                     @if ($isBuiltInRole) disabled @endif
                     class="block w-full max-w-xs rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
                 >
