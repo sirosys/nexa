@@ -96,20 +96,36 @@
     --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
-    /* Breakpoint "lg" ditimpa ke 992px (Bootstrap $grid-breakpoints milik
-       Metronic v7.0.0, src/sass/components/_variables.scss) — BUKAN default
-       Tailwind (1024px). Ini breakpoint yang menentukan kapan shell app
-       (sidebar/header) beralih dari mode mobile/off-canvas ke mode desktop
-       ter-pin di Metronic ASLI (media query "max-width: 991.98px" vs
-       "min-width: 992px" di compiled CSS template) — supaya perilaku
-       tablet/mobile NEXA benar-benar cocok dengan breakpoint template, bukan
-       cuma "kira-kira mirip" di angka Tailwind yang beda 32px. Cuma `lg` yang
-       ditimpa (bukan sm/md/xl juga) karena itu satu-satunya breakpoint yang
-       dipakai `sidebar.blade.php`/`header.blade.php`/`app-layout.blade.php`
-       untuk keputusan mobile-vs-desktop; breakpoint lain (sm/md/xl) dipakai
-       modul-modul lain untuk grid/layout internal yang tidak spesifik meniru
-       shell Metronic, jadi sengaja dibiarkan default Tailwind. */
-    --breakpoint-lg: 62rem;
+    /* Breakpoint "md"/"lg" ditimpa ke 768px/992px (Bootstrap $grid-breakpoints
+       milik Metronic v7.0.0, src/sass/components/_variables.scss) — BUKAN
+       default Tailwind (768px/1024px — md kebetulan sama, lg beda 32px). Dua
+       breakpoint ini yang menentukan 3 tingkat mode shell app
+       (sidebar/header): <768 mobile off-canvas, 768–991 tablet icon-rail,
+       ≥992 desktop penuh — lihat `sidebar.blade.php`/`header.blade.php`.
+
+       BUG NYATA ditemukan & diperbaiki (2026-07-23, laporan user "di 990px
+       sidebar tidak menutup padahal di template v7 sudah menutup") — override
+       pertama ditulis pakai satuan `rem` (`62rem`, dengan asumsi 1rem=16px
+       browser default = 992px). Tapi `html { font-size: 17px }` SUDAH ditimpa
+       lebih awal di `@layer base` (lihat bawah, pass tipografi 2026-07-17,
+       "font kurang besar") — resolusi satuan `rem` di DALAM media query
+       TIDAK konsisten lintas browser soal apakah dihitung dari font-size
+       ROOT AUTHOR (17px, bikin breakpoint efektif jadi ~1054px, jauh lebih
+       lebar dari 992px yang dimaksud) atau dari default UA (16px) — ambiguitas
+       ini persis yang menyebabkan breakpoint meleset dari 992px sungguhan.
+       **Fix**: pakai satuan `px` LANGSUNG (`768px`/`992px`), bukan `rem` —
+       menghilangkan ambiguitas itu sepenuhnya (media query berbasis px murni
+       tidak pernah dipengaruhi font-size root apa pun), SEKALIGUS jadi lebih
+       presisi meniru compiled CSS template asli yang juga pakai px murni
+       (`@media (min-width: 992px)`, bukan rem). **Kalau menambah breakpoint
+       custom baru lagi di masa depan yang harus presisi ke pixel tertentu,
+       SELALU pakai satuan `px`, JANGAN `rem`** — proyek ini sudah menimpa
+       root font-size, jadi asumsi "1rem = 16px" tidak berlaku lagi di sini.
+       `sm`/`xl` sengaja dibiarkan default Tailwind (rem, tidak masalah karena
+       tidak dipakai untuk keputusan presisi-pixel apa pun) — cuma `md`/`lg`
+       yang butuh presisi ini karena dipakai shell. */
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 992px;
 
     /* Palet Metronic v7.0.0 demo1 (src/sass/components/_variables.scss +
        _variables.custom.scss) — MENGGANTIKAN TOTAL palet v8.1.8 yang dipakai
