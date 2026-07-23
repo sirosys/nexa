@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['code', 'service_id', 'category', 'subject', 'description', 'status', 'assigned_technician_id', 'assigned_by', 'claimed_at', 'resolution_notes', 'solved_at', 'solved_by', 'created_by', 'updated_by'])]
+#[Fillable(['code', 'service_id', 'category', 'subject', 'description', 'status', 'assigned_technician_id', 'assigned_by', 'claimed_at', 'sla_reminder_sent_at', 'resolution_notes', 'solved_at', 'solved_by', 'created_by', 'updated_by'])]
 class ServiceTicket extends Model
 {
     use SoftDeletes;
@@ -70,6 +70,7 @@ class ServiceTicket extends Model
     {
         return [
             'claimed_at' => 'datetime',
+            'sla_reminder_sent_at' => 'datetime',
             'solved_at' => 'datetime',
         ];
     }

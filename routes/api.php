@@ -25,6 +25,7 @@ Route::post('/auth/register', [RegistrationController::class, 'register'])->midd
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [SessionController::class, 'logout']);
     Route::get('/me', [ProfileController::class, 'show']);
+    Route::post('/me/complete-kyc', [ProfileController::class, 'completeKyc'])->middleware('throttle:api-kyc');
 
     Route::get('/services', [ServiceController::class, 'index']);
     Route::get('/services/{code}', [ServiceController::class, 'show']);

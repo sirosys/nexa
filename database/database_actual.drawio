@@ -3542,7 +3542,7 @@
         </mxCell>
 
         <mxCell id="ST0" value="service_tickets" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;rounded=0;" parent="1" vertex="1">
-          <mxGeometry x="1680" y="1780" width="160" height="570" as="geometry" />
+          <mxGeometry x="1680" y="1780" width="160" height="600" as="geometry" />
         </mxCell>
         <mxCell id="ST-r1" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;rounded=0;" parent="ST0" vertex="1">
           <mxGeometry y="30" width="160" height="30" as="geometry" />
@@ -3674,8 +3674,21 @@
             <mxRectangle width="130" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="ST-r11" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;rounded=0;" parent="ST0" vertex="1">
+        <mxCell id="ST-r10b" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;rounded=0;" parent="ST0" vertex="1">
           <mxGeometry y="330" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ST-r10b-k" value="" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;whiteSpace=wrap;html=1;rounded=0;" parent="ST-r10b" vertex="1">
+          <mxGeometry width="30" height="30" as="geometry">
+            <mxRectangle width="30" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ST-r10b-f" value="sla_reminder_sent_at" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;whiteSpace=wrap;html=1;rounded=0;" parent="ST-r10b" vertex="1">
+          <mxGeometry x="30" width="130" height="30" as="geometry">
+            <mxRectangle width="130" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ST-r11" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;rounded=0;" parent="ST0" vertex="1">
+          <mxGeometry y="360" width="160" height="30" as="geometry" />
         </mxCell>
         <mxCell id="ST-r11-k" value="" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;whiteSpace=wrap;html=1;rounded=0;" parent="ST-r11" vertex="1">
           <mxGeometry width="30" height="30" as="geometry">
@@ -3688,7 +3701,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="ST-r12" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;rounded=0;" parent="ST0" vertex="1">
-          <mxGeometry y="360" width="160" height="30" as="geometry" />
+          <mxGeometry y="390" width="160" height="30" as="geometry" />
         </mxCell>
         <mxCell id="ST-r12-k" value="" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;whiteSpace=wrap;html=1;rounded=0;" parent="ST-r12" vertex="1">
           <mxGeometry width="30" height="30" as="geometry">
@@ -3701,7 +3714,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="ST-r13" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;rounded=0;" parent="ST0" vertex="1">
-          <mxGeometry y="390" width="160" height="30" as="geometry" />
+          <mxGeometry y="420" width="160" height="30" as="geometry" />
         </mxCell>
         <mxCell id="ST-r13-k" value="FK" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;whiteSpace=wrap;html=1;rounded=0;" parent="ST-r13" vertex="1">
           <mxGeometry width="30" height="30" as="geometry">
@@ -3714,7 +3727,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="ST-r14" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;rounded=0;" parent="ST0" vertex="1">
-          <mxGeometry y="420" width="160" height="30" as="geometry" />
+          <mxGeometry y="450" width="160" height="30" as="geometry" />
         </mxCell>
         <mxCell id="ST-r14-k" value="FK" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;whiteSpace=wrap;html=1;rounded=0;" parent="ST-r14" vertex="1">
           <mxGeometry width="30" height="30" as="geometry">
@@ -3727,7 +3740,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="ST-r15" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;rounded=0;" parent="ST0" vertex="1">
-          <mxGeometry y="450" width="160" height="30" as="geometry" />
+          <mxGeometry y="480" width="160" height="30" as="geometry" />
         </mxCell>
         <mxCell id="ST-r15-k" value="FK" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;whiteSpace=wrap;html=1;rounded=0;" parent="ST-r15" vertex="1">
           <mxGeometry width="30" height="30" as="geometry">
@@ -3740,7 +3753,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="ST-r16" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;rounded=0;" parent="ST0" vertex="1">
-          <mxGeometry y="480" width="160" height="30" as="geometry" />
+          <mxGeometry y="510" width="160" height="30" as="geometry" />
         </mxCell>
         <mxCell id="ST-r16-k" value="" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;whiteSpace=wrap;html=1;rounded=0;" parent="ST-r16" vertex="1">
           <mxGeometry width="30" height="30" as="geometry">
@@ -3753,7 +3766,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="ST-r17" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;rounded=0;" parent="ST0" vertex="1">
-          <mxGeometry y="510" width="160" height="30" as="geometry" />
+          <mxGeometry y="540" width="160" height="30" as="geometry" />
         </mxCell>
         <mxCell id="ST-r17-k" value="" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;whiteSpace=wrap;html=1;rounded=0;" parent="ST-r17" vertex="1">
           <mxGeometry width="30" height="30" as="geometry">
@@ -3766,7 +3779,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="ST-r18" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;rounded=0;" parent="ST0" vertex="1">
-          <mxGeometry y="540" width="160" height="30" as="geometry" />
+          <mxGeometry y="570" width="160" height="30" as="geometry" />
         </mxCell>
         <mxCell id="ST-r18-k" value="" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;whiteSpace=wrap;html=1;rounded=0;" parent="ST-r18" vertex="1">
           <mxGeometry width="30" height="30" as="geometry">

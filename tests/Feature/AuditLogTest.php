@@ -147,6 +147,7 @@ class AuditLogTest extends TestCase
             'renewal.remind_days_before.h3' => 3,
             'renewal.remind_days_before.h1' => 1,
             'dismantle.suspended_months_threshold' => 4,
+            'ticket.sla_reminder_hours' => 24,
         ]));
 
         // Cuma dismantle.suspended_months_threshold yang benar-benar berubah

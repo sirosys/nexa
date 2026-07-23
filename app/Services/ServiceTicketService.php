@@ -6,6 +6,7 @@ use App\Models\ServiceTicket;
 use App\Models\User;
 use App\Notifications\TicketCreatedNotification;
 use App\Notifications\TicketResolvedNotification;
+use App\Notifications\TicketSlaReminderNotification;
 use App\Notifications\TicketTechnicianAssignedNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -119,6 +120,15 @@ class ServiceTicketService
         $this->notificationService->send($ticket->service->user, new TicketResolvedNotification($ticket));
 
         return $ticket;
+    }
+
+    public function sendSlaReminder(ServiceTicket $ticket): void
+    {
+        $hoursOpen = (int) $ticket->claimed_at->diffInHours(now());
+
+        $ticket->update(['sla_reminder_sent_at' => now()]);
+
+        $this->notificationService->send($ticket->assignedTechnician, new TicketSlaReminderNotification($ticket, $hoursOpen));
     }
 
     private function guardOpenForTechnicianAssignment(ServiceTicket $ticket): void

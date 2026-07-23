@@ -60,5 +60,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // online/offline router adalah kondisi yang berubah cepat, beda
         // dari siklus billing/suspend yang berbasis hari.
         $schedule->command('monitoring:check-site-status')->everyFiveMinutes();
+
+        // Modul Ticketing (lihat CLAUDE.md "Ticketing") — pengingat SLA
+        // untuk tiket kategori teknis yang sudah in_progress terlalu lama.
+        // Ditaruh setelah cluster 06:xx di atas, granularitas harian sudah
+        // cukup untuk "staff nudge" ini (bukan kondisi cepat-berubah ala
+        // Monitoring).
+        $schedule->command('tickets:send-sla-reminders')->dailyAt('06:20');
     })
     ->create();

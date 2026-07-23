@@ -18,6 +18,7 @@ class UserResource extends JsonResource
             'phone' => (string) $this->phone,
             'email' => $this->email,
             'nik' => $this->userDetails?->nik,
+            'has_ktp_photo' => $this->userDetails?->ktp_photo !== null,
             'gender' => $this->userDetails?->gender,
             'birth_date' => $this->userDetails?->birth_date?->format('Y-m-d'),
         ];

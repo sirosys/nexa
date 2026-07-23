@@ -56,6 +56,7 @@ class SettingManagementTest extends TestCase
         $this->assertSame('3', Setting::where('key', 'renewal.remind_days_before.h3')->value('value'));
         $this->assertSame('1', Setting::where('key', 'renewal.remind_days_before.h1')->value('value'));
         $this->assertSame('2', Setting::where('key', 'dismantle.suspended_months_threshold')->value('value'));
+        $this->assertSame('24', Setting::where('key', 'ticket.sla_reminder_hours')->value('value'));
     }
 
     public function test_superadmin_can_view_settings_page(): void
@@ -77,6 +78,7 @@ class SettingManagementTest extends TestCase
             'renewal.remind_days_before.h3' => 4,
             'renewal.remind_days_before.h1' => 2,
             'dismantle.suspended_months_threshold' => 3,
+            'ticket.sla_reminder_hours' => 48,
         ]));
 
         $response->assertRedirect('/settings');
@@ -89,6 +91,7 @@ class SettingManagementTest extends TestCase
         $this->assertSame('4', Setting::where('key', 'renewal.remind_days_before.h3')->value('value'));
         $this->assertSame('2', Setting::where('key', 'renewal.remind_days_before.h1')->value('value'));
         $this->assertSame('3', Setting::where('key', 'dismantle.suspended_months_threshold')->value('value'));
+        $this->assertSame('48', Setting::where('key', 'ticket.sla_reminder_hours')->value('value'));
     }
 
     public function test_update_rejects_non_integer_and_below_minimum_values(): void
@@ -101,6 +104,7 @@ class SettingManagementTest extends TestCase
             'renewal.remind_days_before.h3' => 3,
             'renewal.remind_days_before.h1' => 1,
             'dismantle.suspended_months_threshold' => 2,
+            'ticket.sla_reminder_hours' => 24,
         ]));
 
         $response->assertSessionHasErrors([
@@ -122,6 +126,7 @@ class SettingManagementTest extends TestCase
             'renewal.remind_days_before.h3' => 3,
             'renewal.remind_days_before.h1' => 1,
             'dismantle.suspended_months_threshold' => 2,
+            'ticket.sla_reminder_hours' => 24,
         ]);
 
         foreach (['technician', 'finance', 'customer'] as $role) {

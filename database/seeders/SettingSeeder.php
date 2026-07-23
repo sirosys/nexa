@@ -51,6 +51,13 @@ class SettingSeeder extends Seeder
             'label' => 'Ambang Auto-Antre Dismantle (bulan)',
             'description' => 'Berapa bulan sejak layanan disuspend sebelum otomatis diantrekan untuk dibongkar.',
         ],
+        [
+            'key' => 'ticket.sla_reminder_hours',
+            'type' => 'integer',
+            'group' => 'ticket',
+            'label' => 'Ambang Pengingat SLA Tiket (jam)',
+            'description' => 'Berapa jam sejak tiket kategori teknis diklaim teknisi sebelum pengingat SLA WhatsApp dikirim kalau belum diselesaikan.',
+        ],
     ];
 
     public function run(): void

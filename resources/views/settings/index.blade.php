@@ -3,6 +3,7 @@
         'billing' => 'Billing',
         'renewal' => 'Renewal',
         'dismantle' => 'Dismantle',
+        'ticket' => 'Tiket',
     ];
 @endphp
 

@@ -75,5 +75,15 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('payment-action', function (Request $request) {
             return Limit::perMinute(10)->by($request->ip().'|'.$request->route('receipt'));
         });
+
+        // Lengkapi KYC lewat API — mutating, one-shot per user secara
+        // bisnis (CompleteOwnKycRequest::withValidator() menolak NIK yang
+        // sudah terisi), tapi tetap di-throttle konsisten pola aksi
+        // mutating lain di app ini (lihat CLAUDE.md "API Customer-Facing").
+        // Keyed by user id (bukan ip, beda dari limiter lain di atas) karena
+        // endpoint ini SELALU di belakang auth:sanctum.
+        RateLimiter::for('api-kyc', function (Request $request) {
+            return Limit::perMinute(5)->by($request->user()->id);
+        });
     }
 }
