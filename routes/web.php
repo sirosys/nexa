@@ -8,14 +8,12 @@ use App\Http\Controllers\DismantleController;
 use App\Http\Controllers\DismantlePhotoController;
 use App\Http\Controllers\InstallationController;
 use App\Http\Controllers\InstallationPhotoController;
-use App\Http\Controllers\InventoryItemController;
 use App\Http\Controllers\KtpPhotoController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProductController;
-use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SaleController;
@@ -25,7 +23,6 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SubdistrictController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\VendorController;
 use App\Http\Controllers\Webhooks\XenditWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -121,26 +118,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/tickets/{ticket}/resolve', [ServiceTicketController::class, 'resolve'])->name('tickets.resolve');
     Route::resource('tickets', ServiceTicketController::class);
 
-    // Modul Inventaris — lihat CLAUDE.md "Inventaris". Tidak ada
-    // edit/update (product_id/is_serialized immutable setelah dibuat,
-    // tidak ada field lain yang masuk akal diedit lewat form biasa).
-    // Parameter route dipaksa {item} (bukan default {inventory_item})
-    // supaya konsisten dengan nama parameter di InventoryItemController.
-    Route::resource('inventory-items', InventoryItemController::class)
-        ->except(['edit', 'update'])
-        ->parameters(['inventory-items' => 'item']);
-    Route::post('/inventory-items/{item}/stock-in', [InventoryItemController::class, 'stockIn'])->name('inventory-items.stock-in');
-    Route::post('/inventory-items/{item}/adjust', [InventoryItemController::class, 'adjust'])->name('inventory-items.adjust');
-
-    // Modul Vendor & Supplier — lihat CLAUDE.md "Vendor & Supplier". Vendor
-    // resource CRUD biasa; Purchase Order resource CRUD plus 3 action
-    // non-resource (order/receive/cancel) untuk transisi status.
-    Route::resource('vendors', VendorController::class);
-    Route::post('/purchase-orders/{purchase_order}/order', [PurchaseOrderController::class, 'order'])->name('purchase-orders.order');
-    Route::post('/purchase-orders/{purchase_order}/receive', [PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive');
-    Route::post('/purchase-orders/{purchase_order}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
-    Route::resource('purchase-orders', PurchaseOrderController::class);
-
     // Modul System Setting — lihat CLAUDE.md "System Setting". Bukan CRUD
     // resource (tidak ada create/delete, katalog key tetap dari seeder),
     // cuma satu halaman view + satu action update untuk seluruh setting
@@ -167,5 +144,4 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports/finance', [ReportController::class, 'finance'])->name('reports.finance');
     Route::get('/reports/operations', [ReportController::class, 'operations'])->name('reports.operations');
     Route::get('/reports/customers', [ReportController::class, 'customers'])->name('reports.customers');
-    Route::get('/reports/inventory', [ReportController::class, 'inventory'])->name('reports.inventory');
 });

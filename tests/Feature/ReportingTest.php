@@ -2,17 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\InventoryItem;
-use App\Models\InventoryMovement;
-use App\Models\Product;
-use App\Models\PurchaseOrder;
 use App\Models\Sale;
 use App\Models\Service;
 use App\Models\ServiceActivation;
 use App\Models\ServiceDismantle;
 use App\Models\ServiceTicket;
 use App\Models\User;
-use App\Models\Vendor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -176,80 +171,35 @@ class ReportingTest extends TestCase
         $response->assertViewHas('services', fn ($services) => $services->total() === 1 && $services->first()->id === $inRange->id);
     }
 
-    // ---------- Inventaris & Pengadaan ----------
-
-    public function test_inventory_current_stock_snapshot_ignores_date_filter(): void
-    {
-        $product = Product::factory()->create(['type' => 'perangkat']);
-        InventoryItem::create(['product_id' => $product->id, 'is_serialized' => false, 'quantity' => 7]);
-
-        $response = $this->actingAs($this->superadmin())->get(
-            '/reports/inventory?from='.now()->addYear()->format('Y-m-d').'&to='.now()->addYear()->addDay()->format('Y-m-d')
-        );
-
-        $response->assertOk();
-        $response->assertViewHas('current_stock', fn ($items) => $items->count() === 1 && (int) $items->first()->quantity === 7);
-    }
-
-    public function test_inventory_totals_are_computed_from_quantity_sign_not_type(): void
-    {
-        $product = Product::factory()->create(['type' => 'perangkat']);
-        $item = InventoryItem::create(['product_id' => $product->id, 'is_serialized' => false, 'quantity' => 10]);
-
-        // type='adjustment' tapi bertanda POSITIF -> harus ikut Total Masuk.
-        InventoryMovement::create(['inventory_item_id' => $item->id, 'type' => InventoryMovement::TYPE_ADJUSTMENT, 'quantity' => 5]);
-        // type='adjustment' tapi bertanda NEGATIF -> harus ikut Total Keluar.
-        InventoryMovement::create(['inventory_item_id' => $item->id, 'type' => InventoryMovement::TYPE_ADJUSTMENT, 'quantity' => -3]);
-        // type='in' biasa, bertanda positif.
-        InventoryMovement::create(['inventory_item_id' => $item->id, 'type' => InventoryMovement::TYPE_IN, 'quantity' => 2]);
-
-        $response = $this->actingAs($this->superadmin())->get('/reports/inventory');
-
-        $response->assertOk();
-        $response->assertViewHas('summary', function (array $summary) {
-            return (float) $summary['total_in'] === 7.0
-                && (float) $summary['total_out'] === 3.0
-                && $summary['adjustment_count'] === 2;
-        });
-    }
-
-    public function test_inventory_purchase_order_summary_respects_date_filters(): void
-    {
-        $vendor = Vendor::create(['name' => 'Vendor Uji Laporan']);
-
-        PurchaseOrder::create(['vendor_id' => $vendor->id, 'status' => PurchaseOrder::STATUS_ORDERED, 'ordered_at' => now(), 'total' => 500000]);
-        PurchaseOrder::create(['vendor_id' => $vendor->id, 'status' => PurchaseOrder::STATUS_RECEIVED, 'ordered_at' => now(), 'received_at' => now(), 'total' => 300000]);
-        PurchaseOrder::create(['vendor_id' => $vendor->id, 'status' => PurchaseOrder::STATUS_CANCELED, 'ordered_at' => now(), 'canceled_at' => now(), 'total' => 100000]);
-        // Di luar range -> tidak ikut terhitung.
-        PurchaseOrder::create(['vendor_id' => $vendor->id, 'status' => PurchaseOrder::STATUS_ORDERED, 'ordered_at' => now()->subMonths(2), 'total' => 999999]);
-
-        $response = $this->actingAs($this->superadmin())->get('/reports/inventory');
-
-        $response->assertOk();
-        $response->assertViewHas('summary', function (array $summary) {
-            return $summary['po_ordered_count'] === 3
-                && (float) $summary['po_ordered_sum'] === 900000.0
-                && $summary['po_received_count'] === 1
-                && $summary['po_canceled_count'] === 1;
-        });
-    }
-
     // ---------- Akses ----------
 
+    /**
+     * `finance` dikecualikan — sejak diperluas jadi "Admin/NOC" (2026-07-23)
+     * role itu punya `reports.view`.
+     */
     public function test_non_superadmin_roles_get_403_on_all_report_routes(): void
     {
-        foreach (['technician', 'finance', 'customer'] as $role) {
+        foreach (['technician', 'customer'] as $role) {
             $user = $this->withRole($role);
 
-            foreach (['/reports/finance', '/reports/operations', '/reports/customers', '/reports/inventory'] as $route) {
+            foreach (['/reports/finance', '/reports/operations', '/reports/customers'] as $route) {
                 $this->actingAs($user)->get($route)->assertForbidden();
             }
         }
     }
 
+    public function test_finance_can_access_all_report_routes(): void
+    {
+        $finance = $this->withRole('finance');
+
+        foreach (['/reports/finance', '/reports/operations', '/reports/customers'] as $route) {
+            $this->actingAs($finance)->get($route)->assertOk();
+        }
+    }
+
     public function test_guest_is_redirected_to_login(): void
     {
-        foreach (['/reports/finance', '/reports/operations', '/reports/customers', '/reports/inventory'] as $route) {
+        foreach (['/reports/finance', '/reports/operations', '/reports/customers'] as $route) {
             $this->get($route)->assertRedirect('/login');
         }
     }

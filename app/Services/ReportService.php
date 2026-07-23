@@ -2,9 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\InventoryItem;
-use App\Models\InventoryMovement;
-use App\Models\PurchaseOrder;
 use App\Models\Sale;
 use App\Models\Service;
 use App\Models\ServiceActivation;
@@ -12,7 +9,6 @@ use App\Models\ServiceDismantle;
 use App\Models\ServiceTicket;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 
 class ReportService
 {
@@ -146,61 +142,6 @@ class ReportService
                 'new_services' => $newServicesBase()->count(),
             ],
             'services' => $services,
-        ];
-    }
-
-    /**
-     * Stok saat ini per InventoryItem adalah snapshot current-state (kolom
-     * `quantity` langsung, tidak dihitung dari movements). Total masuk/keluar
-     * DIHITUNG DARI TANDA `quantity` (+/-), BUKAN dari kolom `type` — `type`
-     * cuma label kategori untuk filter/pelaporan, arah pergerakan stok
-     * ditentukan tanda quantity (lihat CLAUDE.md "Inventaris").
-     *
-     * @return array{current_stock: Collection, summary: array<string, int|float>, movements: LengthAwarePaginator, purchase_orders: LengthAwarePaginator}
-     */
-    public function inventory(CarbonInterface $from, CarbonInterface $to): array
-    {
-        $currentStock = InventoryItem::query()
-            ->with('product')
-            ->orderBy('code')
-            ->get();
-
-        $movementsBase = fn () => InventoryMovement::query()->whereBetween('created_at', [$from, $to]);
-
-        $totalIn = (float) $movementsBase()->where('quantity', '>', 0)->sum('quantity');
-        $totalOut = (float) abs((float) $movementsBase()->where('quantity', '<', 0)->sum('quantity'));
-        $adjustmentCount = $movementsBase()->where('type', InventoryMovement::TYPE_ADJUSTMENT)->count();
-
-        $movements = $movementsBase()
-            ->with(['item.product', 'service', 'purchaseOrder'])
-            ->latest('created_at')
-            ->paginate(25, ['*'], 'movements_page')
-            ->withQueryString();
-
-        $purchaseOrders = PurchaseOrder::query()
-            ->where(function ($query) use ($from, $to) {
-                $query->whereBetween('ordered_at', [$from, $to])
-                    ->orWhereBetween('received_at', [$from, $to])
-                    ->orWhereBetween('canceled_at', [$from, $to]);
-            })
-            ->with('vendor')
-            ->latest('ordered_at')
-            ->paginate(25, ['*'], 'purchase_orders_page')
-            ->withQueryString();
-
-        return [
-            'current_stock' => $currentStock,
-            'summary' => [
-                'total_in' => $totalIn,
-                'total_out' => $totalOut,
-                'adjustment_count' => $adjustmentCount,
-                'po_ordered_count' => PurchaseOrder::query()->whereBetween('ordered_at', [$from, $to])->count(),
-                'po_ordered_sum' => (float) PurchaseOrder::query()->whereBetween('ordered_at', [$from, $to])->sum('total'),
-                'po_received_count' => PurchaseOrder::query()->whereBetween('received_at', [$from, $to])->count(),
-                'po_canceled_count' => PurchaseOrder::query()->whereBetween('canceled_at', [$from, $to])->count(),
-            ],
-            'movements' => $movements,
-            'purchase_orders' => $purchaseOrders,
         ];
     }
 }

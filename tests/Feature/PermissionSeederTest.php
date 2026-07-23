@@ -40,7 +40,6 @@ class PermissionSeederTest extends TestCase
             'installations.view', 'installations.claim', 'installations.complete',
             'dismantles.view', 'dismantles.claim', 'dismantles.complete',
             'tickets.view', 'tickets.claim', 'tickets.resolve',
-            'inventory.view',
             'services.view', 'services.create', 'services.update',
             'sales.view', 'sales.create', 'sales.update',
             'users.complete-kyc',
@@ -49,12 +48,22 @@ class PermissionSeederTest extends TestCase
         $this->assertSameArrays($expected, $this->permissionsFor('technician'));
     }
 
+    /**
+     * 'finance' diperluas jadi peran operator harian "Admin/NOC" 2026-07-23
+     * — lihat CLAUDE.md "Authorization / Role & Permission" bullet
+     * "`finance` diperluas jadi kapabel 'Admin/NOC'".
+     */
     public function test_finance_permissions_match_matrix(): void
     {
         $expected = [
             'sales.view', 'sales.retry-receipt', 'sales.create', 'sales.update',
             'services.view', 'services.create', 'services.update',
-            'users.complete-kyc',
+            'users.view', 'users.complete-kyc',
+            'installations.view', 'installations.assign', 'installations.complete-any',
+            'dismantles.view', 'dismantles.queue', 'dismantles.assign', 'dismantles.complete-any',
+            'tickets.view', 'tickets.create', 'tickets.assign', 'tickets.resolve-any',
+            'sites.view', 'coverages.view',
+            'reports.view',
         ];
 
         $this->assertSameArrays($expected, $this->permissionsFor('finance'));

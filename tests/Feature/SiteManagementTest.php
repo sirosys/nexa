@@ -174,14 +174,27 @@ class SiteManagementTest extends TestCase
 
     /**
      * Gate `/sites` masih sengaja cuma untuk superadmin, konsisten dengan
-     * gate `/users` dan `/products` (lihat CLAUDE.md "Authorization").
+     * gate `/users` dan `/products` (lihat CLAUDE.md "Authorization"). `finance`
+     * dikecualikan — sejak diperluas jadi "Admin/NOC" (2026-07-23) role itu
+     * punya `sites.view`.
      */
     public function test_non_superadmin_roles_cannot_access_site_routes(): void
     {
-        foreach (['technician', 'finance', 'customer'] as $role) {
+        foreach (['technician', 'customer'] as $role) {
             $staff = $this->withRole($role);
 
             $this->actingAs($staff)->get('/sites')->assertForbidden();
         }
+    }
+
+    public function test_finance_can_view_sites_but_not_manage_them(): void
+    {
+        $finance = $this->withRole('finance');
+        $site = Site::factory()->create();
+
+        $this->actingAs($finance)->get('/sites')->assertOk();
+        $this->actingAs($finance)->get('/sites/create')->assertForbidden();
+        $this->actingAs($finance)->post('/sites', [])->assertForbidden();
+        $this->actingAs($finance)->delete("/sites/{$site->id}")->assertForbidden();
     }
 }

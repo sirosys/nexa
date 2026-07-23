@@ -142,15 +142,30 @@ class DismantleManagementTest extends TestCase
         $this->assertSame(1, ServiceDismantle::where('service_id', $service->id)->count());
     }
 
+    /**
+     * `finance` dikecualikan — sejak diperluas jadi "Admin/NOC" (2026-07-23)
+     * role itu punya `dismantles.queue`.
+     */
     public function test_queue_forbidden_for_non_superadmin(): void
     {
         $service = $this->serviceWithActivation(Service::STATUS_ACTIVE);
 
-        foreach (['finance', 'customer', 'technician'] as $role) {
+        foreach (['customer', 'technician'] as $role) {
             $staff = $this->withRole($role);
 
             $this->actingAs($staff)->post("/dismantles/{$service->id}/queue")->assertForbidden();
         }
+    }
+
+    public function test_finance_can_queue_dismantle(): void
+    {
+        $finance = $this->withRole('finance');
+        $service = $this->serviceWithActivation(Service::STATUS_ACTIVE);
+
+        $response = $this->actingAs($finance)->post("/dismantles/{$service->id}/queue");
+
+        $response->assertRedirect();
+        $this->assertSame(Service::STATUS_PENDING_DISMANTLE, $service->fresh()->status);
     }
 
     public function test_superadmin_can_assign_technician_and_service_becomes_dismantling(): void
@@ -330,16 +345,26 @@ class DismantleManagementTest extends TestCase
         $this->assertSame(Service::STATUS_DISMANTLED, $service->fresh()->status);
     }
 
+    /**
+     * `finance` dikecualikan — sejak diperluas jadi "Admin/NOC" (2026-07-23)
+     * role itu punya `dismantles.view`.
+     */
     public function test_non_superadmin_non_technician_roles_forbidden_from_dismantle_routes(): void
     {
         $service = $this->queuedForDismantleService();
+        $customer = $this->withRole('customer');
 
-        foreach (['finance', 'customer'] as $role) {
-            $staff = $this->withRole($role);
+        $this->actingAs($customer)->get('/dismantles')->assertForbidden();
+        $this->actingAs($customer)->get("/dismantles/{$service->id}")->assertForbidden();
+    }
 
-            $this->actingAs($staff)->get('/dismantles')->assertForbidden();
-            $this->actingAs($staff)->get("/dismantles/{$service->id}")->assertForbidden();
-        }
+    public function test_finance_can_view_dismantle_queue(): void
+    {
+        $finance = $this->withRole('finance');
+        $service = $this->queuedForDismantleService();
+
+        $this->actingAs($finance)->get('/dismantles')->assertOk();
+        $this->actingAs($finance)->get("/dismantles/{$service->id}")->assertOk();
     }
 
     public function test_index_and_show_render_for_superadmin_and_technician(): void

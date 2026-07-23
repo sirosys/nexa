@@ -58,19 +58,6 @@ class ReportController extends Controller
         ]);
     }
 
-    public function inventory(Request $request): View
-    {
-        abort_unless(Auth::user()->can('reports.view'), 403);
-
-        [$from, $to] = $this->resolveRange($request);
-
-        return view('reports.inventory', [
-            ...$this->reportService->inventory($from, $to),
-            'from' => $from,
-            'to' => $to,
-        ]);
-    }
-
     /**
      * Filter tanggal query string from/to (Y-m-d), default awal bulan
      * berjalan s/d hari ini kalau kosong. Validasi ringan supaya input rusak

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\InstallationAssignRequest;
 use App\Http\Requests\InstallationCompleteRequest;
-use App\Models\InventoryItem;
 use App\Models\Service;
 use App\Models\User;
 use App\Services\InstallationService;
@@ -41,17 +40,6 @@ class InstallationController extends Controller
         return view('installations.show', [
             'service' => $service,
             'technicians' => User::role('technician')->orderBy('name')->get(),
-            'inventoryItems' => InventoryItem::with(['product', 'units' => fn ($query) => $query->where('status', 'in_stock')])
-                ->where('quantity', '>', 0)
-                ->get()
-                ->map(fn (InventoryItem $item) => [
-                    'id' => $item->id,
-                    'name' => $item->product?->name,
-                    'is_serialized' => $item->is_serialized,
-                    'quantity' => $item->quantity,
-                    'serials' => $item->is_serialized ? $item->units->pluck('serial_number')->values() : [],
-                ])
-                ->values(),
         ]);
     }
 

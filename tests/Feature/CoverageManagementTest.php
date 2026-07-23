@@ -117,14 +117,27 @@ class CoverageManagementTest extends TestCase
 
     /**
      * Gate `/coverages` masih sengaja cuma untuk superadmin, konsisten dengan
-     * gate `/users` dan `/products` (lihat CLAUDE.md "Authorization").
+     * gate `/users` dan `/products` (lihat CLAUDE.md "Authorization"). `finance`
+     * dikecualikan — sejak diperluas jadi "Admin/NOC" (2026-07-23) role itu
+     * punya `coverages.view`.
      */
     public function test_non_superadmin_roles_cannot_access_coverage_routes(): void
     {
-        foreach (['technician', 'finance', 'customer'] as $role) {
+        foreach (['technician', 'customer'] as $role) {
             $staff = $this->withRole($role);
 
             $this->actingAs($staff)->get('/coverages')->assertForbidden();
         }
+    }
+
+    public function test_finance_can_view_coverages_but_not_manage_them(): void
+    {
+        $finance = $this->withRole('finance');
+        $coverage = Coverage::factory()->create();
+
+        $this->actingAs($finance)->get('/coverages')->assertOk();
+        $this->actingAs($finance)->get('/coverages/create')->assertForbidden();
+        $this->actingAs($finance)->post('/coverages', [])->assertForbidden();
+        $this->actingAs($finance)->delete("/coverages/{$coverage->id}")->assertForbidden();
     }
 }

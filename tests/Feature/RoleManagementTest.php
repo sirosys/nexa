@@ -61,28 +61,28 @@ class RoleManagementTest extends TestCase
 
         $response = $this->actingAs($admin)->put("/roles/{$role->id}", [
             'name' => 'warehouse_staff',
-            'permissions' => ['inventory.view', 'inventory.stock-in'],
+            'permissions' => ['sites.view', 'coverages.view'],
         ]);
 
         $response->assertRedirect(route('roles.edit', $role));
         $role->refresh();
-        $this->assertEqualsCanonicalizing(['inventory.view', 'inventory.stock-in'], $role->permissions->pluck('name')->all());
+        $this->assertEqualsCanonicalizing(['sites.view', 'coverages.view'], $role->permissions->pluck('name')->all());
 
         $log = AuditLog::where('action', 'role.permissions_updated')->first();
         $this->assertNotNull($log);
         $this->assertSame($admin->id, $log->actor_id);
-        $this->assertEqualsCanonicalizing(['inventory.view', 'inventory.stock-in'], $log->changes['to']);
+        $this->assertEqualsCanonicalizing(['sites.view', 'coverages.view'], $log->changes['to']);
     }
 
     public function test_resubmitting_the_same_permission_set_does_not_record_a_new_audit_entry(): void
     {
         $admin = $this->superadmin();
         $role = Role::create(['name' => 'warehouse_staff', 'guard_name' => 'web', 'permissions_managed_by_seeder' => false]);
-        $role->syncPermissions(['inventory.view']);
+        $role->syncPermissions(['sites.view']);
 
         $this->actingAs($admin)->put("/roles/{$role->id}", [
             'name' => 'warehouse_staff',
-            'permissions' => ['inventory.view'],
+            'permissions' => ['sites.view'],
         ]);
 
         $this->assertSame(0, AuditLog::where('action', 'role.permissions_updated')->count());

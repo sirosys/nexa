@@ -295,16 +295,33 @@ class ServiceTicketManagementTest extends TestCase
         $this->actingAs($technician)->delete("/tickets/{$ticket->id}")->assertForbidden();
     }
 
+    /**
+     * `finance` dikecualikan — sejak diperluas jadi "Admin/NOC" (2026-07-23)
+     * role itu punya `tickets.view`.
+     */
     public function test_non_superadmin_non_technician_roles_forbidden_from_ticket_routes(): void
     {
         $ticket = $this->ticket();
+        $customer = $this->withRole('customer');
 
-        foreach (['finance', 'customer'] as $role) {
-            $staff = $this->withRole($role);
+        $this->actingAs($customer)->get('/tickets')->assertForbidden();
+        $this->actingAs($customer)->get("/tickets/{$ticket->id}")->assertForbidden();
+    }
 
-            $this->actingAs($staff)->get('/tickets')->assertForbidden();
-            $this->actingAs($staff)->get("/tickets/{$ticket->id}")->assertForbidden();
-        }
+    public function test_finance_can_view_tickets_but_not_update_or_delete(): void
+    {
+        $finance = $this->withRole('finance');
+        $ticket = $this->ticket();
+
+        $this->actingAs($finance)->get('/tickets')->assertOk();
+        $this->actingAs($finance)->get("/tickets/{$ticket->id}")->assertOk();
+        $this->actingAs($finance)->put("/tickets/{$ticket->id}", [
+            'service_id' => $ticket->service_id,
+            'category' => ServiceTicket::CATEGORY_LAINNYA,
+            'subject' => 'x',
+            'description' => 'y',
+        ])->assertForbidden();
+        $this->actingAs($finance)->delete("/tickets/{$ticket->id}")->assertForbidden();
     }
 
     public function test_index_and_show_render_for_superadmin_and_technician(): void

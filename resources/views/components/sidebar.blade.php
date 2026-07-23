@@ -50,9 +50,6 @@
                 ['label' => 'Plan', 'route' => 'plans.index', 'icon' => 'signal', 'permission' => 'plans.view'],
                 ['label' => 'Produk', 'route' => 'products.index', 'icon' => 'cube', 'permission' => 'products.view'],
                 ['label' => 'Paket', 'route' => 'packages.index', 'icon' => 'gift', 'permission' => 'packages.view'],
-                ['label' => 'Inventaris', 'route' => 'inventory-items.index', 'icon' => 'archive-box', 'permission' => 'inventory.view'],
-                ['label' => 'Vendor', 'route' => 'vendors.index', 'icon' => 'truck', 'permission' => 'vendors.view'],
-                ['label' => 'Purchase Order', 'route' => 'purchase-orders.index', 'icon' => 'clipboard-document-list', 'permission' => 'purchase_orders.view'],
             ],
         ],
         [

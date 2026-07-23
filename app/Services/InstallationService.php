@@ -17,7 +17,6 @@ class InstallationService
     public function __construct(
         private readonly NotificationService $notificationService,
         private readonly MikrotikService $mikrotikService,
-        private readonly InventoryService $inventoryService,
         private readonly AuditLogService $auditLogService,
     ) {}
 
@@ -66,7 +65,7 @@ class InstallationService
     }
 
     /**
-     * @param  array{odp_port: string, cable_length: ?float, photo: ?UploadedFile, notes: ?string, equipment: ?array<int, array{inventory_item_id: int, quantity: ?int, serial_number: ?string}>}  $data
+     * @param  array{odp_port: string, cable_length: ?float, photo: ?UploadedFile, notes: ?string}  $data
      */
     public function complete(Service $service, array $data): Service
     {
@@ -98,15 +97,6 @@ class InstallationService
                 'activated_at' => $activatedAt,
                 'expired_at' => $activatedAt->copy()->addMonths($durationMonths),
             ]);
-
-            // Di dalam transaksi yang sama (beda dari MikroTik/notifikasi
-            // yang best-effort di luar transaksi) — kekurangan stok adalah
-            // masalah integritas data, bukan kegagalan sistem eksternal
-            // yang boleh ditelan, jadi instalasi ikut gagal/rollback kalau
-            // equipment yang diklaim terpakai ternyata tidak tersedia.
-            if (! empty($data['equipment'])) {
-                $this->inventoryService->consumeForInstallation($service, $data['equipment']);
-            }
 
             return $service;
         });

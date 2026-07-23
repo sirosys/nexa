@@ -135,14 +135,22 @@ class DashboardTest extends TestCase
         $response->assertViewHas('recentServices', fn ($value) => $value !== null);
     }
 
-    public function test_finance_sees_financial_and_service_data_but_not_installation_dismantle_queues(): void
+    /**
+     * `finance` diperluas jadi "Admin/NOC" (2026-07-23) — sekarang punya
+     * `users.view`/`installations.view`/`dismantles.view` juga, jadi ikut
+     * melihat seluruh kartu statistik, bukan cuma yang finansial/layanan
+     * seperti sebelum perluasan itu.
+     */
+    public function test_finance_sees_all_dashboard_stat_cards(): void
     {
         Service::factory()->create(['status' => Service::STATUS_ACTIVE]);
 
         $response = $this->actingAs($this->withRole('finance'))->get('/dashboard');
 
         $response->assertOk();
-        $response->assertViewHas('stats', fn (array $stats) => array_keys($stats) === ['active_services', 'unpaid_invoices', 'revenue_this_month']);
+        $response->assertViewHas('stats', fn (array $stats) => array_keys($stats) === [
+            'registered_customers', 'active_services', 'unpaid_invoices', 'revenue_this_month', 'installation_queue', 'dismantle_queue',
+        ]);
         $response->assertViewHas('statusDistribution', fn ($value) => $value !== null);
         $response->assertViewHas('monthlyRevenue', fn ($value) => $value !== null);
         $response->assertViewHas('recentServices', fn ($value) => $value !== null);

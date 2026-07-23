@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['code', 'type', 'name', 'description', 'price', 'unit', 'created_by', 'updated_by'])]
 class Product extends Model
@@ -33,11 +32,5 @@ class Product extends Model
         return $this->belongsToMany(Package::class)
             ->withPivot(['quantity', 'price'])
             ->withTimestamps();
-    }
-
-    /** @return HasOne<InventoryItem, $this> */
-    public function inventoryItem(): HasOne
-    {
-        return $this->hasOne(InventoryItem::class);
     }
 }

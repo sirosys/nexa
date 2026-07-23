@@ -2,10 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\InventoryItem;
-use App\Models\InventoryUnit;
 use App\Models\Package;
-use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Service;
 use App\Models\ServiceActivation;
@@ -197,66 +194,6 @@ class InstallationManagementTest extends TestCase
         ]);
     }
 
-    public function test_complete_installation_consumes_equipment_from_inventory(): void
-    {
-        Storage::fake('local');
-        $package = Package::factory()->create(['is_starter' => true, 'plan_qty' => 1]);
-        $service = $this->pendingInstallationService($package);
-        $technician = $this->withRole('technician');
-        $this->actingAs($technician)->post("/installations/{$service->id}/claim");
-
-        $product = Product::factory()->create(['type' => 'perangkat']);
-        $item = InventoryItem::create(['product_id' => $product->id, 'is_serialized' => true, 'quantity' => 1]);
-        InventoryUnit::create([
-            'inventory_item_id' => $item->id,
-            'serial_number' => 'SN-MODEM-01',
-            'status' => InventoryUnit::STATUS_IN_STOCK,
-        ]);
-
-        $response = $this->actingAs($technician)->post("/installations/{$service->id}/complete", [
-            'odp_port' => 'ODP-01-02',
-            'photo' => UploadedFile::fake()->image('bukti.jpg'),
-            'equipment' => [
-                ['inventory_item_id' => $item->id, 'serial_number' => 'SN-MODEM-01'],
-            ],
-        ]);
-
-        $response->assertRedirect(route('installations.show', $service));
-        $this->assertSame(Service::STATUS_ACTIVE, $service->fresh()->status);
-
-        $item->refresh();
-        $this->assertSame(0, $item->quantity);
-        $unit = InventoryUnit::where('serial_number', 'SN-MODEM-01')->firstOrFail();
-        $this->assertSame(InventoryUnit::STATUS_INSTALLED, $unit->status);
-        $this->assertSame($service->id, $unit->service_id);
-    }
-
-    public function test_complete_installation_fails_when_equipment_stock_insufficient(): void
-    {
-        Storage::fake('local');
-        $package = Package::factory()->create(['is_starter' => true, 'plan_qty' => 1]);
-        $service = $this->pendingInstallationService($package);
-        $technician = $this->withRole('technician');
-        $this->actingAs($technician)->post("/installations/{$service->id}/claim");
-
-        $product = Product::factory()->create(['type' => 'perangkat']);
-        $item = InventoryItem::create(['product_id' => $product->id, 'is_serialized' => false, 'quantity' => 2]);
-
-        $response = $this->actingAs($technician)->post("/installations/{$service->id}/complete", [
-            'odp_port' => 'ODP-01-02',
-            'photo' => UploadedFile::fake()->image('bukti.jpg'),
-            'equipment' => [
-                ['inventory_item_id' => $item->id, 'quantity' => 5],
-            ],
-        ]);
-
-        $response->assertRedirect();
-        $response->assertSessionHas('error');
-        // Rollback penuh — instalasi TIDAK ikut selesai kalau stok kurang.
-        $this->assertSame(Service::STATUS_INSTALLING, $service->fresh()->status);
-        $this->assertSame(2, $item->fresh()->quantity);
-    }
-
     public function test_technician_who_is_not_assigned_installer_cannot_complete(): void
     {
         Storage::fake('local');
@@ -320,16 +257,26 @@ class InstallationManagementTest extends TestCase
         $this->assertSame(Service::STATUS_ACTIVE, $service->fresh()->status);
     }
 
+    /**
+     * `finance` dikecualikan — sejak diperluas jadi "Admin/NOC" (2026-07-23)
+     * role itu punya `installations.view`.
+     */
     public function test_non_superadmin_non_technician_roles_forbidden_from_installation_routes(): void
     {
         $service = $this->pendingInstallationService();
+        $customer = $this->withRole('customer');
 
-        foreach (['finance', 'customer'] as $role) {
-            $staff = $this->withRole($role);
+        $this->actingAs($customer)->get('/installations')->assertForbidden();
+        $this->actingAs($customer)->get("/installations/{$service->id}")->assertForbidden();
+    }
 
-            $this->actingAs($staff)->get('/installations')->assertForbidden();
-            $this->actingAs($staff)->get("/installations/{$service->id}")->assertForbidden();
-        }
+    public function test_finance_can_view_installation_queue(): void
+    {
+        $finance = $this->withRole('finance');
+        $service = $this->pendingInstallationService();
+
+        $this->actingAs($finance)->get('/installations')->assertOk();
+        $this->actingAs($finance)->get("/installations/{$service->id}")->assertOk();
     }
 
     public function test_index_and_show_render_for_superadmin_and_technician(): void

@@ -362,16 +362,24 @@ class UserManagementTest extends TestCase
     }
 
     /**
-     * Gate `/users` masih sengaja cuma untuk superadmin — technician/finance
-     * belum dapat akses apa pun di iterasi ini (lihat CLAUDE.md "Authorization").
+     * Gate `/users` masih sengaja cuma untuk superadmin — technician belum
+     * dapat akses apa pun di iterasi ini (lihat CLAUDE.md "Authorization").
+     * `finance` dikecualikan — sejak diperluas jadi "Admin/NOC" (2026-07-23)
+     * role itu punya `users.view`.
      */
     public function test_non_superadmin_staff_roles_cannot_access_user_routes(): void
     {
-        foreach (['technician', 'finance'] as $role) {
-            $staff = $this->withRole($role);
+        $staff = $this->withRole('technician');
 
-            $this->actingAs($staff)->get('/users')->assertForbidden();
-        }
+        $this->actingAs($staff)->get('/users')->assertForbidden();
+    }
+
+    public function test_finance_can_view_users_but_not_manage_them(): void
+    {
+        $finance = $this->withRole('finance');
+
+        $this->actingAs($finance)->get('/users')->assertOk();
+        $this->actingAs($finance)->post('/users', $this->validCreatePayload())->assertForbidden();
     }
 
     public function test_ktp_photo_is_stored_privately_and_owner_can_view_it(): void

@@ -103,8 +103,6 @@ Prinsip utama:
 - Mikrotik Integration
 - Monitoring
 - Ticketing
-- Inventory
-- Vendor & Supplier
 - Notification
 - Automation
 - Reporting
@@ -281,7 +279,6 @@ konsisten, aman, mudah dipelihara, dan siap berkembang.
 - MikroTik Integration
 - Monitoring
 - Ticketing
-- Inventory
 - Reporting
 - Audit Log
 

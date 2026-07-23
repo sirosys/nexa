@@ -3,7 +3,6 @@
         ['route' => 'reports.finance', 'label' => 'Keuangan & Billing'],
         ['route' => 'reports.operations', 'label' => 'Operasional Lapangan'],
         ['route' => 'reports.customers', 'label' => 'Pelanggan & Layanan'],
-        ['route' => 'reports.inventory', 'label' => 'Inventaris & Pengadaan'],
     ];
 @endphp
 
