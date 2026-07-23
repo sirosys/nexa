@@ -16,7 +16,7 @@ class UserService
     private const ROLE_LABELS = [
         'superadmin' => 'Superadmin',
         'technician' => 'Teknisi',
-        'finance' => 'Admin/NOC',
+        'finance' => 'NOC',
         'customer' => 'Pelanggan',
     ];
 

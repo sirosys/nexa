@@ -4,7 +4,7 @@
     $roleBadges = [
         'superadmin' => ['label' => 'Superadmin', 'class' => 'bg-danger-light text-danger dark:bg-danger/10', 'avatar' => 'bg-danger'],
         'technician' => ['label' => 'Teknisi', 'class' => 'bg-warning-light text-warning dark:bg-warning/10', 'avatar' => 'bg-warning'],
-        'finance' => ['label' => 'Admin/NOC', 'class' => 'bg-success-light text-success dark:bg-success/10', 'avatar' => 'bg-success'],
+        'finance' => ['label' => 'NOC', 'class' => 'bg-success-light text-success dark:bg-success/10', 'avatar' => 'bg-success'],
         'customer' => ['label' => 'Pelanggan', 'class' => 'bg-primary-light text-primary dark:bg-primary/10', 'avatar' => 'bg-primary'],
     ];
 @endphp

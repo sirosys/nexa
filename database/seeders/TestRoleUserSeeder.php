@@ -18,7 +18,7 @@ class TestRoleUserSeeder extends Seeder
     // / Role & Permission") — tidak ada lagi akun uji coba untuk role itu.
     private const USERS = [
         'technician' => ['phone' => '6280000000002', 'name' => 'Teknisi Uji Coba', 'email' => 'technician@nexa.test'],
-        'finance' => ['phone' => '6280000000003', 'name' => 'Admin/NOC Uji Coba', 'email' => 'finance@nexa.test'],
+        'finance' => ['phone' => '6280000000003', 'name' => 'NOC Uji Coba', 'email' => 'finance@nexa.test'],
     ];
 
     public function run(): void
