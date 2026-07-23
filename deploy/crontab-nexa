@@ -1,0 +1,16 @@
+# Entry cron untuk scheduler Laravel NEXA di production.
+# Menggantikan `php artisan schedule:work` (dipakai composer script `dev`,
+# proses foreground cuma cocok untuk development) — production butuh cron
+# system yang memanggil `schedule:run` setiap menit; Laravel sendiri yang
+# menentukan job mana yang benar-benar perlu dieksekusi saat itu (lihat
+# `bootstrap/app.php` withSchedule() untuk daftar job: billing, renewal,
+# dismantle, monitoring).
+#
+# Install (sebagai user yang menjalankan aplikasi, mis. www-data):
+#   crontab -e
+#   # tempel baris di bawah, ganti /var/www/nexa dengan path deploy sungguhan
+#
+# Verifikasi jalan: cek `storage/logs/laravel.log` setelah beberapa menit,
+# atau jalankan `php artisan schedule:list` untuk lihat jadwal terdaftar.
+
+* * * * * cd /var/www/nexa && php artisan schedule:run >> /dev/null 2>&1

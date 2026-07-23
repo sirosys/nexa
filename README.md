@@ -37,6 +37,7 @@ Frontend Blade
 Styling Tailwind CSS
 UI Interaction Alpine.js
 Component Kompleks Vue
+daisyUI
 Database MySQL
 Payment Gateway Xendit
 Development OS Ubuntu 20.04
@@ -199,7 +200,7 @@ Seluruh developer wajib mengikuti standar berikut, dan semua proses, penjelasan,
 
 ## Naming
 
-Gunakan nama yang konsisten.
+Gunakan nama yang konsisten. untuk penamaan url routing menggunakan kolom code dari masing-masing table dan bukan menggunakan kolom ID.
 
 Contoh:
 
