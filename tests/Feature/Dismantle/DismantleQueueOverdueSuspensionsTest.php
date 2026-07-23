@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Dismantle;
 
-use App\Models\Sale;
 use App\Models\Service;
 use App\Models\ServiceActivation;
 use App\Models\ServiceDismantle;
+use App\Models\ServiceOrder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
@@ -24,7 +24,7 @@ class DismantleQueueOverdueSuspensionsTest extends TestCase
     {
         $service = Service::factory()->create($overrides);
 
-        $sale = Sale::factory()->create([
+        $serviceOrder = ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'package_id' => $service->package_id,
             'settled_at' => now(),
@@ -32,7 +32,7 @@ class DismantleQueueOverdueSuspensionsTest extends TestCase
 
         ServiceActivation::create([
             'service_id' => $service->id,
-            'sale_id' => $sale->id,
+            'service_order_id' => $serviceOrder->id,
         ]);
 
         return $service;

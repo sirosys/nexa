@@ -151,10 +151,10 @@ class Service extends Model
         return $this->belongsTo(Package::class);
     }
 
-    /** @return HasMany<Sale, $this> */
-    public function sales(): HasMany
+    /** @return HasMany<ServiceOrder, $this> */
+    public function serviceOrders(): HasMany
     {
-        return $this->hasMany(Sale::class);
+        return $this->hasMany(ServiceOrder::class);
     }
 
     /** @return HasOne<ServiceActivation, $this> */

@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CompleteKycRequest;
 use App\Http\Requests\UserRequest;
-use App\Models\Sale;
 use App\Models\ServiceActivation;
 use App\Models\ServiceDismantle;
+use App\Models\ServiceOrder;
 use App\Models\ServiceTicket;
 use App\Models\User;
 use App\Services\UserService;
@@ -76,7 +76,7 @@ class UserController extends Controller
         $user->load(['userDetails', 'roles']);
 
         $services = null;
-        $sales = null;
+        $serviceOrders = null;
         $tickets = null;
         $installations = null;
         $dismantles = null;
@@ -90,7 +90,7 @@ class UserController extends Controller
 
             $serviceIds = $services->pluck('id');
 
-            $sales = Sale::query()
+            $serviceOrders = ServiceOrder::query()
                 ->whereIn('service_id', $serviceIds)
                 ->latest('id')
                 ->get();
@@ -125,7 +125,7 @@ class UserController extends Controller
         return view('users.show', [
             'user' => $user,
             'services' => $services,
-            'sales' => $sales,
+            'serviceOrders' => $serviceOrders,
             'tickets' => $tickets,
             'installations' => $installations,
             'dismantles' => $dismantles,

@@ -13,17 +13,17 @@ class InvoiceController extends Controller
     {
         $service = $request->user()->services()->where('code', $code)->firstOrFail();
 
-        $sales = $service->sales()->with('receipt')->latest()->get();
+        $serviceOrders = $service->serviceOrders()->with('receipt')->latest()->get();
 
-        return InvoiceResource::collection($sales);
+        return InvoiceResource::collection($serviceOrders);
     }
 
     public function show(Request $request, string $code, string $saleCode): InvoiceResource
     {
         $service = $request->user()->services()->where('code', $code)->firstOrFail();
 
-        $sale = $service->sales()->with('receipt')->where('code', $saleCode)->firstOrFail();
+        $serviceOrder = $service->serviceOrders()->with('receipt')->where('code', $saleCode)->firstOrFail();
 
-        return new InvoiceResource($sale);
+        return new InvoiceResource($serviceOrder);
     }
 }

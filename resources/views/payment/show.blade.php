@@ -1,24 +1,24 @@
 @php
-    $sale = $receipt->sale;
-    $customerName = $sale->service->user->name;
+    $serviceOrder = $receipt->serviceOrder;
+    $customerName = $serviceOrder->service->user->name;
     $actions = $receipt->raw_response['actions'] ?? [];
     $qrAction = collect($actions)->firstWhere('descriptor', 'QR_STRING');
 @endphp
 
-<x-auth-layout :title="'Tagihan '.$sale->code">
-    <h1 class="text-lg font-semibold text-gray-900 dark:text-white">Tagihan {{ $sale->code }}</h1>
+<x-auth-layout :title="'Tagihan '.$serviceOrder->code">
+    <h1 class="text-lg font-semibold text-gray-900 dark:text-white">Tagihan {{ $serviceOrder->code }}</h1>
     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Halo {{ $customerName }}, berikut detail tagihan pendaftaran Anda.</p>
 
     <dl class="mt-6 divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
         <x-detail-row label="Jumlah Tagihan">Rp{{ number_format((float) $receipt->amount, 0, ',', '.') }}</x-detail-row>
-        <x-detail-row label="Berlaku Sampai">{{ optional($sale->expired_at)->translatedFormat('d F Y H:i') }}</x-detail-row>
+        <x-detail-row label="Berlaku Sampai">{{ optional($serviceOrder->expired_at)->translatedFormat('d F Y H:i') }}</x-detail-row>
     </dl>
 
-    @if ($sale->canceled_at)
+    @if ($serviceOrder->canceled_at)
         <div class="mt-6 rounded-lg bg-danger-light px-4 py-3 text-sm text-danger dark:bg-danger/10">
             Tagihan ini sudah <strong>dibatalkan</strong> karena melewati batas waktu pembayaran. Silakan hubungi kami kalau Anda masih ingin berlangganan.
         </div>
-    @elseif ($sale->settled_at)
+    @elseif ($serviceOrder->settled_at)
         <div class="mt-6 rounded-lg bg-success-light px-4 py-3 text-sm text-success dark:bg-success/10">
             Pembayaran sudah <strong>kami terima</strong>. Terima kasih! Tim kami akan segera menghubungi Anda untuk proses instalasi.
         </div>
@@ -29,7 +29,7 @@
             @if ($qrAction)
                 <div
                     class="flex flex-col items-center gap-3 py-2"
-                    x-data="qrRenderer('{{ addslashes($qrAction['value']) }}', 'QRIS-{{ $sale->code }}.png')"
+                    x-data="qrRenderer('{{ addslashes($qrAction['value']) }}', 'QRIS-{{ $serviceOrder->code }}.png')"
                     x-init="init()"
                 >
                     <canvas x-ref="canvas" class="rounded-lg border border-gray-200 dark:border-gray-700"></canvas>

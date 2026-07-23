@@ -121,9 +121,10 @@ class InstallationService
 
     /**
      * Cari-atau-buat baris ServiceActivation untuk service ini, disambungkan
-     * ke Sale registrasi yang sudah settled (satu Service = satu Sale
-     * pendaftaran awal di iterasi ini — belum ada alur upgrade/renewal
-     * yang bikin Sale kedua, lihat CLAUDE.md "Sales").
+     * ke Order Layanan registrasi yang sudah settled (satu Service = satu
+     * Order Layanan pendaftaran awal di iterasi ini — belum ada alur
+     * upgrade/renewal yang bikin Order Layanan kedua, lihat CLAUDE.md
+     * "Service Order").
      */
     private function activationFor(Service $service): ServiceActivation
     {
@@ -131,11 +132,11 @@ class InstallationService
             return $service->activation;
         }
 
-        $sale = $service->sales()->whereNotNull('settled_at')->latest('settled_at')->firstOrFail();
+        $serviceOrder = $service->serviceOrders()->whereNotNull('settled_at')->latest('settled_at')->firstOrFail();
 
         return ServiceActivation::create([
             'service_id' => $service->id,
-            'sale_id' => $sale->id,
+            'service_order_id' => $serviceOrder->id,
             'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
         ]);

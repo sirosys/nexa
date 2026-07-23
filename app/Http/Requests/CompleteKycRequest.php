@@ -19,7 +19,7 @@ class CompleteKycRequest extends FormRequest
     public function authorize(): bool
     {
         // Pola konsisten dengan action non-resource lain (mis.
-        // SaleController::retryReceipt()) — otorisasi ditulis eksplisit
+        // ServiceOrderController::retryReceipt()) — otorisasi ditulis eksplisit
         // di controller (UserController::completeKyc()), bukan di sini.
         return true;
     }

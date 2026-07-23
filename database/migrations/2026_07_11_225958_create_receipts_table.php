@@ -14,10 +14,11 @@ return new class extends Migration
         Schema::create('receipts', function (Blueprint $table) {
             $table->id();
             $table->string('code')->nullable()->unique();
-            // Satu Sale = maksimal satu Receipt di iterasi ini (tidak ada
-            // retry setelah expired — lihat CLAUDE.md "Billing / Invoice
-            // (Xendit)"), jadi unique di sini menegakkan invariant itu.
-            $table->foreignId('sale_id')->unique()->constrained('sales')->restrictOnDelete();
+            // Satu Order Layanan = maksimal satu Receipt di iterasi ini
+            // (tidak ada retry setelah expired — lihat CLAUDE.md "Billing /
+            // Invoice (Xendit)"), jadi unique di sini menegakkan invariant
+            // itu.
+            $table->foreignId('service_order_id')->unique()->constrained('service_orders')->restrictOnDelete();
             // Null berarti belum berhasil dibuat di Xendit (mis. panggilan
             // HTTP gagal) — sinyal untuk tombol retry manual di UI.
             $table->string('xendit_payment_request_id')->nullable()->unique();

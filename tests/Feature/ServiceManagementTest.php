@@ -5,8 +5,8 @@ namespace Tests\Feature;
 use App\Models\Coverage;
 use App\Models\Package;
 use App\Models\Product;
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Models\Subdistrict;
 use App\Models\User;
 use App\Models\UserDetail;
@@ -105,8 +105,9 @@ class ServiceManagementTest extends TestCase
 
     /**
      * Regression test untuk bug nyata: paket gratis (mis. promo) membuat
-     * ReceiptService::createForSale() langsung mengisi sale.settled_at
-     * tanpa pernah membuat Receipt — sebelum diperbaiki, tidak ada apa pun
+     * ReceiptService::createForServiceOrder() langsung mengisi
+     * service_order.settled_at tanpa pernah membuat Receipt — sebelum
+     * diperbaiki, tidak ada apa pun
      * yang memicu transisi status Service, jadi macet selamanya di
      * pending_payment tanpa tagihan yang pernah dibuat/dikirim ke
      * pelanggan. Lihat CLAUDE.md "Service" / ServiceService::create().
@@ -136,10 +137,10 @@ class ServiceManagementTest extends TestCase
         $service = Service::where('address', 'Jl. Contoh Promo No. 1')->firstOrFail();
         $this->assertSame(Service::STATUS_PENDING_INSTALLATION, $service->status);
 
-        $sale = $service->sales()->firstOrFail();
-        $this->assertSame('0.00', $sale->grandtotal);
-        $this->assertNotNull($sale->settled_at);
-        $this->assertFalse($sale->receipt()->exists());
+        $serviceOrder = $service->serviceOrders()->firstOrFail();
+        $this->assertSame('0.00', $serviceOrder->grandtotal);
+        $this->assertNotNull($serviceOrder->settled_at);
+        $this->assertFalse($serviceOrder->receipt()->exists());
     }
 
     /**
@@ -194,7 +195,7 @@ class ServiceManagementTest extends TestCase
     /**
      * Registrasi (paket gratis di sini) selalu mengirim lebih dari satu
      * notifikasi WhatsApp berurutan (ServiceRegisteredNotification lalu
-     * PaymentReceivedNotification begitu Sale gratis auto-settled — lihat
+     * PaymentReceivedNotification begitu Order Layanan gratis auto-settled — lihat
      * test_registering_with_free_package_skips_straight_to_installation),
      * jadi dicari dari riwayat $gateway->messages, bukan cuma
      * $gateway->message (yang cuma menyimpan panggilan TERAKHIR).
@@ -229,18 +230,19 @@ class ServiceManagementTest extends TestCase
     }
 
     /**
-     * Sale (tagihan pendaftaran) untuk paket starter yang dipilih dibuat
-     * otomatis saat service ditambahkan — staff tidak input manual ke
-     * /sales terpisah untuk pendaftaran awal (lihat CLAUDE.md "Service").
+     * Order Layanan (tagihan pendaftaran) untuk paket starter yang dipilih
+     * dibuat otomatis saat service ditambahkan — staff tidak input manual
+     * ke /service-orders terpisah untuk pendaftaran awal (lihat CLAUDE.md
+     * "Service").
      */
-    public function test_creating_service_auto_generates_initial_sale_from_starter_package(): void
+    public function test_creating_service_auto_generates_initial_service_order_from_starter_package(): void
     {
         $customer = $this->customer();
         $subdistrict = Subdistrict::factory()->create();
         $coverage = Coverage::factory()->create();
-        // price=0 — isolasi test ini ke perhitungan sale_products saja,
-        // tanpa kontribusi packages.price (lihat CLAUDE.md "Product &
-        // Package"/"Sales").
+        // price=0 — isolasi test ini ke perhitungan service_order_products
+        // saja, tanpa kontribusi packages.price (lihat CLAUDE.md "Product &
+        // Package"/"Service Order").
         $package = Package::factory()->create(['is_starter' => true, 'price' => 0]);
         $product = Product::factory()->create(['price' => 150000]);
         $package->products()->attach($product->id, ['quantity' => 2, 'price' => 150000]);
@@ -256,15 +258,15 @@ class ServiceManagementTest extends TestCase
         $response->assertRedirect(route('services.index'));
 
         $service = Service::where('address', 'Jl. Contoh No. 20')->firstOrFail();
-        $sale = Sale::where('service_id', $service->id)->firstOrFail();
+        $serviceOrder = ServiceOrder::where('service_id', $service->id)->firstOrFail();
 
-        $this->assertStringStartsWith('SAL', $sale->code);
-        $this->assertSame($package->id, $sale->package_id);
-        $this->assertTrue($sale->is_starter);
-        $this->assertEquals(300000, (float) $sale->total);
-        $this->assertEquals(300000, (float) $sale->grandtotal);
-        $this->assertDatabaseHas('sale_products', [
-            'sale_id' => $sale->id,
+        $this->assertMatchesRegularExpression('/^[A-HJ-NP-Z2-9]{16}$/', $serviceOrder->code);
+        $this->assertSame($package->id, $serviceOrder->package_id);
+        $this->assertTrue($serviceOrder->is_starter);
+        $this->assertEquals(300000, (float) $serviceOrder->total);
+        $this->assertEquals(300000, (float) $serviceOrder->grandtotal);
+        $this->assertDatabaseHas('service_order_products', [
+            'service_order_id' => $serviceOrder->id,
             'product_id' => $product->id,
             'quantity' => 2,
         ]);

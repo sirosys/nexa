@@ -3,8 +3,8 @@
 namespace Tests\Feature\Renewal;
 
 use App\Models\Receipt;
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Notifications\RenewalReminderNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -15,14 +15,14 @@ class RenewalRemindersTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function unpaidRenewalSale(int $expiresInDays): Sale
+    private function unpaidRenewalServiceOrder(int $expiresInDays): ServiceOrder
     {
         $service = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,
             'expired_at' => now()->addDays($expiresInDays),
         ]);
 
-        $sale = Sale::factory()->create([
+        $serviceOrder = ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'is_renewal' => true,
             'grandtotal' => 200000,
@@ -31,37 +31,37 @@ class RenewalRemindersTest extends TestCase
         ]);
 
         Receipt::factory()->create([
-            'sale_id' => $sale->id,
+            'service_order_id' => $serviceOrder->id,
             'status' => Receipt::STATUS_AWAITING_CHANNEL_SELECTION,
             'xendit_payment_request_id' => null,
         ]);
 
-        return $sale;
+        return $serviceOrder;
     }
 
     public function test_sends_h3_reminder_once_and_stamps_column(): void
     {
         Notification::fake();
 
-        $sale = $this->unpaidRenewalSale(3);
+        $serviceOrder = $this->unpaidRenewalServiceOrder(3);
 
         Artisan::call('renewal:send-reminders');
 
-        $sale->refresh();
-        $this->assertNotNull($sale->renewal_reminder_h3_sent_at);
-        Notification::assertSentToTimes($sale->service->user, RenewalReminderNotification::class, 1);
+        $serviceOrder->refresh();
+        $this->assertNotNull($serviceOrder->renewal_reminder_h3_sent_at);
+        Notification::assertSentToTimes($serviceOrder->service->user, RenewalReminderNotification::class, 1);
     }
 
     public function test_does_not_resend_h3_reminder_on_second_run(): void
     {
         Notification::fake();
 
-        $sale = $this->unpaidRenewalSale(3);
+        $serviceOrder = $this->unpaidRenewalServiceOrder(3);
 
         Artisan::call('renewal:send-reminders');
         Artisan::call('renewal:send-reminders');
 
-        Notification::assertSentToTimes($sale->service->user, RenewalReminderNotification::class, 1);
+        Notification::assertSentToTimes($serviceOrder->service->user, RenewalReminderNotification::class, 1);
     }
 
     /**
@@ -76,41 +76,41 @@ class RenewalRemindersTest extends TestCase
     {
         Notification::fake();
 
-        $sale = $this->unpaidRenewalSale(1);
-        $sale->update(['renewal_reminder_h3_sent_at' => now()->subDays(2)]);
+        $serviceOrder = $this->unpaidRenewalServiceOrder(1);
+        $serviceOrder->update(['renewal_reminder_h3_sent_at' => now()->subDays(2)]);
 
         Artisan::call('renewal:send-reminders');
 
-        $sale->refresh();
-        $this->assertNotNull($sale->renewal_reminder_h1_sent_at);
-        Notification::assertSentToTimes($sale->service->user, RenewalReminderNotification::class, 1);
+        $serviceOrder->refresh();
+        $this->assertNotNull($serviceOrder->renewal_reminder_h1_sent_at);
+        Notification::assertSentToTimes($serviceOrder->service->user, RenewalReminderNotification::class, 1);
     }
 
-    public function test_does_not_remind_settled_sale(): void
+    public function test_does_not_remind_settled_service_order(): void
     {
         Notification::fake();
 
-        $sale = $this->unpaidRenewalSale(2);
-        $sale->update(['settled_at' => now()]);
+        $serviceOrder = $this->unpaidRenewalServiceOrder(2);
+        $serviceOrder->update(['settled_at' => now()]);
 
         Artisan::call('renewal:send-reminders');
 
         Notification::assertNothingSent();
     }
 
-    public function test_does_not_remind_canceled_sale(): void
+    public function test_does_not_remind_canceled_service_order(): void
     {
         Notification::fake();
 
-        $sale = $this->unpaidRenewalSale(2);
-        $sale->update(['canceled_at' => now()]);
+        $serviceOrder = $this->unpaidRenewalServiceOrder(2);
+        $serviceOrder->update(['canceled_at' => now()]);
 
         Artisan::call('renewal:send-reminders');
 
         Notification::assertNothingSent();
     }
 
-    public function test_does_not_remind_registration_sale(): void
+    public function test_does_not_remind_registration_service_order(): void
     {
         Notification::fake();
 
@@ -119,7 +119,7 @@ class RenewalRemindersTest extends TestCase
             'expired_at' => now()->addDays(3),
         ]);
 
-        Sale::factory()->create([
+        ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'is_renewal' => false,
             'invoiced_at' => now()->subDays(2),

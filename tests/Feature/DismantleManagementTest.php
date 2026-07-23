@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Package;
-use App\Models\Sale;
 use App\Models\Service;
 use App\Models\ServiceActivation;
 use App\Models\ServiceDismantle;
+use App\Models\ServiceOrder;
 use App\Models\User;
 use App\Notifications\ServiceDismantledNotification;
 use App\Notifications\TechnicianAssignedForDismantleNotification;
@@ -59,7 +59,7 @@ class DismantleManagementTest extends TestCase
             'status' => $status,
         ], $overrides));
 
-        $sale = Sale::factory()->create([
+        $serviceOrder = ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'package_id' => $package->id,
             'settled_at' => now(),
@@ -67,7 +67,7 @@ class DismantleManagementTest extends TestCase
 
         ServiceActivation::create([
             'service_id' => $service->id,
-            'sale_id' => $sale->id,
+            'service_order_id' => $serviceOrder->id,
         ]);
 
         return $service;

@@ -3,8 +3,8 @@
 namespace Tests\Feature\Api\V1;
 
 use App\Models\Receipt;
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -26,18 +26,18 @@ class InvoiceApiTest extends TestCase
     {
         $customer = $this->customer();
         $service = Service::factory()->create(['user_id' => $customer->id]);
-        $sale = Sale::factory()->create(['service_id' => $service->id, 'grandtotal' => 150000]);
+        $serviceOrder = ServiceOrder::factory()->create(['service_id' => $service->id, 'grandtotal' => 150000]);
 
         Sanctum::actingAs($customer);
 
         $this->getJson("/api/v1/services/{$service->code}/invoices")
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.code', $sale->code);
+            ->assertJsonPath('data.0.code', $serviceOrder->code);
 
-        $this->getJson("/api/v1/services/{$service->code}/invoices/{$sale->code}")
+        $this->getJson("/api/v1/services/{$service->code}/invoices/{$serviceOrder->code}")
             ->assertOk()
-            ->assertJsonPath('data.code', $sale->code)
+            ->assertJsonPath('data.code', $serviceOrder->code)
             ->assertJsonPath('data.grandtotal', 150000);
     }
 
@@ -47,21 +47,21 @@ class InvoiceApiTest extends TestCase
         $service = Service::factory()->create(['user_id' => $customer->id]);
         Sanctum::actingAs($customer);
 
-        $draft = Sale::factory()->create(['service_id' => $service->id]);
+        $draft = ServiceOrder::factory()->create(['service_id' => $service->id]);
         $this->getJson("/api/v1/services/{$service->code}/invoices/{$draft->code}")
             ->assertJsonPath('data.status', 'draft');
 
-        $invoiced = Sale::factory()->create(['service_id' => $service->id, 'invoiced_at' => now()]);
+        $invoiced = ServiceOrder::factory()->create(['service_id' => $service->id, 'invoiced_at' => now()]);
         $this->getJson("/api/v1/services/{$service->code}/invoices/{$invoiced->code}")
             ->assertJsonPath('data.status', 'invoiced');
 
-        $settled = Sale::factory()->create(['service_id' => $service->id, 'invoiced_at' => now(), 'settled_at' => now()]);
+        $settled = ServiceOrder::factory()->create(['service_id' => $service->id, 'invoiced_at' => now(), 'settled_at' => now()]);
         $this->getJson("/api/v1/services/{$service->code}/invoices/{$settled->code}")
             ->assertJsonPath('data.status', 'settled');
 
         // Presedensi: canceled menang atas settled kalau kedua timestamp
-        // somehow terisi (lihat App\Support\SaleStatus).
-        $canceledAndSettled = Sale::factory()->create([
+        // somehow terisi (lihat App\Support\ServiceOrderStatus).
+        $canceledAndSettled = ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'invoiced_at' => now(),
             'settled_at' => now(),
@@ -75,11 +75,11 @@ class InvoiceApiTest extends TestCase
     {
         $customer = $this->customer();
         $service = Service::factory()->create(['user_id' => $customer->id]);
-        $sale = Sale::factory()->create(['service_id' => $service->id]);
+        $serviceOrder = ServiceOrder::factory()->create(['service_id' => $service->id]);
 
         Sanctum::actingAs($customer);
 
-        $this->getJson("/api/v1/services/{$service->code}/invoices/{$sale->code}")
+        $this->getJson("/api/v1/services/{$service->code}/invoices/{$serviceOrder->code}")
             ->assertJsonPath('data.checkout_url', null);
     }
 
@@ -87,12 +87,12 @@ class InvoiceApiTest extends TestCase
     {
         $customer = $this->customer();
         $service = Service::factory()->create(['user_id' => $customer->id]);
-        $sale = Sale::factory()->create(['service_id' => $service->id]);
-        $receipt = Receipt::factory()->create(['sale_id' => $sale->id, 'checkout_url' => 'https://nexa.test/pay/abc']);
+        $serviceOrder = ServiceOrder::factory()->create(['service_id' => $service->id]);
+        $receipt = Receipt::factory()->create(['service_order_id' => $serviceOrder->id, 'checkout_url' => 'https://nexa.test/pay/abc']);
 
         Sanctum::actingAs($customer);
 
-        $this->getJson("/api/v1/services/{$service->code}/invoices/{$sale->code}")
+        $this->getJson("/api/v1/services/{$service->code}/invoices/{$serviceOrder->code}")
             ->assertJsonPath('data.checkout_url', $receipt->checkout_url);
     }
 
@@ -101,11 +101,11 @@ class InvoiceApiTest extends TestCase
         $customer = $this->customer();
         $service = Service::factory()->create(['user_id' => $customer->id]);
         $otherService = Service::factory()->create();
-        $otherSale = Sale::factory()->create(['service_id' => $otherService->id]);
+        $otherServiceOrder = ServiceOrder::factory()->create(['service_id' => $otherService->id]);
 
         Sanctum::actingAs($customer);
 
-        $this->getJson("/api/v1/services/{$service->code}/invoices/{$otherSale->code}")
+        $this->getJson("/api/v1/services/{$service->code}/invoices/{$otherServiceOrder->code}")
             ->assertStatus(404);
 
         $this->getJson("/api/v1/services/{$otherService->code}/invoices")

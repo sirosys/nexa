@@ -11,27 +11,30 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sales', function (Blueprint $table) {
+        Schema::create('service_orders', function (Blueprint $table) {
             $table->id();
             $table->string('code')->nullable()->unique();
             $table->foreignId('service_id')->constrained('services')->restrictOnDelete();
             $table->foreignId('package_id')->constrained('packages')->restrictOnDelete();
-            // Plan yang ditagih di Sale ini — kolom langsung (bukan pivot,
-            // kardinalitas plan-per-sale selalu 1), lihat CLAUDE.md "Plan"/
-            // "Renewal". plan_price TIDAK dikalikan plan_qty saat dihitung
-            // ke total (dianggap TOTAL untuk seluruh durasi plan_qty).
+            // Plan yang ditagih di Order Layanan ini — kolom langsung (bukan
+            // pivot, kardinalitas plan-per-service-order selalu 1), lihat
+            // CLAUDE.md "Plan"/"Renewal". plan_price TIDAK dikalikan
+            // plan_qty saat dihitung ke total (dianggap TOTAL untuk seluruh
+            // durasi plan_qty).
             $table->foreignId('plan_id')->nullable()->constrained('plans')->restrictOnDelete();
             $table->decimal('plan_price', 12, 2)->nullable();
             $table->unsignedSmallInteger('plan_qty')->nullable();
             // Snapshot dari packages.is_starter milik package_id yang sedang
-            // dipilih — dihitung ulang tiap create/update, lihat CLAUDE.md "Sales".
+            // dipilih — dihitung ulang tiap create/update, lihat CLAUDE.md
+            // "Service Order".
             $table->boolean('is_starter')->default(false);
-            // Membedakan Sale registrasi vs perpanjangan — lihat CLAUDE.md
-            // "Renewal" (dipakai CancelExpiredInvoices supaya tidak salah
-            // membatalkan invoice renewal yang sengaja tidak punya expired_at).
+            // Membedakan Order Layanan registrasi vs perpanjangan — lihat
+            // CLAUDE.md "Renewal" (dipakai CancelExpiredInvoices supaya
+            // tidak salah membatalkan invoice renewal yang sengaja tidak
+            // punya expired_at).
             $table->boolean('is_renewal')->default(false);
             $table->decimal('total', 12, 2)->default(0);
-            // Turunan SUM(sale_products.discount), bukan input manual staff.
+            // Turunan SUM(service_order_products.discount), bukan input manual staff.
             $table->decimal('discount', 12, 2)->default(0);
             $table->decimal('subtotal', 12, 2)->default(0);
             $table->decimal('tax', 12, 2)->default(0);
@@ -57,6 +60,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sales');
+        Schema::dropIfExists('service_orders');
     }
 };

@@ -7,7 +7,7 @@ return new class extends Migration
 {
     /**
      * Perluas permission role 'finance' jadi kapabel operator harian
-     * "Admin/NOC" (2026-07-23) — sebelumnya cuma pegang sales.*, services.*,
+     * "Admin/NOC" (2026-07-23) — sebelumnya cuma pegang service_orders.*, services.*,
      * users.complete-kyc, sekarang ditambah akses dispatch operasional
      * (installations/dismantles/tickets assign-queue-resolve-any) + view
      * sites/coverages/reports/users. Identifier database TETAP

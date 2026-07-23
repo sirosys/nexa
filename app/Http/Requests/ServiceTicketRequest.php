@@ -21,7 +21,7 @@ class ServiceTicketRequest extends FormRequest
         return [
             // Rule::exists query langsung ke tabel, tidak menghormati global
             // scope SoftDeletes milik model Service — whereNull('deleted_at')
-            // wajib eksplisit, pola sama SaleRequest.
+            // wajib eksplisit, pola sama ServiceOrderRequest.
             'service_id' => ['required', 'integer', Rule::exists('services', 'id')->whereNull('deleted_at')],
             'category' => ['required', Rule::in(ServiceTicket::CATEGORIES)],
             'subject' => ['required', 'string', 'max:150'],

@@ -2,7 +2,7 @@
     use App\Models\Service;
     use App\Models\ServiceTicket;
     use App\Support\Currency;
-    use App\Support\SaleStatus;
+    use App\Support\ServiceOrderStatus;
 
     $roleBadges = [
         'superadmin' => ['label' => 'Superadmin', 'class' => 'bg-danger-light text-danger dark:bg-danger/10', 'avatar' => 'bg-danger'],
@@ -31,11 +31,12 @@
         ServiceTicket::STATUS_RESOLVED => 'bg-success-light text-success dark:bg-success/10',
     ];
 
-    // Status pembayaran Sale diturunkan dari kombinasi timestamp (tidak ada
-    // kolom status eksplisit di tabel `sales`, lihat CLAUDE.md "Sales") —
-    // logic-nya di App\Support\SaleStatus (reuse yang sama dipakai API
-    // customer-facing, lihat CLAUDE.md "API Customer-Facing").
-    $saleStatus = fn ($sale) => SaleStatus::resolve($sale);
+    // Status pembayaran Order Layanan diturunkan dari kombinasi timestamp
+    // (tidak ada kolom status eksplisit di tabel `service_orders`, lihat
+    // CLAUDE.md "Service Order") — logic-nya di App\Support\ServiceOrderStatus
+    // (reuse yang sama dipakai API customer-facing, lihat CLAUDE.md
+    // "API Customer-Facing").
+    $serviceOrderStatus = fn ($serviceOrder) => ServiceOrderStatus::resolve($serviceOrder);
 
     // Tab data-role yang relevan cuma ditentukan sekali di sini — null
     // berarti role ini tidak punya data "miliknya sendiri" untuk
@@ -120,7 +121,7 @@
                                     <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Layanan Aktif</p>
                                 </div>
                                 <div class="min-w-32 rounded-lg border border-dashed border-gray-300 px-4 py-3 dark:border-gray-600">
-                                    <p class="text-xl font-bold text-gray-900 dark:text-white">{{ $sales->filter(fn ($sale) => $sale->invoiced_at && ! $sale->settled_at && ! $sale->canceled_at)->count() }}</p>
+                                    <p class="text-xl font-bold text-gray-900 dark:text-white">{{ $serviceOrders->filter(fn ($serviceOrder) => $serviceOrder->invoiced_at && ! $serviceOrder->settled_at && ! $serviceOrder->canceled_at)->count() }}</p>
                                     <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Tagihan Belum Lunas</p>
                                 </div>
                                 <div class="min-w-32 rounded-lg border border-dashed border-gray-300 px-4 py-3 dark:border-gray-600">
@@ -160,7 +161,7 @@
                         </button>
                         <button @click="tab = 'billing'" type="button" class="shrink-0 border-b-2 pb-3 text-sm font-semibold transition" :class="tab === 'billing' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'">
                             Tagihan &amp; Pembayaran
-                            <span class="ms-1 text-xs text-gray-400">({{ $sales->count() }})</span>
+                            <span class="ms-1 text-xs text-gray-400">({{ $serviceOrders->count() }})</span>
                         </button>
                         <button @click="tab = 'tickets'" type="button" class="shrink-0 border-b-2 pb-3 text-sm font-semibold transition" :class="tab === 'tickets' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'">
                             Tiket
@@ -251,7 +252,7 @@
 
                 {{-- Tagihan & Pembayaran --}}
                 <div x-show="tab === 'billing'" style="display: none;" class="rounded-2xl border border-gray-200 bg-white shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
-                    @if ($sales->isEmpty())
+                    @if ($serviceOrders->isEmpty())
                         <p class="px-6 py-6 text-sm text-gray-500 dark:text-gray-400">Belum ada tagihan untuk pelanggan ini.</p>
                     @else
                         <div class="overflow-x-auto">
@@ -265,20 +266,20 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                                    @foreach ($sales as $sale)
-                                        @php($status = $saleStatus($sale))
+                                    @foreach ($serviceOrders as $serviceOrder)
+                                        @php($status = $serviceOrderStatus($serviceOrder))
                                         <tr class="transition hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                             <td class="px-6 py-3">
-                                                <a href="{{ route('sales.show', $sale) }}" class="font-semibold text-primary hover:underline">{{ $sale->code ?? '—' }}</a>
-                                                @if ($sale->is_renewal)
+                                                <a href="{{ route('service-orders.show', $serviceOrder) }}" class="font-semibold text-primary hover:underline">{{ $serviceOrder->code ?? '—' }}</a>
+                                                @if ($serviceOrder->is_renewal)
                                                     <span class="ms-1 inline-flex items-center rounded-full bg-info-light px-2 py-0.5 text-[11px] font-semibold text-info dark:bg-info/10">Perpanjangan</span>
                                                 @endif
                                             </td>
-                                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ Currency::rupiah($sale->grandtotal) }}</td>
+                                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ Currency::rupiah($serviceOrder->grandtotal) }}</td>
                                             <td class="px-4 py-3">
                                                 <span class="inline-flex items-center rounded-full {{ $status['class'] }} px-3 py-1 text-[13px] font-semibold">{{ $status['label'] }}</span>
                                             </td>
-                                            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $sale->invoiced_at?->locale('id')->translatedFormat('d M Y') ?? '—' }}</td>
+                                            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $serviceOrder->invoiced_at?->locale('id')->translatedFormat('d M Y') ?? '—' }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>

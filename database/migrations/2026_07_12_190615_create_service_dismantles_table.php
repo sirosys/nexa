@@ -16,10 +16,10 @@ return new class extends Migration
             // Satu service maksimal satu baris dismantle di iterasi ini —
             // konsisten pola service_activations.service_id.
             $table->foreignId('service_id')->constrained('services')->restrictOnDelete()->unique();
-            // FK ke activation, BUKAN ke sale — deviasi sadar dari pola
-            // service_activations.sale_id: dismantle adalah "kebalikan dari
-            // sebuah instalasi", bukan terikat ke Sale (service suspended
-            // karena telat bayar bisa saja tidak punya Sale renewal yang
+            // FK ke activation, BUKAN ke service order — deviasi sadar dari pola
+            // service_activations.service_order_id: dismantle adalah "kebalikan dari
+            // sebuah instalasi", bukan terikat ke Order Layanan (service suspended
+            // karena telat bayar bisa saja tidak punya Order Layanan renewal yang
             // settled sama sekali). Lihat CLAUDE.md "Dismantle".
             $table->foreignId('activation_id')->constrained('service_activations')->restrictOnDelete();
             // Nama "technician_id", bukan "installer_id" — semantiknya lebih

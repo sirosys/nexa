@@ -16,8 +16,8 @@ use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
-use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\ServiceOrderController;
 use App\Http\Controllers\ServiceTicketController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SiteController;
@@ -84,9 +84,9 @@ Route::middleware('auth')->group(function () {
     // di halaman index (lihat services/index.blade.php + _wizard.blade.php),
     // bukan halaman terpisah. Pola sama users.store, lihat CLAUDE.md "User".
     Route::resource('services', ServiceController::class)->except(['create']);
-    Route::get('/sales/services/search', [SaleController::class, 'searchServices'])->name('sales.services.search');
-    Route::post('/sales/{sale}/receipt/retry', [SaleController::class, 'retryReceipt'])->name('sales.receipt.retry');
-    Route::resource('sales', SaleController::class);
+    Route::get('/service-orders/services/search', [ServiceOrderController::class, 'searchServices'])->name('service-orders.services.search');
+    Route::post('/service-orders/{service_order}/receipt/retry', [ServiceOrderController::class, 'retryReceipt'])->name('service-orders.receipt.retry');
+    Route::resource('service-orders', ServiceOrderController::class);
 
     // Modul Installation — bukan CRUD resource standar, route-model-binding
     // di atas Service (bukan model ServiceActivation), lihat CLAUDE.md

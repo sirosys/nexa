@@ -27,7 +27,7 @@ class PaymentOtpService
         }
 
         $code = $this->generateCode();
-        $phone = (string) $receipt->sale->service->user->phone;
+        $phone = (string) $receipt->serviceOrder->service->user->phone;
 
         DB::transaction(function () use ($receipt, $code) {
             $receipt->otpCodes()->valid()->update(['consumed_at' => now()]);

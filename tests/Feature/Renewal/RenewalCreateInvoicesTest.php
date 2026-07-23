@@ -5,8 +5,8 @@ namespace Tests\Feature\Renewal;
 use App\Models\Package;
 use App\Models\Plan;
 use App\Models\Receipt;
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -48,14 +48,14 @@ class RenewalCreateInvoicesTest extends TestCase
 
         Artisan::call('renewal:create-invoices');
 
-        $sale = Sale::where('service_id', $service->id)->where('is_renewal', true)->first();
+        $serviceOrder = ServiceOrder::where('service_id', $service->id)->where('is_renewal', true)->first();
 
-        $this->assertNotNull($sale);
-        $this->assertEquals(200000, (float) $sale->grandtotal);
-        $this->assertNotNull($sale->invoiced_at);
-        $this->assertNull($sale->expired_at);
+        $this->assertNotNull($serviceOrder);
+        $this->assertEquals(200000, (float) $serviceOrder->grandtotal);
+        $this->assertNotNull($serviceOrder->invoiced_at);
+        $this->assertNull($serviceOrder->expired_at);
 
-        $receipt = Receipt::where('sale_id', $sale->id)->first();
+        $receipt = Receipt::where('service_order_id', $serviceOrder->id)->first();
         $this->assertNotNull($receipt);
         $this->assertSame(Receipt::STATUS_AWAITING_CHANNEL_SELECTION, $receipt->status);
     }
@@ -72,7 +72,7 @@ class RenewalCreateInvoicesTest extends TestCase
         Artisan::call('renewal:create-invoices');
         Artisan::call('renewal:create-invoices');
 
-        $this->assertSame(1, Sale::where('service_id', $service->id)->where('is_renewal', true)->count());
+        $this->assertSame(1, ServiceOrder::where('service_id', $service->id)->where('is_renewal', true)->count());
     }
 
     public function test_does_not_create_invoice_outside_window(): void
@@ -86,7 +86,7 @@ class RenewalCreateInvoicesTest extends TestCase
 
         Artisan::call('renewal:create-invoices');
 
-        $this->assertDatabaseMissing('sales', ['service_id' => $service->id, 'is_renewal' => true]);
+        $this->assertDatabaseMissing('service_orders', ['service_id' => $service->id, 'is_renewal' => true]);
     }
 
     public function test_does_not_touch_non_active_service(): void
@@ -100,13 +100,13 @@ class RenewalCreateInvoicesTest extends TestCase
 
         Artisan::call('renewal:create-invoices');
 
-        $this->assertDatabaseMissing('sales', ['service_id' => $service->id, 'is_renewal' => true]);
+        $this->assertDatabaseMissing('service_orders', ['service_id' => $service->id, 'is_renewal' => true]);
     }
 
     /**
      * Paket gratis/promo tidak lewat Xendit sama sekali (grandtotal 0) —
      * harus tetap memperpanjang expired_at (lewat reactivate() internal)
-     * supaya command besok tidak membuat Sale renewal gratis baru lagi.
+     * supaya command besok tidak membuat Order Layanan renewal gratis baru lagi.
      */
     public function test_free_package_renewal_auto_settles_and_extends_expiry_without_receipt(): void
     {
@@ -120,25 +120,25 @@ class RenewalCreateInvoicesTest extends TestCase
 
         Artisan::call('renewal:create-invoices');
 
-        $sale = Sale::where('service_id', $service->id)->where('is_renewal', true)->first();
-        $this->assertNotNull($sale);
-        $this->assertEquals(0, (float) $sale->grandtotal);
-        $this->assertNotNull($sale->settled_at);
+        $serviceOrder = ServiceOrder::where('service_id', $service->id)->where('is_renewal', true)->first();
+        $this->assertNotNull($serviceOrder);
+        $this->assertEquals(0, (float) $serviceOrder->grandtotal);
+        $this->assertNotNull($serviceOrder->settled_at);
         $this->assertDatabaseCount('receipts', 0);
 
         $service->refresh();
         $this->assertSame(Service::STATUS_ACTIVE, $service->status);
         $this->assertTrue($service->expired_at->greaterThan($oldExpiredAt));
 
-        // Guard idempotency tetap efektif walau Sale-nya settled: jalankan
-        // command lagi tidak membuat Sale renewal kedua.
+        // Guard idempotency tetap efektif walau Order Layanan-nya settled: jalankan
+        // command lagi tidak membuat Order Layanan renewal kedua.
         Artisan::call('renewal:create-invoices');
-        $this->assertSame(1, Sale::where('service_id', $service->id)->where('is_renewal', true)->count());
+        $this->assertSame(1, ServiceOrder::where('service_id', $service->id)->where('is_renewal', true)->count());
     }
 
     /**
-     * Bukti utama fix bug SAL000002: Sale renewal cuma menagih Plan tier
-     * paket ini (tidak ada baris sale_products sama sekali — modem/instalasi
+     * Bukti utama fix bug SAL000002: Order Layanan renewal cuma menagih Plan tier
+     * paket ini (tidak ada baris service_order_products sama sekali — modem/instalasi
      * TIDAK ikut tertagih ulang), pada harga katalog Plan SAAT INI — bukan
      * packages.price milik paket registrasi ini (sengaja dibuat beda jauh
      * di bawah supaya assertion gagal tegas kalau RenewalService diam-diam
@@ -156,17 +156,17 @@ class RenewalCreateInvoicesTest extends TestCase
 
         Artisan::call('renewal:create-invoices');
 
-        $sale = Sale::where('service_id', $service->id)->where('is_renewal', true)->firstOrFail();
+        $serviceOrder = ServiceOrder::where('service_id', $service->id)->where('is_renewal', true)->firstOrFail();
 
-        $this->assertCount(0, $sale->products);
-        $this->assertSame($package->plan_id, $sale->plan_id);
-        $this->assertEquals(150000, (float) $sale->plan_price);
-        $this->assertSame(1, $sale->plan_qty);
-        $this->assertEquals(150000, (float) $sale->grandtotal);
+        $this->assertCount(0, $serviceOrder->products);
+        $this->assertSame($package->plan_id, $serviceOrder->plan_id);
+        $this->assertEquals(150000, (float) $serviceOrder->plan_price);
+        $this->assertSame(1, $serviceOrder->plan_qty);
+        $this->assertEquals(150000, (float) $serviceOrder->grandtotal);
     }
 
     /**
-     * sales.is_starter harus SELALU false untuk Sale renewal, terlepas dari
+     * service_orders.is_starter harus SELALU false untuk Order Layanan renewal, terlepas dari
      * is_starter paket registrasi yang masih terpasang di service_id-nya
      * (paket promo/starter) — regression untuk SAL000002.
      */
@@ -183,9 +183,9 @@ class RenewalCreateInvoicesTest extends TestCase
 
         Artisan::call('renewal:create-invoices');
 
-        $sale = Sale::where('service_id', $service->id)->where('is_renewal', true)->firstOrFail();
+        $serviceOrder = ServiceOrder::where('service_id', $service->id)->where('is_renewal', true)->firstOrFail();
 
-        $this->assertFalse($sale->is_starter);
+        $this->assertFalse($serviceOrder->is_starter);
     }
 
     /**
@@ -207,8 +207,8 @@ class RenewalCreateInvoicesTest extends TestCase
 
         Artisan::call('renewal:create-invoices');
 
-        $sale = Sale::where('service_id', $service->id)->where('is_renewal', true)->firstOrFail();
-        $receipt = Receipt::where('sale_id', $sale->id)->firstOrFail();
+        $serviceOrder = ServiceOrder::where('service_id', $service->id)->where('is_renewal', true)->firstOrFail();
+        $receipt = Receipt::where('service_order_id', $serviceOrder->id)->firstOrFail();
 
         parse_str(parse_url($receipt->checkout_url, PHP_URL_QUERY), $query);
         $this->assertArrayHasKey('expires', $query);
@@ -241,7 +241,7 @@ class RenewalCreateInvoicesTest extends TestCase
 
         Artisan::call('renewal:create-invoices');
 
-        $this->assertDatabaseMissing('sales', ['service_id' => $incompleteService->id, 'is_renewal' => true]);
-        $this->assertDatabaseHas('sales', ['service_id' => $goodService->id, 'is_renewal' => true]);
+        $this->assertDatabaseMissing('service_orders', ['service_id' => $incompleteService->id, 'is_renewal' => true]);
+        $this->assertDatabaseHas('service_orders', ['service_id' => $goodService->id, 'is_renewal' => true]);
     }
 }

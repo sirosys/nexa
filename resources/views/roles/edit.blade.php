@@ -13,7 +13,7 @@
         'services' => 'Layanan',
         'installations' => 'Instalasi',
         'dismantles' => 'Dismantle',
-        'sales' => 'Penjualan',
+        'service_orders' => 'Order Layanan',
         'tickets' => 'Tiket',
         'settings' => 'Pengaturan',
         'audit_logs' => 'Log Aktivitas',

@@ -1,10 +1,11 @@
 @php
     use App\Support\Currency;
-    use App\Support\SaleStatus;
+    use App\Support\ServiceOrderStatus;
 
-    // Reuse App\Support\SaleStatus — dipakai juga oleh API customer-facing
-    // (lihat CLAUDE.md "API Customer-Facing"), bukan lagi closure lokal.
-    $saleStatus = fn ($sale) => SaleStatus::resolve($sale);
+    // Reuse App\Support\ServiceOrderStatus — dipakai juga oleh API
+    // customer-facing (lihat CLAUDE.md "API Customer-Facing"), bukan lagi
+    // closure lokal.
+    $serviceOrderStatus = fn ($serviceOrder) => ServiceOrderStatus::resolve($serviceOrder);
 
     // Kelas badge/aksen ditulis literal (bukan interpolasi) supaya terdeteksi
     // content-scanner Tailwind v4 saat build — pola sama dashboard.blade.php.
@@ -43,7 +44,7 @@
             <h2 class="text-base font-bold text-gray-900 dark:text-white">Riwayat Tagihan</h2>
         </div>
 
-        @if ($sales->isEmpty())
+        @if ($serviceOrders->isEmpty())
             <p class="px-6 py-6 text-sm text-gray-500 dark:text-gray-400">Tidak ada tagihan pada periode ini.</p>
         @else
             <div class="overflow-x-auto">
@@ -60,32 +61,32 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                        @foreach ($sales as $sale)
-                            @php($status = $saleStatus($sale))
+                        @foreach ($serviceOrders as $serviceOrder)
+                            @php($status = $serviceOrderStatus($serviceOrder))
                             <tr class="transition hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                 <td class="px-6 py-3">
-                                    <a href="{{ route('sales.show', $sale) }}" class="font-semibold text-primary hover:underline">{{ $sale->code ?? '—' }}</a>
-                                    @if ($sale->is_renewal)
+                                    <a href="{{ route('service-orders.show', $serviceOrder) }}" class="font-semibold text-primary hover:underline">{{ $serviceOrder->code ?? '—' }}</a>
+                                    @if ($serviceOrder->is_renewal)
                                         <span class="ms-1 inline-flex items-center rounded-full bg-info-light px-2 py-0.5 text-[11px] font-semibold text-info dark:bg-info/10">Perpanjangan</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $sale->service?->user?->name ?? '—' }}</td>
-                                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $sale->package?->name ?? '—' }}</td>
-                                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $sale->invoiced_at?->translatedFormat('d M Y') ?? '—' }}</td>
+                                <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{{ $serviceOrder->service?->user?->name ?? '—' }}</td>
+                                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $serviceOrder->package?->name ?? '—' }}</td>
+                                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $serviceOrder->invoiced_at?->translatedFormat('d M Y') ?? '—' }}</td>
                                 <td class="px-4 py-3">
                                     <span class="inline-flex items-center rounded-full {{ $status['class'] }} px-3 py-1 text-[13px] font-semibold">{{ $status['label'] }}</span>
                                 </td>
-                                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ Currency::rupiah($sale->grandtotal) }}</td>
-                                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $sale->settled_at?->translatedFormat('d M Y') ?? '—' }}</td>
+                                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ Currency::rupiah($serviceOrder->grandtotal) }}</td>
+                                <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $serviceOrder->settled_at?->translatedFormat('d M Y') ?? '—' }}</td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
 
-            @if ($sales->hasPages())
+            @if ($serviceOrders->hasPages())
                 <div class="border-t border-gray-300 p-4 dark:border-gray-700">
-                    {{ $sales->links() }}
+                    {{ $serviceOrders->links() }}
                 </div>
             @endif
         @endif

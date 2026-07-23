@@ -153,7 +153,7 @@ class ServiceTicketController extends Controller
             })
             // Query kosong (klik pertama kali di kolom pencarian) tetap
             // mengembalikan daftar browse — bukan array kosong — sama pola
-            // seperti picker service di form Sales.
+            // seperti picker service di form Order Layanan.
             ->latest('id')
             ->limit(20)
             ->get()

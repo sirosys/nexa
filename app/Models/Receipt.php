@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['code', 'sale_id', 'xendit_payment_request_id', 'channel_code', 'amount', 'status', 'checkout_url', 'raw_response', 'created_by', 'updated_by'])]
+#[Fillable(['code', 'service_order_id', 'xendit_payment_request_id', 'channel_code', 'amount', 'status', 'checkout_url', 'raw_response', 'created_by', 'updated_by'])]
 class Receipt extends Model
 {
     /** @use HasFactory<ReceiptFactory> */
@@ -35,10 +35,10 @@ class Receipt extends Model
         ];
     }
 
-    /** @return BelongsTo<Sale, $this> */
-    public function sale(): BelongsTo
+    /** @return BelongsTo<ServiceOrder, $this> */
+    public function serviceOrder(): BelongsTo
     {
-        return $this->belongsTo(Sale::class);
+        return $this->belongsTo(ServiceOrder::class);
     }
 
     /** @return HasMany<ReceiptOtpCode, $this> */

@@ -7,7 +7,7 @@ return [
     | Billing / Invoice Settings
     |--------------------------------------------------------------------------
     |
-    | Berapa lama tagihan pendaftaran (Sale) berlaku sebelum auto-cancel
+    | Berapa lama tagihan pendaftaran (Order Layanan) berlaku sebelum auto-cancel
     | (lihat App\Console\Commands\CancelExpiredInvoices, dijadwalkan
     | hourly). Kredensial Xendit ada di config('services.xendit'), bukan
     | di sini — file ini murni untuk aturan bisnis, bukan kredensial.

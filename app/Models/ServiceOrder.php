@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Database\Factories\SaleFactory;
+use Database\Factories\ServiceOrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,9 +12,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['code', 'service_id', 'package_id', 'plan_id', 'plan_price', 'plan_qty', 'is_starter', 'is_renewal', 'total', 'discount', 'subtotal', 'tax', 'admin_fee', 'grandtotal', 'notes', 'invoiced_at', 'expired_at', 'settled_at', 'canceled_at', 'renewal_reminder_h3_sent_at', 'renewal_reminder_h1_sent_at', 'created_by', 'updated_by'])]
-class Sale extends Model
+class ServiceOrder extends Model
 {
-    /** @use HasFactory<SaleFactory> */
+    /** @use HasFactory<ServiceOrderFactory> */
     use HasFactory, SoftDeletes;
 
     /**
@@ -43,6 +43,50 @@ class Sale extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        // `code` digenerate sebelum insert (independen dari id) — pola sama
+        // Service::booted()/User::booted(), menggantikan cara lama
+        // ('SAL'+6digit id) yang diisi belakangan lewat update() di
+        // ServiceOrderService::create().
+        static::creating(function (ServiceOrder $serviceOrder) {
+            $serviceOrder->code ??= self::generateUniqueCode();
+        });
+    }
+
+    /**
+     * 16 karakter alphanumeric acak (alfabet tanpa I/O/0/1 supaya tidak
+     * ambigu dibaca staff), dipakai sebagai `code` — juga jadi route key
+     * (getRouteKeyName()) supaya URL /service-orders/{service_order}
+     * memakai code, bukan id database. Panjang 16 (bukan 8 seperti
+     * Service::generateUniqueCode()) supaya kode tidak terlihat sekuensial
+     * meski volume transaksi masih kecil. `withTrashed()` karena
+     * ServiceOrder pakai SoftDeletes — code tidak boleh dipakai ulang oleh
+     * baris yang sudah soft-deleted.
+     */
+    public static function generateUniqueCode(): string
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+        do {
+            $code = '';
+            for ($i = 0; $i < 16; $i++) {
+                $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+            }
+        } while (self::withTrashed()->where('code', $code)->exists());
+
+        return $code;
+    }
+
+    /**
+     * URL (mis. /service-orders/{service_order}) memakai `code`, bukan id
+     * database — sengaja, supaya id tidak bisa dibaca/ditebak lewat URL.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'code';
+    }
+
     /** @return BelongsTo<Service, $this> */
     public function service(): BelongsTo
     {
@@ -64,7 +108,7 @@ class Sale extends Model
     /** @return BelongsToMany<Product, $this> */
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class, 'sale_products')
+        return $this->belongsToMany(Product::class, 'service_order_products')
             ->withPivot(['price', 'discount', 'quantity', 'unit'])
             ->withTimestamps();
     }

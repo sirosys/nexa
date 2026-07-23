@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['service_id', 'sale_id', 'installer_id', 'assigned_by', 'claimed_at', 'odp_port', 'cable_length', 'photo', 'notes', 'completed_at', 'created_by', 'updated_by'])]
+#[Fillable(['service_id', 'service_order_id', 'installer_id', 'assigned_by', 'claimed_at', 'odp_port', 'cable_length', 'photo', 'notes', 'completed_at', 'created_by', 'updated_by'])]
 class ServiceActivation extends Model
 {
     /**
@@ -29,10 +29,10 @@ class ServiceActivation extends Model
         return $this->belongsTo(Service::class);
     }
 
-    /** @return BelongsTo<Sale, $this> */
-    public function sale(): BelongsTo
+    /** @return BelongsTo<ServiceOrder, $this> */
+    public function serviceOrder(): BelongsTo
     {
-        return $this->belongsTo(Sale::class);
+        return $this->belongsTo(ServiceOrder::class);
     }
 
     /** @return BelongsTo<User, $this> */

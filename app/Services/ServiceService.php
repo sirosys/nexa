@@ -13,14 +13,14 @@ use Illuminate\Support\Facades\DB;
 class ServiceService
 {
     public function __construct(
-        private readonly SaleService $saleService,
+        private readonly ServiceOrderService $serviceOrderService,
         private readonly ReceiptService $receiptService,
         private readonly NotificationService $notificationService,
     ) {}
 
     public function create(array $data): Service
     {
-        $sale = DB::transaction(function () use ($data) {
+        $serviceOrder = DB::transaction(function () use ($data) {
             $service = Service::create([
                 'pin' => $this->generatePin(),
                 'user_id' => $data['user_id'],
@@ -39,45 +39,47 @@ class ServiceService
             // `code` sudah digenerate otomatis lewat Service::booted() —
             // tidak perlu diisi di sini (lihat CLAUDE.md "Service").
 
-            // Sale (tagihan pendaftaran) untuk paket starter yang dipilih
-            // dibuat otomatis di sini — staff tidak input manual ke /sales
-            // terpisah untuk pendaftaran awal (lihat CLAUDE.md "Service").
+            // Order Layanan (tagihan pendaftaran) untuk paket starter yang
+            // dipilih dibuat otomatis di sini — staff tidak input manual ke
+            // /service-orders terpisah untuk pendaftaran awal (lihat
+            // CLAUDE.md "Service").
             $package = Package::with('products')->findOrFail($data['package_id']);
 
-            $sale = $this->saleService->create([
+            $serviceOrder = $this->serviceOrderService->create([
                 'service_id' => $service->id,
                 'package_id' => $package->id,
                 'products' => $this->buildProductLines($package),
             ]);
 
-            return $sale->setRelation('service', $service);
+            return $serviceOrder->setRelation('service', $service);
         });
 
-        $this->notificationService->send($sale->service->user, new ServiceRegisteredNotification($sale->service));
+        $this->notificationService->send($serviceOrder->service->user, new ServiceRegisteredNotification($serviceOrder->service));
 
-        // Sengaja di luar transaksi Service+Sale di atas: ini panggilan
-        // HTTP eksternal ke Xendit (lihat CLAUDE.md "Billing / Invoice
-        // (Xendit)") — tidak boleh menahan lock DB kalau lambat/gagal.
-        // ReceiptService yang mengirim notifikasi tagihan (kalau berhasil
-        // dibuat) — bukan di sini, supaya retry manual lewat
-        // SaleController::retryReceipt() juga ikut mengirim notifikasi.
-        $this->receiptService->createForSale($sale);
+        // Sengaja di luar transaksi Service+Order Layanan di atas: ini
+        // panggilan HTTP eksternal ke Xendit (lihat CLAUDE.md "Billing /
+        // Invoice (Xendit)") — tidak boleh menahan lock DB kalau
+        // lambat/gagal. ReceiptService yang mengirim notifikasi tagihan
+        // (kalau berhasil dibuat) — bukan di sini, supaya retry manual
+        // lewat ServiceOrderController::retryReceipt() juga ikut mengirim
+        // notifikasi.
+        $this->receiptService->createForServiceOrder($serviceOrder);
 
         // Paket gratis (grandtotal 0, mis. promo) membuat
-        // ReceiptService::createForSale() langsung mengisi
-        // sale.settled_at TANPA pernah membuat Receipt — tidak ada
+        // ReceiptService::createForServiceOrder() langsung mengisi
+        // service_order.settled_at TANPA pernah membuat Receipt — tidak ada
         // webhook Xendit yang bisa memicu transisi
         // pending_payment -> pending_installation seperti pembayaran
         // sungguhan, jadi Service akan macet selamanya di
         // pending_payment kalau tidak ditangani eksplisit di sini
         // (pola sama RenewalService::createInvoiceForDueService() yang
-        // mendeteksi kasus sama untuk Sale perpanjangan).
-        if ($sale->fresh()->settled_at !== null) {
-            $sale->service->update(['status' => Service::STATUS_PENDING_INSTALLATION]);
-            $this->notificationService->send($sale->service->user, new PaymentReceivedNotification($sale));
+        // mendeteksi kasus sama untuk Order Layanan perpanjangan).
+        if ($serviceOrder->fresh()->settled_at !== null) {
+            $serviceOrder->service->update(['status' => Service::STATUS_PENDING_INSTALLATION]);
+            $this->notificationService->send($serviceOrder->service->user, new PaymentReceivedNotification($serviceOrder));
         }
 
-        return $sale->service;
+        return $serviceOrder->service;
     }
 
     public function update(Service $service, array $data): Service
@@ -109,7 +111,7 @@ class ServiceService
     }
 
     /**
-     * Baris produk untuk Sale pendaftaran awal, disalin dari snapshot
+     * Baris produk untuk Order Layanan pendaftaran awal, disalin dari snapshot
      * package_product paket starter yang dipilih (quantity/price sama
      * seperti yang tersimpan di paket, bukan harga produk terkini).
      *

@@ -36,7 +36,7 @@ class PaymentController extends Controller
 
     public function show(Receipt $receipt): View
     {
-        $receipt->load('sale.service.user');
+        $receipt->load('serviceOrder.service.user');
 
         if (! $this->otpService->isVerified($receipt)) {
             if (! $this->otpService->hasPendingCode($receipt)) {

@@ -3,8 +3,8 @@
 namespace Tests\Feature\Billing;
 
 use App\Models\Receipt;
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Models\User;
 use App\Services\Billing\XenditGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,7 +21,7 @@ class PaymentChannelSelectionTest extends TestCase
      * sendiri) sudah dianggap "lulus" di sini secara default supaya test
      * di file ini fokus murni ke perilaku pilih channel, bukan OTP.
      */
-    private function pendingReceipt(array $saleAttributes = [], bool $otpVerified = true): Receipt
+    private function pendingReceipt(array $serviceOrderAttributes = [], bool $otpVerified = true): Receipt
     {
         $customer = User::factory()->create();
         $customer->assignRole('customer');
@@ -31,16 +31,16 @@ class PaymentChannelSelectionTest extends TestCase
             'status' => Service::STATUS_PENDING_PAYMENT,
         ]);
 
-        $sale = Sale::factory()->create(array_merge([
+        $serviceOrder = ServiceOrder::factory()->create(array_merge([
             'service_id' => $service->id,
             'grandtotal' => 150000,
             'invoiced_at' => now()->subHour(),
             'expired_at' => now()->addDays(2),
-        ], $saleAttributes));
+        ], $serviceOrderAttributes));
 
         $receipt = Receipt::create([
-            'sale_id' => $sale->id,
-            'code' => 'REC'.str_pad((string) $sale->id, 6, '0', STR_PAD_LEFT),
+            'service_order_id' => $serviceOrder->id,
+            'code' => 'REC'.str_pad((string) $serviceOrder->id, 6, '0', STR_PAD_LEFT),
             'amount' => 150000,
             'status' => Receipt::STATUS_AWAITING_CHANNEL_SELECTION,
         ]);
@@ -105,7 +105,7 @@ class PaymentChannelSelectionTest extends TestCase
         $this->app->instance(XenditGateway::class, $fake);
 
         $receipt = $this->pendingReceipt();
-        $customerName = $receipt->sale->service->user->name;
+        $customerName = $receipt->serviceOrder->service->user->name;
 
         $response = $this->post($receipt->checkout_url, ['channel_code' => 'BCA_VIRTUAL_ACCOUNT']);
 
@@ -126,7 +126,7 @@ class PaymentChannelSelectionTest extends TestCase
         $this->app->instance(XenditGateway::class, $fake);
 
         $receipt = $this->pendingReceipt();
-        $customerName = $receipt->sale->service->user->name;
+        $customerName = $receipt->serviceOrder->service->user->name;
 
         $response = $this->post($receipt->checkout_url, ['channel_code' => 'INDOMARET']);
 
@@ -186,7 +186,7 @@ class PaymentChannelSelectionTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_settled_sale_shows_final_message_instead_of_picker(): void
+    public function test_settled_service_order_shows_final_message_instead_of_picker(): void
     {
         $receipt = $this->pendingReceipt(['settled_at' => now()]);
 
@@ -197,7 +197,7 @@ class PaymentChannelSelectionTest extends TestCase
         $response->assertDontSee('name="channel_code"', false);
     }
 
-    public function test_canceled_sale_shows_final_message_instead_of_picker(): void
+    public function test_canceled_service_order_shows_final_message_instead_of_picker(): void
     {
         $receipt = $this->pendingReceipt(['canceled_at' => now()]);
 

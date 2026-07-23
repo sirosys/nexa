@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Receipt;
-use App\Models\Sale;
+use App\Models\ServiceOrder;
 use App\Models\Setting;
 use App\Notifications\InvoiceCreatedNotification;
 use App\Services\Billing\XenditGateway;
@@ -20,8 +20,8 @@ class ReceiptService
     ) {}
 
     /**
-     * Buat tagihan untuk sebuah Sale. Kalau grandtotal 0 (paket promo
-     * gratis), skip sepenuhnya dan langsung tandai lunas — tidak ada
+     * Buat tagihan untuk sebuah Order Layanan. Kalau grandtotal 0 (paket
+     * promo gratis), skip sepenuhnya dan langsung tandai lunas — tidak ada
      * gunanya membuat tagihan untuk Rp 0.
      *
      * Payment Requests API v3 Xendit TIDAK punya halaman checkout hosted
@@ -34,8 +34,9 @@ class ReceiptService
      * terjadi di selectChannel() begitu pelanggan memilih.
      *
      * Sengaja TIDAK dibungkus DB::transaction() oleh method ini (dan harus
-     * dipanggil di luar transaksi Service+Sale oleh pemanggil) — konsisten
-     * pola lama, walau sekarang tidak ada panggilan HTTP eksternal di sini.
+     * dipanggil di luar transaksi Service+Order Layanan oleh pemanggil) —
+     * konsisten pola lama, walau sekarang tidak ada panggilan HTTP eksternal
+     * di sini.
      *
      * $signedUrlExpiresAt dipakai modul Renewal (lihat RenewalService) untuk
      * memberi TTL signed URL yang lebih panjang dari invoice_ttl_days biasa
@@ -43,17 +44,17 @@ class ReceiptService
      * bisa sampai 5 hari) — default null berarti perilaku registrasi biasa
      * (invoice_ttl_days) tidak berubah sama sekali.
      */
-    public function createForSale(Sale $sale, ?CarbonInterface $signedUrlExpiresAt = null): ?Receipt
+    public function createForServiceOrder(ServiceOrder $serviceOrder, ?CarbonInterface $signedUrlExpiresAt = null): ?Receipt
     {
-        if ((float) $sale->grandtotal <= 0) {
-            $sale->update(['settled_at' => now()]);
+        if ((float) $serviceOrder->grandtotal <= 0) {
+            $serviceOrder->update(['settled_at' => now()]);
 
             return null;
         }
 
-        $receipt = $sale->receipt ?? Receipt::create([
-            'sale_id' => $sale->id,
-            'amount' => $sale->grandtotal,
+        $receipt = $serviceOrder->receipt ?? Receipt::create([
+            'service_order_id' => $serviceOrder->id,
+            'amount' => $serviceOrder->grandtotal,
             'status' => Receipt::STATUS_AWAITING_CHANNEL_SELECTION,
             'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
@@ -75,20 +76,20 @@ class ReceiptService
             ]);
         }
 
-        if (! $sale->invoiced_at) {
-            // Sale renewal sengaja TIDAK diberi expired_at (tidak ada konsep
-            // "jatuh tempo invoice 3 hari" untuknya — invoice renewal harus
-            // tetap terbuka/bisa dibayar selama masa suspend, cuma
-            // service.expired_at yang relevan). Ini yang membuat
-            // CancelExpiredInvoices otomatis skip Sale renewal, lihat
-            // CLAUDE.md "Renewal".
-            $sale->update([
+        if (! $serviceOrder->invoiced_at) {
+            // Order Layanan renewal sengaja TIDAK diberi expired_at (tidak
+            // ada konsep "jatuh tempo invoice 3 hari" untuknya — invoice
+            // renewal harus tetap terbuka/bisa dibayar selama masa suspend,
+            // cuma service.expired_at yang relevan). Ini yang membuat
+            // CancelExpiredInvoices otomatis skip Order Layanan renewal,
+            // lihat CLAUDE.md "Renewal".
+            $serviceOrder->update([
                 'invoiced_at' => now(),
-                'expired_at' => $sale->is_renewal ? null : now()->addDays((int) Setting::get('billing.invoice_ttl_days', config('billing.invoice_ttl_days'))),
+                'expired_at' => $serviceOrder->is_renewal ? null : now()->addDays((int) Setting::get('billing.invoice_ttl_days', config('billing.invoice_ttl_days'))),
             ]);
         }
 
-        $this->notificationService->send($sale->service->user, new InvoiceCreatedNotification($receipt));
+        $this->notificationService->send($serviceOrder->service->user, new InvoiceCreatedNotification($receipt));
 
         return $receipt;
     }
@@ -100,8 +101,8 @@ class ReceiptService
      * (percobaan sebelumnya belum pernah berhasil dapat id sungguhan dari
      * Xendit) — begitu sudah ada id sungguhan, ganti channel tidak
      * didukung di iterasi ini (staff/pelanggan tunggu channel itu
-     * kadaluarsa lalu Sale otomatis dibatalkan scheduler, konsisten pola
-     * "retry setelah expired tidak didukung").
+     * kadaluarsa lalu Order Layanan otomatis dibatalkan scheduler, konsisten
+     * pola "retry setelah expired tidak didukung").
      */
     public function selectChannel(Receipt $receipt, string $channelCode): Receipt
     {
@@ -109,14 +110,14 @@ class ReceiptService
             throw new RuntimeException('Channel pembayaran sudah dipilih dan tidak bisa diganti.');
         }
 
-        $sale = $receipt->sale()->with('service.user')->first();
+        $serviceOrder = $receipt->serviceOrder()->with('service.user')->first();
 
         $result = $this->gateway->createPaymentRequest(
             referenceId: $receipt->code,
             amount: (float) $receipt->amount,
-            description: "Tagihan pendaftaran {$sale->code}",
+            description: "Tagihan pendaftaran {$serviceOrder->code}",
             channelCode: $channelCode,
-            channelProperties: $this->buildChannelProperties($channelCode, $sale, $receipt),
+            channelProperties: $this->buildChannelProperties($channelCode, $serviceOrder, $receipt),
             type: $this->resolveRequestType($channelCode),
         );
 
@@ -152,9 +153,9 @@ class ReceiptService
      *
      * @return array<string, mixed>
      */
-    private function buildChannelProperties(string $channelCode, Sale $sale, Receipt $receipt): array
+    private function buildChannelProperties(string $channelCode, ServiceOrder $serviceOrder, Receipt $receipt): array
     {
-        $customerName = $sale->service->user->name;
+        $customerName = $serviceOrder->service->user->name;
 
         return match (true) {
             $channelCode === 'QRIS' => [],

@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\AuditLog;
 use App\Models\Package;
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Models\Setting;
 use App\Models\Subdistrict;
 use App\Models\User;
@@ -162,8 +162,8 @@ class AuditLogTest extends TestCase
     }
 
     /**
-     * Service pending_installation + Sale registrasi settled — prasyarat
-     * yang sama dipakai InstallationManagementTest.
+     * Service pending_installation + Order Layanan registrasi settled —
+     * prasyarat yang sama dipakai InstallationManagementTest.
      */
     private function pendingInstallationService(): Service
     {
@@ -172,7 +172,7 @@ class AuditLogTest extends TestCase
             'package_id' => $package->id,
             'status' => Service::STATUS_PENDING_INSTALLATION,
         ]);
-        Sale::factory()->create([
+        ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'package_id' => $package->id,
             'settled_at' => now(),

@@ -3,8 +3,8 @@
 namespace Tests\Feature\Billing;
 
 use App\Models\Receipt;
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Models\User;
 use App\Services\Whatsapp\WhatsappGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,7 +27,7 @@ class PaymentOtpVerificationTest extends TestCase
             'status' => Service::STATUS_PENDING_PAYMENT,
         ]);
 
-        $sale = Sale::factory()->create([
+        $serviceOrder = ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'grandtotal' => 150000,
             'invoiced_at' => now()->subHour(),
@@ -35,8 +35,8 @@ class PaymentOtpVerificationTest extends TestCase
         ]);
 
         $receipt = Receipt::create([
-            'sale_id' => $sale->id,
-            'code' => 'REC'.str_pad((string) $sale->id, 6, '0', STR_PAD_LEFT),
+            'service_order_id' => $serviceOrder->id,
+            'code' => 'REC'.str_pad((string) $serviceOrder->id, 6, '0', STR_PAD_LEFT),
             'amount' => 150000,
             'status' => Receipt::STATUS_AWAITING_CHANNEL_SELECTION,
         ]);
@@ -74,7 +74,7 @@ class PaymentOtpVerificationTest extends TestCase
         $response->assertSee('Verifikasi Pembayaran');
         $response->assertDontSee('Pilih metode pembayaran');
         $this->assertNotNull($gateway->message);
-        $this->assertSame((string) $receipt->sale->service->user->phone, $gateway->phone);
+        $this->assertSame((string) $receipt->serviceOrder->service->user->phone, $gateway->phone);
         $this->assertDatabaseCount('receipt_otp_codes', 1);
     }
 

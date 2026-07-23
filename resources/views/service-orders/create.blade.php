@@ -1,13 +1,13 @@
-<x-app-layout :title="'Tambah Sale — ' . config('app.name', 'NEXA')">
+<x-app-layout :title="'Tambah Order Layanan — ' . config('app.name', 'NEXA')">
     <div class="mb-6">
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Tambah Sale</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Tambah Order Layanan</h1>
     </div>
 
     <div class="max-w-3xl rounded-2xl border border-gray-200 bg-white p-6 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
-        <form method="POST" action="{{ route('sales.store') }}">
+        <form method="POST" action="{{ route('service-orders.store') }}">
             @csrf
 
-            @include('sales._form')
+            @include('service-orders._form')
 
             <div class="mt-6 flex items-center gap-3">
                 <button
@@ -16,7 +16,7 @@
                 >
                     Simpan
                 </button>
-                <a href="{{ route('sales.index') }}" class="text-sm font-medium text-gray-600 hover:underline dark:text-gray-300">Batal</a>
+                <a href="{{ route('service-orders.index') }}" class="text-sm font-medium text-gray-600 hover:underline dark:text-gray-300">Batal</a>
             </div>
         </form>
     </div>

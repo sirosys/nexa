@@ -4,37 +4,37 @@ namespace App\Policies;
 
 use App\Models\User;
 
-class SalePolicy
+class ServiceOrderPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can('sales.view');
+        return $user->can('service_orders.view');
     }
 
     public function view(User $user): bool
     {
-        return $user->can('sales.view');
+        return $user->can('service_orders.view');
     }
 
     public function create(User $user): bool
     {
-        return $user->can('sales.create');
+        return $user->can('service_orders.create');
     }
 
     public function update(User $user): bool
     {
-        return $user->can('sales.update');
+        return $user->can('service_orders.update');
     }
 
     public function delete(User $user): bool
     {
-        return $user->can('sales.delete');
+        return $user->can('service_orders.delete');
     }
 
     // Terpisah dari update() penuh — supaya finance bisa retry link
-    // pembayaran tanpa diberi akses ubah line item/harga Sale.
+    // pembayaran tanpa diberi akses ubah line item/harga Order Layanan.
     public function retryReceipt(User $user): bool
     {
-        return $user->can('sales.retry-receipt');
+        return $user->can('service_orders.retry-receipt');
     }
 }

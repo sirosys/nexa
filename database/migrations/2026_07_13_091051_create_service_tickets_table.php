@@ -17,7 +17,7 @@ return new class extends Migration
             // Beda dari service_activations/service_dismantles — satu
             // service bisa punya banyak tiket sepanjang riwayatnya, jadi
             // TIDAK unique. Tetap restrictOnDelete konsisten pola FK ke
-            // services lain (sales.service_id, dst).
+            // services lain (service_orders.service_id, dst).
             $table->foreignId('service_id')->constrained('services')->restrictOnDelete();
             // Draft ERD tidak menggambarkan kolom ini sama sekali — kategori
             // & subject/description ditambahkan sendiri setelah dikonfirmasi
@@ -45,7 +45,7 @@ return new class extends Migration
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             // Riwayat keluhan pelanggan — soft delete, pola sama
-            // services/sales, bukan hard delete seperti master data.
+            // services/service_orders, bukan hard delete seperti master data.
             $table->softDeletes();
         });
     }

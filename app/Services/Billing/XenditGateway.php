@@ -30,7 +30,7 @@ interface XenditGateway
      * @throws \RuntimeException Kalau panggilan ke Xendit gagal (HTTP error,
      *                           network, dll) — pemanggil (ReceiptService)
      *                           bertanggung jawab menangkap ini supaya tidak
-     *                           menjalar ke alur pembuatan Service/Sale.
+     *                           menjalar ke alur pembuatan Service/Order Layanan.
      */
     public function createPaymentRequest(string $referenceId, float $amount, string $description, string $channelCode, array $channelProperties, string $type = 'PAY'): array;
 }

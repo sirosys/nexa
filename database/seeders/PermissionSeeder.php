@@ -23,7 +23,7 @@ class PermissionSeeder extends Seeder
         'services' => ['view', 'create', 'update', 'delete'],
         'installations' => ['view', 'assign', 'claim', 'complete', 'complete-any'],
         'dismantles' => ['view', 'queue', 'assign', 'claim', 'complete', 'complete-any'],
-        'sales' => ['view', 'create', 'update', 'delete', 'retry-receipt'],
+        'service_orders' => ['view', 'create', 'update', 'delete', 'retry-receipt'],
         'tickets' => ['view', 'create', 'update', 'delete', 'assign', 'claim', 'resolve', 'resolve-any'],
         'settings' => ['view', 'update'],
         'audit_logs' => ['view'],
@@ -39,27 +39,28 @@ class PermissionSeeder extends Seeder
     private const ROLE_PERMISSIONS = [
         // Role 'sales' sudah dihapus total (2026-07-17) — semua role staff
         // yang tersisa (di luar superadmin) sekarang ikut dapat permission
-        // registrasi pelanggan (services.*/sales.*/users.complete-kyc) di
-        // bawah ini, bukan cuma dimiliki satu role eksklusif. Lihat
+        // registrasi pelanggan (services.*/service_orders.*/users.complete-kyc)
+        // di bawah ini, bukan cuma dimiliki satu role eksklusif. Lihat
         // CLAUDE.md "Authorization / Role & Permission".
         'technician' => [
             'installations.view', 'installations.claim', 'installations.complete',
             'dismantles.view', 'dismantles.claim', 'dismantles.complete',
             'tickets.view', 'tickets.claim', 'tickets.resolve',
             'services.view', 'services.create', 'services.update',
-            'sales.view', 'sales.create', 'sales.update',
+            'service_orders.view', 'service_orders.create', 'service_orders.update',
             'users.complete-kyc',
         ],
         // 'finance' diperluas jadi peran operator harian "Admin/NOC" (2026-07-23)
         // — identifier database TETAP 'finance' (dirujuk literal di banyak
         // test & label map), cuma cakupan permission-nya yang diperluas dan
         // label UI-nya diganti "Admin/NOC". Sebelumnya cuma pegang
-        // sales.*/services.*/users.complete-kyc (murni transaksi), sekarang
-        // ditambah akses dispatch operasional (assign/queue/resolve-any)
-        // supaya NOC tidak wajib pakai akun superadmin untuk kerja
-        // sehari-hari. Lihat CLAUDE.md "Authorization / Role & Permission".
+        // service_orders.*/services.*/users.complete-kyc (murni transaksi),
+        // sekarang ditambah akses dispatch operasional
+        // (assign/queue/resolve-any) supaya NOC tidak wajib pakai akun
+        // superadmin untuk kerja sehari-hari. Lihat CLAUDE.md
+        // "Authorization / Role & Permission".
         'finance' => [
-            'sales.view', 'sales.retry-receipt', 'sales.create', 'sales.update',
+            'service_orders.view', 'service_orders.retry-receipt', 'service_orders.create', 'service_orders.update',
             'services.view', 'services.create', 'services.update',
             'users.view', 'users.complete-kyc',
             'installations.view', 'installations.assign', 'installations.complete-any',

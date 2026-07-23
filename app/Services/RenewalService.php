@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Models\Setting;
 use App\Notifications\RenewalReminderNotification;
 use App\Notifications\ServiceReactivatedNotification;
@@ -20,7 +20,7 @@ use RuntimeException;
 class RenewalService
 {
     public function __construct(
-        private readonly SaleService $saleService,
+        private readonly ServiceOrderService $serviceOrderService,
         private readonly ReceiptService $receiptService,
         private readonly NotificationService $notificationService,
         private readonly MikrotikService $mikrotikService,
@@ -28,19 +28,19 @@ class RenewalService
     ) {}
 
     /**
-     * Buat Sale+Receipt perpanjangan untuk sebuah Service yang mendekati
-     * expired_at — SELALU 1 bulan, menagih HANYA Plan tier paket Service ini
-     * (bukan seluruh bundel registrasi), pada harga katalog Plan SAAT INI
-     * (bukan harga snapshot promo registrasi). Lihat CLAUDE.md "Renewal"
-     * dan "Plan" untuk alasan lengkap desain ini.
+     * Buat Order Layanan+Receipt perpanjangan untuk sebuah Service yang
+     * mendekati expired_at — SELALU 1 bulan, menagih HANYA Plan tier paket
+     * Service ini (bukan seluruh bundel registrasi), pada harga katalog Plan
+     * SAAT INI (bukan harga snapshot promo registrasi). Lihat CLAUDE.md
+     * "Renewal" dan "Plan" untuk alasan lengkap desain ini.
      *
-     * Idempotent — no-op kalau Service ini sudah punya Sale renewal
-     * terbuka (belum settled/canceled), supaya command bisa jalan
+     * Idempotent — no-op kalau Service ini sudah punya Order Layanan
+     * renewal terbuka (belum settled/canceled), supaya command bisa jalan
      * berkali-kali/telat sehari tanpa menduplikasi tagihan. Guard ini juga
      * yang menegakkan aturan "perpanjangan non-default (masa depan, lewat
      * customer app/API) ditolak selama tagihan default H-5 masih terbuka".
      */
-    public function createInvoiceForDueService(Service $service): ?Sale
+    public function createInvoiceForDueService(Service $service): ?ServiceOrder
     {
         if ($this->hasOpenRenewalInvoice($service)) {
             return null;
@@ -52,7 +52,7 @@ class RenewalService
             throw new RuntimeException("Paket layanan {$service->code} belum punya plan — lengkapi dulu lewat halaman Paket.");
         }
 
-        $sale = $this->saleService->create([
+        $serviceOrder = $this->serviceOrderService->create([
             'service_id' => $service->id,
             'package_id' => $service->package_id,
             'is_renewal' => true,
@@ -75,24 +75,25 @@ class RenewalService
             ? $service->expired_at
             : now()->addDays((int) Setting::get('billing.invoice_ttl_days', config('billing.invoice_ttl_days')));
 
-        $this->receiptService->createForSale($sale, $signedUrlExpiresAt);
+        $this->receiptService->createForServiceOrder($serviceOrder, $signedUrlExpiresAt);
 
         // Paket gratis/promo (grandtotal 0) di-auto-settled langsung oleh
-        // createForSale() tanpa lewat webhook Xendit sama sekali — kalau
-        // tidak direaktivasi di sini juga, expired_at Service tidak pernah
-        // diperpanjang dan guard "sudah ada renewal terbuka" di atas tidak
-        // lagi menghalangi (settled_at sudah terisi), jadi command besok
-        // akan membuat Sale renewal gratis baru lagi tanpa henti.
-        if ($sale->fresh()->settled_at !== null) {
-            $this->reactivate($sale->fresh());
+        // createForServiceOrder() tanpa lewat webhook Xendit sama sekali —
+        // kalau tidak direaktivasi di sini juga, expired_at Service tidak
+        // pernah diperpanjang dan guard "sudah ada renewal terbuka" di atas
+        // tidak lagi menghalangi (settled_at sudah terisi), jadi command
+        // besok akan membuat Order Layanan renewal gratis baru lagi tanpa
+        // henti.
+        if ($serviceOrder->fresh()->settled_at !== null) {
+            $this->reactivate($serviceOrder->fresh());
         }
 
-        return $sale;
+        return $serviceOrder;
     }
 
     private function hasOpenRenewalInvoice(Service $service): bool
     {
-        return $service->sales()
+        return $service->serviceOrders()
             ->where('is_renewal', true)
             ->whereNull('settled_at')
             ->whereNull('canceled_at')
@@ -100,20 +101,21 @@ class RenewalService
     }
 
     /**
-     * Kirim reminder WhatsApp susulan (H-3 atau H-1) untuk Sale renewal yang
-     * masih belum dibayar — merujuk checkout_url yang SAMA dari H-5, tidak
-     * membuat Sale/Receipt baru. $daysRemaining menentukan kolom penanda
-     * *_sent_at mana yang distempel (idempotency per hari reminder).
+     * Kirim reminder WhatsApp susulan (H-3 atau H-1) untuk Order Layanan
+     * renewal yang masih belum dibayar — merujuk checkout_url yang SAMA
+     * dari H-5, tidak membuat Order Layanan/Receipt baru. $daysRemaining
+     * menentukan kolom penanda *_sent_at mana yang distempel (idempotency
+     * per hari reminder).
      */
-    public function sendReminder(Sale $sale, int $daysRemaining): void
+    public function sendReminder(ServiceOrder $serviceOrder, int $daysRemaining): void
     {
         $column = $daysRemaining === 3 ? 'renewal_reminder_h3_sent_at' : 'renewal_reminder_h1_sent_at';
 
-        $sale->update([$column => now()]);
+        $serviceOrder->update([$column => now()]);
 
         $this->notificationService->send(
-            $sale->service->user,
-            new RenewalReminderNotification($sale, $daysRemaining),
+            $serviceOrder->service->user,
+            new RenewalReminderNotification($serviceOrder, $daysRemaining),
         );
     }
 
@@ -135,29 +137,30 @@ class RenewalService
     }
 
     /**
-     * Dipanggil dari XenditWebhookController begitu Sale renewal SUCCEEDED.
-     * Dipakai untuk DUA skenario sekaligus: pembayaran telat setelah
-     * status=suspended (reaktivasi sungguhan) MAUPUN pembayaran tepat waktu
-     * sebelum sempat suspend (status masih active) — logic-nya sama persis
-     * di kedua kasus (extend expired_at dari nilai LAMA, paksa status
-     * active, null-kan suspended_at), jadi aman dipanggil tanpa cek status
-     * dulu; pada kasus kedua ini jadi no-op yang aman untuk status/suspended_at.
+     * Dipanggil dari XenditWebhookController begitu Order Layanan renewal
+     * SUCCEEDED. Dipakai untuk DUA skenario sekaligus: pembayaran telat
+     * setelah status=suspended (reaktivasi sungguhan) MAUPUN pembayaran
+     * tepat waktu sebelum sempat suspend (status masih active) — logic-nya
+     * sama persis di kedua kasus (extend expired_at dari nilai LAMA, paksa
+     * status active, null-kan suspended_at), jadi aman dipanggil tanpa cek
+     * status dulu; pada kasus kedua ini jadi no-op yang aman untuk
+     * status/suspended_at.
      */
-    public function reactivate(Sale $sale): Service
+    public function reactivate(ServiceOrder $serviceOrder): Service
     {
-        $service = DB::transaction(function () use ($sale) {
-            $service = $sale->service;
+        $service = DB::transaction(function () use ($serviceOrder) {
+            $service = $serviceOrder->service;
             $oldExpiredAt = $service->expired_at ?? now();
 
-            // Durasi perpanjangan = plan_qty Sale renewal ITU SENDIRI (bukan
-            // lagi package->duration_months/base product) — sales.package_id
-            // tetap paket registrasi asli (mis. promo 3 bulan), yang durasinya
-            // tidak relevan lagi untuk siklus renewal. Nilainya SELALU 1 untuk
-            // renewal otomatis saat ini, tapi ditulis generik lewat plan_qty
-            // Sale supaya siap dipakai juga oleh perpanjangan non-default
-            // (quantity > 1) begitu customer app/API dibangun — lihat CLAUDE.md
-            // "Renewal".
-            $monthsToExtend = (int) ($sale->plan_qty ?? 1);
+            // Durasi perpanjangan = plan_qty Order Layanan renewal ITU
+            // SENDIRI (bukan lagi package->duration_months/base product) —
+            // service_orders.package_id tetap paket registrasi asli (mis.
+            // promo 3 bulan), yang durasinya tidak relevan lagi untuk siklus
+            // renewal. Nilainya SELALU 1 untuk renewal otomatis saat ini,
+            // tapi ditulis generik lewat plan_qty Order Layanan supaya siap
+            // dipakai juga oleh perpanjangan non-default (quantity > 1)
+            // begitu customer app/API dibangun — lihat CLAUDE.md "Renewal".
+            $monthsToExtend = (int) ($serviceOrder->plan_qty ?? 1);
 
             $service->update([
                 'status' => Service::STATUS_ACTIVE,

@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sale_products', function (Blueprint $table) {
+        Schema::create('service_order_products', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('sale_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('service_order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             // Snapshot harga & satuan produk saat baris ditambahkan —
             // independen dari products.price/unit yang bisa berubah setelahnya.
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->unsignedInteger('quantity')->default(1);
             $table->string('unit')->nullable();
             $table->timestamps();
-            $table->unique(['sale_id', 'product_id']);
+            $table->unique(['service_order_id', 'product_id']);
         });
     }
 
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sale_products');
+        Schema::dropIfExists('service_order_products');
     }
 };

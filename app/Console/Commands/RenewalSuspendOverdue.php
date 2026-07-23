@@ -13,7 +13,7 @@ use Illuminate\Console\Command;
 class RenewalSuspendOverdue extends Command
 {
     /**
-     * Sengaja tidak cek keberadaan Sale renewal — kalau Service active dan
+     * Sengaja tidak cek keberadaan Order Layanan renewal — kalau Service active dan
      * expired_at sudah lewat, suspend tetap jalan (defensif: kalau
      * renewal:create-invoices gagal/tidak sempat jalan untuk Service ini,
      * layanan tetap tidak boleh diam-diam terus aktif tanpa tagihan).

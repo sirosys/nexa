@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Sale;
+use App\Models\ServiceOrder;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\ReceiptService;
@@ -165,11 +165,11 @@ class SettingManagementTest extends TestCase
     {
         Setting::where('key', 'billing.invoice_ttl_days')->update(['value' => '10']);
 
-        $sale = Sale::factory()->create(['grandtotal' => 100000]);
+        $serviceOrder = ServiceOrder::factory()->create(['grandtotal' => 100000]);
 
-        app(ReceiptService::class)->createForSale($sale);
+        app(ReceiptService::class)->createForServiceOrder($serviceOrder);
 
-        $sale->refresh();
-        $this->assertEqualsWithDelta(now()->addDays(10)->timestamp, $sale->expired_at->timestamp, 5);
+        $serviceOrder->refresh();
+        $this->assertEqualsWithDelta(now()->addDays(10)->timestamp, $serviceOrder->expired_at->timestamp, 5);
     }
 }

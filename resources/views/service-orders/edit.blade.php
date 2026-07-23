@@ -1,15 +1,15 @@
-<x-app-layout :title="'Ubah Sale — ' . config('app.name', 'NEXA')">
+<x-app-layout :title="'Ubah Order Layanan — ' . config('app.name', 'NEXA')">
     <div class="mb-6">
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Ubah Sale</h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Kode: {{ $sale->code }}</p>
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Ubah Order Layanan</h1>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Kode: {{ $serviceOrder->code }}</p>
     </div>
 
     <div class="max-w-3xl rounded-2xl border border-gray-200 bg-white p-6 shadow-[0_0_20px_0_rgba(76,87,125,0.02)] dark:border-gray-700 dark:bg-gray-800">
-        <form method="POST" action="{{ route('sales.update', $sale) }}">
+        <form method="POST" action="{{ route('service-orders.update', $serviceOrder) }}">
             @csrf
             @method('PUT')
 
-            @include('sales._form')
+            @include('service-orders._form')
 
             <div class="mt-6 flex items-center gap-3">
                 <button
@@ -18,7 +18,7 @@
                 >
                     Simpan
                 </button>
-                <a href="{{ route('sales.index') }}" class="text-sm font-medium text-gray-600 hover:underline dark:text-gray-300">Batal</a>
+                <a href="{{ route('service-orders.index') }}" class="text-sm font-medium text-gray-600 hover:underline dark:text-gray-300">Batal</a>
             </div>
         </form>
     </div>

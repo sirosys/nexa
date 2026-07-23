@@ -30,9 +30,9 @@ class PermissionSeederTest extends TestCase
     /**
      * Role 'sales' dihapus total 2026-07-17 — semua permission registrasi
      * pelanggan yang tadinya eksklusif miliknya (services.create/update,
-     * sales.create/update, users.complete-kyc) sekarang ikut dimiliki
-     * technician & finance juga (lihat CLAUDE.md "Authorization / Role &
-     * Permission").
+     * service_orders.create/update, users.complete-kyc) sekarang ikut
+     * dimiliki technician & finance juga (lihat CLAUDE.md "Authorization /
+     * Role & Permission").
      */
     public function test_technician_permissions_match_matrix(): void
     {
@@ -41,7 +41,7 @@ class PermissionSeederTest extends TestCase
             'dismantles.view', 'dismantles.claim', 'dismantles.complete',
             'tickets.view', 'tickets.claim', 'tickets.resolve',
             'services.view', 'services.create', 'services.update',
-            'sales.view', 'sales.create', 'sales.update',
+            'service_orders.view', 'service_orders.create', 'service_orders.update',
             'users.complete-kyc',
         ];
 
@@ -56,7 +56,7 @@ class PermissionSeederTest extends TestCase
     public function test_finance_permissions_match_matrix(): void
     {
         $expected = [
-            'sales.view', 'sales.retry-receipt', 'sales.create', 'sales.update',
+            'service_orders.view', 'service_orders.retry-receipt', 'service_orders.create', 'service_orders.update',
             'services.view', 'services.create', 'services.update',
             'users.view', 'users.complete-kyc',
             'installations.view', 'installations.assign', 'installations.complete-any',

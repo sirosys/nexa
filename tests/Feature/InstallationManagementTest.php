@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Package;
-use App\Models\Sale;
 use App\Models\Service;
 use App\Models\ServiceActivation;
+use App\Models\ServiceOrder;
 use App\Models\User;
 use App\Notifications\ServiceActivatedNotification;
 use App\Notifications\TechnicianAssignedNotification;
@@ -45,9 +45,9 @@ class InstallationManagementTest extends TestCase
     }
 
     /**
-     * Service pending_installation + Sale registrasi yang sudah settled —
-     * prasyarat yang dicari InstallationService::activationFor() untuk
-     * menyambungkan service_activations.sale_id.
+     * Service pending_installation + Order Layanan registrasi yang sudah
+     * settled — prasyarat yang dicari InstallationService::activationFor()
+     * untuk menyambungkan service_activations.service_order_id.
      */
     private function pendingInstallationService(?Package $package = null): Service
     {
@@ -56,7 +56,7 @@ class InstallationManagementTest extends TestCase
             'package_id' => $package->id,
             'status' => Service::STATUS_PENDING_INSTALLATION,
         ]);
-        Sale::factory()->create([
+        ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'package_id' => $package->id,
             'settled_at' => now(),
@@ -241,7 +241,7 @@ class InstallationManagementTest extends TestCase
         $service->update(['status' => Service::STATUS_INSTALLING]);
         ServiceActivation::create([
             'service_id' => $service->id,
-            'sale_id' => Sale::where('service_id', $service->id)->firstOrFail()->id,
+            'service_order_id' => ServiceOrder::where('service_id', $service->id)->firstOrFail()->id,
             'installer_id' => $this->withRole('technician')->id,
         ]);
 

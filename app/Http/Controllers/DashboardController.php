@@ -17,7 +17,7 @@ class DashboardController extends Controller
         return view('dashboard', [
             'stats' => $this->dashboardService->stats($user),
             'statusDistribution' => $user->can('services.view') ? $this->dashboardService->serviceStatusDistribution() : null,
-            'monthlyRevenue' => $user->can('sales.view') ? $this->dashboardService->monthlyRevenue() : null,
+            'monthlyRevenue' => $user->can('service_orders.view') ? $this->dashboardService->monthlyRevenue() : null,
             'recentServices' => $user->can('services.view') ? $this->dashboardService->recentServices() : null,
         ]);
     }

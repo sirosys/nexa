@@ -3,8 +3,8 @@
 namespace Tests\Feature\Billing;
 
 use App\Models\Receipt;
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Models\User;
 use App\Notifications\PaymentReceivedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +23,7 @@ class XenditWebhookTest extends TestCase
         Config::set('services.xendit.webhook_token', 'test-webhook-token');
     }
 
-    private function receiptForPendingSale(): Receipt
+    private function receiptForPendingServiceOrder(): Receipt
     {
         $customer = User::factory()->create();
         $customer->assignRole('customer');
@@ -33,7 +33,7 @@ class XenditWebhookTest extends TestCase
             'status' => Service::STATUS_PENDING_PAYMENT,
         ]);
 
-        $sale = Sale::factory()->create([
+        $serviceOrder = ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'grandtotal' => 150000,
             'invoiced_at' => now()->subHour(),
@@ -41,18 +41,18 @@ class XenditWebhookTest extends TestCase
         ]);
 
         return Receipt::factory()->create([
-            'sale_id' => $sale->id,
+            'service_order_id' => $serviceOrder->id,
             'amount' => 150000,
             'status' => 'PENDING',
             'xendit_payment_request_id' => 'pr-webhook-test-1',
         ]);
     }
 
-    public function test_valid_webhook_marks_sale_paid_and_service_pending_installation(): void
+    public function test_valid_webhook_marks_service_order_paid_and_service_pending_installation(): void
     {
         Notification::fake();
 
-        $receipt = $this->receiptForPendingSale();
+        $receipt = $this->receiptForPendingServiceOrder();
 
         $response = $this->postJson('/webhooks/xendit', [
             'data' => [
@@ -66,10 +66,10 @@ class XenditWebhookTest extends TestCase
         $receipt->refresh();
         $this->assertSame('SUCCEEDED', $receipt->status);
 
-        $sale = $receipt->sale;
-        $this->assertNotNull($sale->settled_at);
+        $serviceOrder = $receipt->serviceOrder;
+        $this->assertNotNull($serviceOrder->settled_at);
 
-        $service = $sale->service->fresh();
+        $service = $serviceOrder->service->fresh();
         $this->assertSame(Service::STATUS_PENDING_INSTALLATION, $service->status);
 
         Notification::assertSentTo($service->user, PaymentReceivedNotification::class);
@@ -77,7 +77,7 @@ class XenditWebhookTest extends TestCase
 
     public function test_webhook_with_invalid_token_is_rejected(): void
     {
-        $receipt = $this->receiptForPendingSale();
+        $receipt = $this->receiptForPendingServiceOrder();
 
         $response = $this->postJson('/webhooks/xendit', [
             'data' => [
@@ -90,7 +90,7 @@ class XenditWebhookTest extends TestCase
 
         $receipt->refresh();
         $this->assertSame('PENDING', $receipt->status);
-        $this->assertNull($receipt->sale->settled_at);
+        $this->assertNull($receipt->serviceOrder->settled_at);
     }
 
     public function test_unknown_payment_request_id_is_ignored_with_200(): void
@@ -132,7 +132,7 @@ class XenditWebhookTest extends TestCase
     {
         Notification::fake();
 
-        $receipt = $this->receiptForPendingSale();
+        $receipt = $this->receiptForPendingServiceOrder();
 
         $payload = [
             'data' => [
@@ -145,7 +145,7 @@ class XenditWebhookTest extends TestCase
         $this->postJson('/webhooks/xendit', $payload, $headers)->assertOk();
         $this->postJson('/webhooks/xendit', $payload, $headers)->assertOk();
 
-        $service = $receipt->sale->service->fresh();
+        $service = $receipt->serviceOrder->service->fresh();
 
         Notification::assertSentToTimes($service->user, PaymentReceivedNotification::class, 1);
     }

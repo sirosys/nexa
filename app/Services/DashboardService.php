@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
@@ -29,14 +29,14 @@ class DashboardService
             $stats['active_services'] = Service::query()->where('status', Service::STATUS_ACTIVE)->count();
         }
 
-        if ($user->can('sales.view')) {
-            $stats['unpaid_invoices'] = Sale::query()
+        if ($user->can('service_orders.view')) {
+            $stats['unpaid_invoices'] = ServiceOrder::query()
                 ->whereNotNull('invoiced_at')
                 ->whereNull('settled_at')
                 ->whereNull('canceled_at')
                 ->count();
 
-            $stats['revenue_this_month'] = (float) Sale::query()
+            $stats['revenue_this_month'] = (float) ServiceOrder::query()
                 ->whereNotNull('settled_at')
                 ->whereBetween('settled_at', [now()->startOfMonth(), now()->endOfMonth()])
                 ->sum('grandtotal');
@@ -88,7 +88,7 @@ class DashboardService
     {
         $start = now()->startOfMonth()->subMonths($months - 1);
 
-        $rows = Sale::query()
+        $rows = ServiceOrder::query()
             ->whereNotNull('settled_at')
             ->where('settled_at', '>=', $start)
             ->selectRaw('DATE_FORMAT(settled_at, "%Y-%m") as ym, SUM(grandtotal) as total')

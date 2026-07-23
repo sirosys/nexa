@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -23,7 +23,7 @@ class DashboardTest extends TestCase
     public function test_dashboard_shows_real_operational_stats(): void
     {
         // 3 customer yang mau dihitung, plus 1 "pemilik" dipakai ulang untuk
-        // seluruh Service/Sale di bawah supaya ServiceFactory/SaleFactory
+        // seluruh Service/ServiceOrder di bawah supaya ServiceFactory/ServiceOrderFactory
         // tidak diam-diam membuat customer baru lewat relasi default
         // (user_id di-override -> closure User::factory() bawaan tidak
         // pernah dievaluasi), jadi total customer tetap presisi terkontrol.
@@ -41,15 +41,15 @@ class DashboardTest extends TestCase
         $billingService = Service::factory()->create(['user_id' => $owner->id]);
 
         // Tagihan belum lunas: sudah di-invoice, belum settled/canceled.
-        Sale::factory()->create(['service_id' => $billingService->id, 'invoiced_at' => now(), 'settled_at' => null, 'canceled_at' => null]);
-        Sale::factory()->create(['service_id' => $billingService->id, 'invoiced_at' => now(), 'settled_at' => null, 'canceled_at' => null]);
+        ServiceOrder::factory()->create(['service_id' => $billingService->id, 'invoiced_at' => now(), 'settled_at' => null, 'canceled_at' => null]);
+        ServiceOrder::factory()->create(['service_id' => $billingService->id, 'invoiced_at' => now(), 'settled_at' => null, 'canceled_at' => null]);
         // Sudah lunas bulan ini — ikut dihitung sebagai pendapatan.
-        Sale::factory()->create(['service_id' => $billingService->id, 'invoiced_at' => now(), 'settled_at' => now(), 'grandtotal' => 150000]);
-        Sale::factory()->create(['service_id' => $billingService->id, 'invoiced_at' => now(), 'settled_at' => now(), 'grandtotal' => 250000]);
+        ServiceOrder::factory()->create(['service_id' => $billingService->id, 'invoiced_at' => now(), 'settled_at' => now(), 'grandtotal' => 150000]);
+        ServiceOrder::factory()->create(['service_id' => $billingService->id, 'invoiced_at' => now(), 'settled_at' => now(), 'grandtotal' => 250000]);
         // Lunas bulan lalu — TIDAK ikut "pendapatan bulan ini".
-        Sale::factory()->create(['service_id' => $billingService->id, 'invoiced_at' => now()->subMonth(), 'settled_at' => now()->subMonth(), 'grandtotal' => 999999]);
+        ServiceOrder::factory()->create(['service_id' => $billingService->id, 'invoiced_at' => now()->subMonth(), 'settled_at' => now()->subMonth(), 'grandtotal' => 999999]);
         // Dibatalkan — bukan tagihan belum lunas maupun pendapatan.
-        Sale::factory()->create(['service_id' => $billingService->id, 'invoiced_at' => now(), 'settled_at' => null, 'canceled_at' => now()]);
+        ServiceOrder::factory()->create(['service_id' => $billingService->id, 'invoiced_at' => now(), 'settled_at' => null, 'canceled_at' => now()]);
 
         $response = $this->actingAs($this->withRole('superadmin'))->get('/dashboard');
 
@@ -81,7 +81,7 @@ class DashboardTest extends TestCase
 
     public function test_monthly_revenue_covers_six_months_ending_this_month(): void
     {
-        Sale::factory()->create(['settled_at' => now(), 'grandtotal' => 100000]);
+        ServiceOrder::factory()->create(['settled_at' => now(), 'grandtotal' => 100000]);
 
         $response = $this->actingAs($this->withRole('superadmin'))->get('/dashboard');
 
@@ -114,15 +114,15 @@ class DashboardTest extends TestCase
 
     /**
      * Role 'sales' dihapus total 2026-07-17 — technician sekarang ikut
-     * dapat services.view/sales.view (permission registrasi pelanggan
+     * dapat services.view/service_orders.view (permission registrasi pelanggan
      * dibagikan ke semua staff, lihat CLAUDE.md "Authorization / Role &
      * Permission"), jadi dashboard-nya ikut menampilkan data layanan/tagihan
      * di samping antrean instalasi/dismantle — bukan lagi cuma dua stat itu.
      */
-    public function test_technician_sees_installation_dismantle_and_service_sales_stats(): void
+    public function test_technician_sees_installation_dismantle_and_service_order_stats(): void
     {
         Service::factory()->create(['status' => Service::STATUS_ACTIVE]);
-        Sale::factory()->create(['settled_at' => now(), 'grandtotal' => 100000]);
+        ServiceOrder::factory()->create(['settled_at' => now(), 'grandtotal' => 100000]);
 
         $response = $this->actingAs($this->withRole('technician'))->get('/dashboard');
 

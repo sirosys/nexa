@@ -3,28 +3,29 @@
 namespace Database\Factories;
 
 use App\Models\Package;
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Sale>
+ * @extends Factory<ServiceOrder>
  */
-class SaleFactory extends Factory
+class ServiceOrderFactory extends Factory
 {
     /**
      * Define the model's default state.
      *
      * Field harga (total/discount/subtotal/grandtotal) sengaja default 0 —
      * nilai sungguhannya selalu dihitung ulang lewat
-     * SaleService::syncProductsAndRecalculate(), bukan angka acak di sini.
+     * ServiceOrderService::syncProductsAndRecalculate(), bukan angka acak di
+     * sini. `code` juga sengaja tidak diisi di sini — digenerate otomatis
+     * lewat ServiceOrder::booted() (pola sama UserFactory/ServiceFactory).
      *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
-            'code' => 'SAL'.fake()->unique()->numerify('######'),
             'service_id' => Service::factory(),
             'package_id' => Package::factory(),
             'is_starter' => false,

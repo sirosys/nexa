@@ -1,12 +1,12 @@
 @php
-    $phone = (string) $receipt->sale->service->user->phone;
+    $phone = (string) $receipt->serviceOrder->service->user->phone;
     $maskedPhone = substr($phone, 0, 4).str_repeat('*', max(strlen($phone) - 7, 0)).substr($phone, -3);
 @endphp
 
 <x-auth-layout :title="'Verifikasi Pembayaran — ' . config('app.name', 'NEXA')">
     <div class="mb-8 text-center">
         <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Verifikasi Pembayaran</h1>
-        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Masukkan 6 digit kode yang dikirim ke WhatsApp {{ $maskedPhone }} untuk melanjutkan ke tagihan {{ $receipt->sale->code }}.</p>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Masukkan 6 digit kode yang dikirim ke WhatsApp {{ $maskedPhone }} untuk melanjutkan ke tagihan {{ $receipt->serviceOrder->code }}.</p>
     </div>
 
     @if ($otpStatus)

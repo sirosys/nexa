@@ -10,7 +10,7 @@ abstract class TestCase extends BaseTestCase
 {
     /**
      * Binding default untuk semua test: mencegah panggilan HTTP sungguhan
-     * ke Xendit setiap kali sebuah Service (dan Sale pendaftarannya) dibuat
+     * ke Xendit setiap kali sebuah Service (dan Order Layanan pendaftarannya) dibuat
      * lewat ServiceService::create() — hampir semua test CRUD Service tidak
      * peduli soal Xendit sama sekali. Test Billing yang butuh perilaku
      * spesifik (gagal, status tertentu, dst) meng-override binding ini

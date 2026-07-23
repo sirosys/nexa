@@ -21,7 +21,7 @@ class SettingSeeder extends Seeder
             'type' => 'integer',
             'group' => 'billing',
             'label' => 'Masa Berlaku Tagihan Pendaftaran (hari)',
-            'description' => 'Jumlah hari sebelum tagihan pendaftaran (Sale) otomatis dibatalkan kalau belum dibayar.',
+            'description' => 'Jumlah hari sebelum tagihan pendaftaran (Order Layanan) otomatis dibatalkan kalau belum dibayar.',
         ],
         [
             'key' => 'renewal.remind_days_before.invoice',

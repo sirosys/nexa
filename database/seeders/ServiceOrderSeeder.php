@@ -4,13 +4,13 @@ namespace Database\Seeders;
 
 use App\Models\Package;
 use App\Models\Product;
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Models\User;
-use App\Services\SaleService;
+use App\Services\ServiceOrderService;
 use Illuminate\Database\Seeder;
 
-class SaleSeeder extends Seeder
+class ServiceOrderSeeder extends Seeder
 {
     public function run(): void
     {
@@ -18,18 +18,19 @@ class SaleSeeder extends Seeder
         $services = Service::inRandomOrder()->limit(10)->get();
         $packages = Package::all();
         $products = Product::all();
-        $saleService = app(SaleService::class);
+        $serviceOrderService = app(ServiceOrderService::class);
 
-        $services->each(function (Service $service) use ($adminId, $packages, $products, $saleService) {
+        $services->each(function (Service $service) use ($adminId, $packages, $products, $serviceOrderService) {
             $package = $packages->random();
 
-            // Sale::factory()->create() dulu (bukan lewat SaleService::create()
-            // — Auth::id() null di konteks console), lalu pakai
-            // syncProductsAndRecalculate() supaya totalnya konsisten dengan
-            // rumus asli, bukan angka acak. is_starter di-set manual di sini
-            // karena bukan lewat SaleService::create() yang biasanya
-            // menyalinnya otomatis dari package.
-            $sale = Sale::factory()->create([
+            // ServiceOrder::factory()->create() dulu (bukan lewat
+            // ServiceOrderService::create() — Auth::id() null di konteks
+            // console), lalu pakai syncProductsAndRecalculate() supaya
+            // totalnya konsisten dengan rumus asli, bukan angka acak.
+            // is_starter di-set manual di sini karena bukan lewat
+            // ServiceOrderService::create() yang biasanya menyalinnya
+            // otomatis dari package.
+            $serviceOrder = ServiceOrder::factory()->create([
                 'service_id' => $service->id,
                 'package_id' => $package->id,
                 'is_starter' => $package->is_starter,
@@ -45,7 +46,7 @@ class SaleSeeder extends Seeder
                 'unit' => $product->unit,
             ])->values()->all();
 
-            $saleService->syncProductsAndRecalculate($sale, $lines);
+            $serviceOrderService->syncProductsAndRecalculate($serviceOrder, $lines);
         });
     }
 }

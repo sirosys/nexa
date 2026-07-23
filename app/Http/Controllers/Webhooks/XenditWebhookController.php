@@ -72,7 +72,7 @@ class XenditWebhookController extends Controller
         }
 
         // Idempotency: event sukses yang sama datang lagi (Xendit retry
-        // webhook) tidak mengulang efek samping (Sale/Service/notifikasi).
+        // webhook) tidak mengulang efek samping (Order Layanan/Service/notifikasi).
         if ($receipt->status === 'SUCCEEDED') {
             return response()->json(['message' => 'Already processed']);
         }
@@ -83,39 +83,40 @@ class XenditWebhookController extends Controller
         ]);
 
         if ($status === 'SUCCEEDED') {
-            $this->markSaleAsPaid($receipt);
+            $this->markServiceOrderAsPaid($receipt);
         }
 
         return response()->json(['message' => 'OK']);
     }
 
-    private function markSaleAsPaid(Receipt $receipt): void
+    private function markServiceOrderAsPaid(Receipt $receipt): void
     {
-        $sale = $receipt->sale()->with('service.user')->first();
+        $serviceOrder = $receipt->serviceOrder()->with('service.user')->first();
 
-        if (! $sale) {
+        if (! $serviceOrder) {
             return;
         }
 
-        $sale->update(['settled_at' => now()]);
+        $serviceOrder->update(['settled_at' => now()]);
 
-        // Sale renewal (lihat CLAUDE.md "Renewal") lewat jalur reaktivasi,
-        // bukan jalur registrasi pending_installation — RenewalService yang
-        // kirim notifikasinya sendiri (ServiceReactivatedNotification).
-        if ($sale->is_renewal) {
-            $this->renewalService->reactivate($sale);
+        // Order Layanan renewal (lihat CLAUDE.md "Renewal") lewat jalur
+        // reaktivasi, bukan jalur registrasi pending_installation —
+        // RenewalService yang kirim notifikasinya sendiri
+        // (ServiceReactivatedNotification).
+        if ($serviceOrder->is_renewal) {
+            $this->renewalService->reactivate($serviceOrder);
 
             return;
         }
 
-        $service = $sale->service;
+        $service = $serviceOrder->service;
 
         if ($service) {
             $service->update(['status' => Service::STATUS_PENDING_INSTALLATION]);
         }
 
         if ($service?->user) {
-            $this->notificationService->send($service->user, new PaymentReceivedNotification($sale));
+            $this->notificationService->send($service->user, new PaymentReceivedNotification($serviceOrder));
         }
     }
 }

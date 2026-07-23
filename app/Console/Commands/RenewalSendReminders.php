@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Sale;
+use App\Models\ServiceOrder;
 use App\Models\Setting;
 use App\Services\RenewalService;
 use Illuminate\Console\Attributes\Description;
@@ -18,14 +18,14 @@ class RenewalSendReminders extends Command
     {
         $h3 = $this->due('h3', 'renewal_reminder_h3_sent_at');
 
-        foreach ($h3 as $sale) {
-            $renewalService->sendReminder($sale, 3);
+        foreach ($h3 as $serviceOrder) {
+            $renewalService->sendReminder($serviceOrder, 3);
         }
 
         $h1 = $this->due('h1', 'renewal_reminder_h1_sent_at');
 
-        foreach ($h1 as $sale) {
-            $renewalService->sendReminder($sale, 1);
+        foreach ($h1 as $serviceOrder) {
+            $renewalService->sendReminder($serviceOrder, 1);
         }
 
         $this->info("Reminder H-3 terkirim: {$h3->count()}. Reminder H-1 terkirim: {$h1->count()}.");
@@ -34,11 +34,11 @@ class RenewalSendReminders extends Command
     }
 
     /**
-     * @return Collection<int, Sale>
+     * @return Collection<int, ServiceOrder>
      */
     private function due(string $configKey, string $sentAtColumn): Collection
     {
-        return Sale::query()
+        return ServiceOrder::query()
             ->where('is_renewal', true)
             ->whereNull('settled_at')
             ->whereNull('canceled_at')

@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\Sale;
 use App\Models\Service;
 use App\Models\ServiceActivation;
 use App\Models\ServiceDismantle;
+use App\Models\ServiceOrder;
 use App\Models\ServiceTicket;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -15,18 +15,18 @@ class ReportService
     public function __construct(private readonly DashboardService $dashboardService) {}
 
     /**
-     * Filter di sales.invoiced_at. "Pendapatan" tetap filter sales.settled_at
-     * sendiri (bukan invoiced_at) — Sale bisa terbit di satu periode tapi
-     * lunas di periode lain, jadi kedua angka sengaja tidak saling terikat
-     * satu filter yang sama.
+     * Filter di service_orders.invoiced_at. "Pendapatan" tetap filter
+     * service_orders.settled_at sendiri (bukan invoiced_at) — Order Layanan
+     * bisa terbit di satu periode tapi lunas di periode lain, jadi kedua
+     * angka sengaja tidak saling terikat satu filter yang sama.
      *
-     * @return array{summary: array<string, int|float>, sales: LengthAwarePaginator}
+     * @return array{summary: array<string, int|float>, serviceOrders: LengthAwarePaginator}
      */
     public function finance(CarbonInterface $from, CarbonInterface $to): array
     {
-        $base = fn () => Sale::query()->whereBetween('invoiced_at', [$from, $to]);
+        $base = fn () => ServiceOrder::query()->whereBetween('invoiced_at', [$from, $to]);
 
-        $revenue = (float) Sale::query()
+        $revenue = (float) ServiceOrder::query()
             ->whereNotNull('settled_at')
             ->whereBetween('settled_at', [$from, $to])
             ->sum('grandtotal');
@@ -36,10 +36,10 @@ class ReportService
         $canceledCount = $base()->whereNotNull('canceled_at')->count();
         $issuedCount = $base()->count();
 
-        $sales = $base()
+        $serviceOrders = $base()
             ->with(['service.user', 'package'])
             ->latest('invoiced_at')
-            ->paginate(25, ['*'], 'sales_page')
+            ->paginate(25, ['*'], 'service_orders_page')
             ->withQueryString();
 
         return [
@@ -50,7 +50,7 @@ class ReportService
                 'canceled_count' => $canceledCount,
                 'issued_count' => $issuedCount,
             ],
-            'sales' => $sales,
+            'serviceOrders' => $serviceOrders,
         ];
     }
 

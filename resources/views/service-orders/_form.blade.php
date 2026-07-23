@@ -1,12 +1,12 @@
 @php
-    $sale ??= null;
+    $serviceOrder ??= null;
 
-    $selectedServiceLabel = $sale?->service
-        ? "{$sale->service->code} — {$sale->service->user?->name} ({$sale->service->user?->phone})"
+    $selectedServiceLabel = $serviceOrder?->service
+        ? "{$serviceOrder->service->code} — {$serviceOrder->service->user?->name} ({$serviceOrder->service->user?->phone})"
         : '';
 
-    $existingRows = $sale
-        ? $sale->products->map(fn ($p) => [
+    $existingRows = $serviceOrder
+        ? $serviceOrder->products->map(fn ($p) => [
             'product_id' => $p->id,
             'quantity' => $p->pivot->quantity,
             'price' => (float) $p->pivot->price,
@@ -33,12 +33,12 @@
     class="space-y-4"
     x-data="{
         serviceQuery: {{ \Illuminate\Support\Js::from(old('service_label', $selectedServiceLabel)) }},
-        serviceId: {{ \Illuminate\Support\Js::from(old('service_id', $sale?->service_id)) }},
+        serviceId: {{ \Illuminate\Support\Js::from(old('service_id', $serviceOrder?->service_id)) }},
         serviceResults: [],
         serviceOpen: false,
         serviceDebounce: null,
         fetchServices(q) {
-            fetch('{{ route('sales.services.search') }}?q=' + encodeURIComponent(q))
+            fetch('{{ route('service-orders.services.search') }}?q=' + encodeURIComponent(q))
                 .then((res) => res.json())
                 .then((data) => {
                     this.serviceResults = data;
@@ -74,8 +74,8 @@
         },
         rows: {{ \Illuminate\Support\Js::from($initialRows) }},
         products: {{ \Illuminate\Support\Js::from($productOptions) }},
-        tax: {{ \Illuminate\Support\Js::from((float) old('tax', $sale?->tax ?? 0)) }},
-        adminFee: {{ \Illuminate\Support\Js::from((float) old('admin_fee', $sale?->admin_fee ?? 0)) }},
+        tax: {{ \Illuminate\Support\Js::from((float) old('tax', $serviceOrder?->tax ?? 0)) }},
+        adminFee: {{ \Illuminate\Support\Js::from((float) old('admin_fee', $serviceOrder?->admin_fee ?? 0)) }},
         addRow() {
             this.rows.push({ product_id: '', quantity: 1, price: '', discount: 0, unit: '' });
         },
@@ -156,7 +156,7 @@
         >
             <option value="">Pilih paket</option>
             @foreach ($packages as $package)
-                <option value="{{ $package->id }}" @selected((int) old('package_id', $sale?->package_id) === $package->id)>
+                <option value="{{ $package->id }}" @selected((int) old('package_id', $serviceOrder?->package_id) === $package->id)>
                     {{ $package->name }} ({{ $package->code }}){{ $package->is_starter ? ' — Starter' : '' }}
                 </option>
             @endforeach
@@ -302,7 +302,7 @@
             name="notes"
             rows="2"
             class="block w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500"
-        >{{ old('notes', $sale?->notes) }}</textarea>
+        >{{ old('notes', $serviceOrder?->notes) }}</textarea>
         @error('notes')
             <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
         @enderror
@@ -311,7 +311,7 @@
     {{-- Preview total dihitung live di browser untuk kenyamanan input saja —
     field ini SENGAJA tidak punya <input name="...">, jadi tidak pernah ikut
     ter-submit. Server selalu menghitung ulang penuh dari products[] yang
-    dikirim (lihat SaleService::syncProductsAndRecalculate()). --}}
+    dikirim (lihat ServiceOrderService::syncProductsAndRecalculate()). --}}
     <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm dark:border-gray-700 dark:bg-gray-900/40">
         <div class="flex items-center justify-between py-0.5">
             <span class="text-gray-500 dark:text-gray-400">Total</span>

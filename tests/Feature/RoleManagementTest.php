@@ -136,7 +136,7 @@ class RoleManagementTest extends TestCase
 
         $this->actingAs($admin)->put("/roles/{$finance->id}", [
             'name' => 'renamed_finance',
-            'permissions' => ['sales.view'],
+            'permissions' => ['service_orders.view'],
         ]);
         $this->assertSame('finance', $finance->fresh()->name);
 

@@ -9,7 +9,8 @@
     // menu tetap ter-highlight di semua sub-halamannya, bukan cuma yang
     // persis sama dengan 'route'. Tidak ada lagi item placeholder tanpa
     // 'route' (mis. "Billing" yang dihapus 2026-07-17 — tidak pernah py
-    // halaman admin sendiri, status/link pembayaran cukup di sales.show).
+    // halaman admin sendiri, status/link pembayaran cukup di
+    // service-orders.show).
     //
     // Dikelompokkan per area kerja (bukan lagi daftar flat 17 item) supaya lebih
     // gampang dipindai — meniru pengelompokan menu ala Metronic. Label grup
@@ -26,7 +27,7 @@
             'items' => [
                 ['label' => 'Pengguna', 'route' => 'users.index', 'icon' => 'users', 'permission' => 'users.view'],
                 ['label' => 'Layanan', 'route' => 'services.index', 'icon' => 'wifi', 'permission' => 'services.view'],
-                ['label' => 'Penjualan', 'route' => 'sales.index', 'icon' => 'shopping-cart', 'permission' => 'sales.view'],
+                ['label' => 'Order Layanan', 'route' => 'service-orders.index', 'icon' => 'shopping-cart', 'permission' => 'service_orders.view'],
                 ['label' => 'Tiket', 'route' => 'tickets.index', 'icon' => 'ticket', 'permission' => 'tickets.view'],
             ],
         ],

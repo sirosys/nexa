@@ -14,12 +14,12 @@ return new class extends Migration
         Schema::create('service_activations', function (Blueprint $table) {
             $table->id();
             // Satu service maksimal satu baris activation di iterasi ini —
-            // konsisten pola receipts.sale_id (tidak ada retry/reassignment,
-            // lihat CLAUDE.md "Installation").
+            // konsisten pola receipts.service_order_id (tidak ada
+            // retry/reassignment, lihat CLAUDE.md "Installation").
             $table->foreignId('service_id')->constrained('services')->restrictOnDelete()->unique();
             // Rename dari "sales_id" di draft ERD, konsisten singular FK
-            // di seluruh project (mis. receipts.sale_id).
-            $table->foreignId('sale_id')->constrained('sales')->restrictOnDelete();
+            // di seluruh project (mis. receipts.service_order_id).
+            $table->foreignId('service_order_id')->constrained('service_orders')->restrictOnDelete();
             $table->foreignId('installer_id')->nullable()->constrained('users')->nullOnDelete();
             // Null berarti teknisi klaim sendiri (bukan ditugaskan staff).
             $table->foreignId('assigned_by')->nullable()->constrained('users')->nullOnDelete();

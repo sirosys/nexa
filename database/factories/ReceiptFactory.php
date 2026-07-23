@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Receipt;
-use App\Models\Sale;
+use App\Models\ServiceOrder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,7 +18,7 @@ class ReceiptFactory extends Factory
     {
         return [
             'code' => 'REC'.fake()->unique()->numerify('######'),
-            'sale_id' => Sale::factory(),
+            'service_order_id' => ServiceOrder::factory(),
             'xendit_payment_request_id' => 'pr-'.fake()->unique()->uuid(),
             'amount' => 0,
             'status' => 'PENDING',

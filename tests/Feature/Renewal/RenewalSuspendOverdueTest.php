@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Renewal;
 
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Notifications\ServiceSuspendedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -14,7 +14,7 @@ class RenewalSuspendOverdueTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_suspends_active_overdue_service_with_unpaid_renewal_sale(): void
+    public function test_suspends_active_overdue_service_with_unpaid_renewal_service_order(): void
     {
         Notification::fake();
 
@@ -22,7 +22,7 @@ class RenewalSuspendOverdueTest extends TestCase
             'status' => Service::STATUS_ACTIVE,
             'expired_at' => now()->subDay(),
         ]);
-        Sale::factory()->create([
+        ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'is_renewal' => true,
             'invoiced_at' => now()->subDays(6),
@@ -38,11 +38,11 @@ class RenewalSuspendOverdueTest extends TestCase
     }
 
     /**
-     * Defensif: Service overdue tanpa Sale renewal sama sekali (mis.
-     * renewal:create-invoices gagal/tidak sempat jalan) tetap disuspend —
-     * layanan tidak boleh diam-diam terus aktif tanpa tagihan.
+     * Defensif: Service overdue tanpa Order Layanan renewal sama sekali
+     * (mis. renewal:create-invoices gagal/tidak sempat jalan) tetap
+     * disuspend — layanan tidak boleh diam-diam terus aktif tanpa tagihan.
      */
-    public function test_suspends_overdue_service_even_without_any_renewal_sale(): void
+    public function test_suspends_overdue_service_even_without_any_renewal_service_order(): void
     {
         $service = Service::factory()->create([
             'status' => Service::STATUS_ACTIVE,

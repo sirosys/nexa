@@ -5,8 +5,8 @@ namespace Tests\Feature\Renewal;
 use App\Models\Package;
 use App\Models\Plan;
 use App\Models\Receipt;
-use App\Models\Sale;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Notifications\PaymentReceivedNotification;
 use App\Notifications\ServiceReactivatedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -53,7 +53,7 @@ class RenewalReactivationTest extends TestCase
             'expired_at' => $oldExpiredAt,
             'suspended_at' => $oldExpiredAt->copy()->addDay(),
         ]);
-        $sale = Sale::factory()->create([
+        $serviceOrder = ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'package_id' => $package->id,
             'is_renewal' => true,
@@ -62,7 +62,7 @@ class RenewalReactivationTest extends TestCase
             'expired_at' => null,
         ]);
         $receipt = Receipt::factory()->create([
-            'sale_id' => $sale->id,
+            'service_order_id' => $serviceOrder->id,
             'amount' => 150000,
             'status' => 'PENDING',
             'xendit_payment_request_id' => 'pr-renewal-late-1',
@@ -70,10 +70,10 @@ class RenewalReactivationTest extends TestCase
 
         $this->sendWebhook($receipt)->assertOk();
 
-        $sale->refresh();
+        $serviceOrder->refresh();
         $service->refresh();
 
-        $this->assertNotNull($sale->settled_at);
+        $this->assertNotNull($serviceOrder->settled_at);
         $this->assertSame(Service::STATUS_ACTIVE, $service->status);
         $this->assertNull($service->suspended_at);
         $this->assertSame(
@@ -101,7 +101,7 @@ class RenewalReactivationTest extends TestCase
             'package_id' => $package->id,
             'expired_at' => $oldExpiredAt,
         ]);
-        $sale = Sale::factory()->create([
+        $serviceOrder = ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'package_id' => $package->id,
             'is_renewal' => true,
@@ -110,7 +110,7 @@ class RenewalReactivationTest extends TestCase
             'expired_at' => null,
         ]);
         $receipt = Receipt::factory()->create([
-            'sale_id' => $sale->id,
+            'service_order_id' => $serviceOrder->id,
             'amount' => 150000,
             'status' => 'PENDING',
             'xendit_payment_request_id' => 'pr-renewal-ontime-1',
@@ -139,7 +139,7 @@ class RenewalReactivationTest extends TestCase
             'expired_at' => $oldExpiredAt,
             'suspended_at' => $oldExpiredAt->copy()->addDay(),
         ]);
-        $sale = Sale::factory()->create([
+        $serviceOrder = ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'package_id' => $package->id,
             'is_renewal' => true,
@@ -148,7 +148,7 @@ class RenewalReactivationTest extends TestCase
             'expired_at' => null,
         ]);
         $receipt = Receipt::factory()->create([
-            'sale_id' => $sale->id,
+            'service_order_id' => $serviceOrder->id,
             'amount' => 150000,
             'status' => 'PENDING',
             'xendit_payment_request_id' => 'pr-renewal-dup-1',
@@ -165,13 +165,13 @@ class RenewalReactivationTest extends TestCase
     }
 
     /**
-     * Durasi perpanjangan dibaca dari sales.plan_qty ITU SENDIRI (bukan
+     * Durasi perpanjangan dibaca dari service_orders.plan_qty ITU SENDIRI (bukan
      * package->plan_qty) — nilainya SELALU 1 untuk renewal otomatis saat
      * ini, tapi ditulis generik supaya siap dipakai perpanjangan non-default
      * (qty > 1, mis. promo prepay beberapa bulan) begitu customer app/API
      * dibangun. Test ini membuktikan mekanismenya sudah benar untuk qty > 1.
      */
-    public function test_extends_expiry_by_sale_line_item_quantity_not_fixed_one_month(): void
+    public function test_extends_expiry_by_service_order_line_item_quantity_not_fixed_one_month(): void
     {
         Notification::fake();
 
@@ -183,7 +183,7 @@ class RenewalReactivationTest extends TestCase
             'package_id' => $package->id,
             'expired_at' => $oldExpiredAt,
         ]);
-        $sale = Sale::factory()->create([
+        $serviceOrder = ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'package_id' => $package->id,
             'is_renewal' => true,
@@ -195,7 +195,7 @@ class RenewalReactivationTest extends TestCase
             'expired_at' => null,
         ]);
         $receipt = Receipt::factory()->create([
-            'sale_id' => $sale->id,
+            'service_order_id' => $serviceOrder->id,
             'amount' => 450000,
             'status' => 'PENDING',
             'xendit_payment_request_id' => 'pr-renewal-bulk-1',
@@ -211,15 +211,15 @@ class RenewalReactivationTest extends TestCase
     }
 
     /**
-     * Regression: Sale registrasi (is_renewal=false) tetap lewat jalur
+     * Regression: Order Layanan registrasi (is_renewal=false) tetap lewat jalur
      * pending_installation lama, tidak tersentuh cabang renewal sama sekali.
      */
-    public function test_registration_sale_still_goes_through_pending_installation_path(): void
+    public function test_registration_service_order_still_goes_through_pending_installation_path(): void
     {
         Notification::fake();
 
         $service = Service::factory()->create(['status' => Service::STATUS_PENDING_PAYMENT]);
-        $sale = Sale::factory()->create([
+        $serviceOrder = ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'is_renewal' => false,
             'grandtotal' => 150000,
@@ -227,7 +227,7 @@ class RenewalReactivationTest extends TestCase
             'expired_at' => now()->addDays(2),
         ]);
         $receipt = Receipt::factory()->create([
-            'sale_id' => $sale->id,
+            'service_order_id' => $serviceOrder->id,
             'amount' => 150000,
             'status' => 'PENDING',
             'xendit_payment_request_id' => 'pr-registration-1',

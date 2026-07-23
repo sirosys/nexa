@@ -2,8 +2,8 @@
 
 namespace App\Http\Resources\Api\V1;
 
-use App\Models\Sale;
-use App\Support\SaleStatus;
+use App\Models\ServiceOrder;
+use App\Support\ServiceOrderStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,8 +14,8 @@ class InvoiceResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        /** @var Sale $this */
-        $status = SaleStatus::resolve($this->resource);
+        /** @var ServiceOrder $this */
+        $status = ServiceOrderStatus::resolve($this->resource);
 
         return [
             'code' => $this->code,
@@ -33,9 +33,10 @@ class InvoiceResource extends JsonResource
             'expired_at' => $this->expired_at?->toIso8601String(),
             'settled_at' => $this->settled_at?->toIso8601String(),
             'canceled_at' => $this->canceled_at?->toIso8601String(),
-            // Link signed sudah final sejak ReceiptService::createForSale(),
-            // TIDAK PERNAH diregenerate di sini (lihat CLAUDE.md "Billing /
-            // Invoice (Xendit)") — null kalau belum ada Receipt (mis. Sale
+            // Link signed sudah final sejak
+            // ReceiptService::createForServiceOrder(), TIDAK PERNAH
+            // diregenerate di sini (lihat CLAUDE.md "Billing / Invoice
+            // (Xendit)") — null kalau belum ada Receipt (mis. Order Layanan
             // gratis, auto-settled tanpa Receipt sama sekali).
             'checkout_url' => $this->receipt?->checkout_url,
         ];

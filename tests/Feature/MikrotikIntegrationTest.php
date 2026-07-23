@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Package;
-use App\Models\Sale;
 use App\Models\Service;
 use App\Models\ServiceActivation;
+use App\Models\ServiceOrder;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\DismantleService;
@@ -47,7 +47,7 @@ class MikrotikIntegrationTest extends TestCase
             'package_id' => $package->id,
             'status' => Service::STATUS_PENDING_INSTALLATION,
         ]);
-        Sale::factory()->create([
+        ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'package_id' => $package->id,
             'settled_at' => now(),
@@ -122,13 +122,13 @@ class MikrotikIntegrationTest extends TestCase
             'status' => Service::STATUS_SUSPENDED,
             'expired_at' => now()->subDay(),
         ]);
-        $sale = Sale::factory()->create([
+        $serviceOrder = ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'package_id' => $service->package_id,
             'is_renewal' => true,
         ]);
 
-        app(RenewalService::class)->reactivate($sale);
+        app(RenewalService::class)->reactivate($serviceOrder);
 
         $this->assertCount(1, $gateway->calls);
         $this->assertSame('enablePppoeSecret', $gateway->calls[0]['action']);
@@ -144,14 +144,14 @@ class MikrotikIntegrationTest extends TestCase
             'package_id' => $package->id,
             'status' => Service::STATUS_SUSPENDED,
         ]);
-        $sale = Sale::factory()->create([
+        $serviceOrder = ServiceOrder::factory()->create([
             'service_id' => $service->id,
             'package_id' => $package->id,
             'settled_at' => now(),
         ]);
         ServiceActivation::create([
             'service_id' => $service->id,
-            'sale_id' => $sale->id,
+            'service_order_id' => $serviceOrder->id,
         ]);
         $dismantleService = app(DismantleService::class);
         $dismantleService->queue($service);

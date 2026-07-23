@@ -18,7 +18,7 @@ class ProductPackageSeeder extends Seeder
      *
      * Dibuat lewat Eloquent langsung (bukan Product/Package/PlanService)
      * karena Auth::id() null di konteks console — pola sama seperti
-     * SaleSeeder. `code` digenerate manual setelah insert supaya tetap
+     * ServiceOrderSeeder. `code` digenerate manual setelah insert supaya tetap
      * mengikuti konvensi PLN/PRD/PKG + id yang dipakai service layer asli.
      */
     public function run(): void

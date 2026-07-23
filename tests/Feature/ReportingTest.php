@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Sale;
 use App\Models\Service;
 use App\Models\ServiceActivation;
 use App\Models\ServiceDismantle;
+use App\Models\ServiceOrder;
 use App\Models\ServiceTicket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -34,16 +34,16 @@ class ReportingTest extends TestCase
 
     // ---------- Keuangan/Billing ----------
 
-    public function test_finance_report_aggregates_sales_within_invoiced_at_range(): void
+    public function test_finance_report_aggregates_service_orders_within_invoiced_at_range(): void
     {
         // Lunas dalam range -> masuk revenue & issued.
-        Sale::factory()->create(['invoiced_at' => now(), 'settled_at' => now(), 'grandtotal' => 100000]);
+        ServiceOrder::factory()->create(['invoiced_at' => now(), 'settled_at' => now(), 'grandtotal' => 100000]);
         // Belum lunas dalam range -> masuk unpaid & issued.
-        Sale::factory()->create(['invoiced_at' => now(), 'settled_at' => null, 'canceled_at' => null, 'grandtotal' => 50000]);
+        ServiceOrder::factory()->create(['invoiced_at' => now(), 'settled_at' => null, 'canceled_at' => null, 'grandtotal' => 50000]);
         // Dibatalkan dalam range -> masuk canceled & issued.
-        Sale::factory()->create(['invoiced_at' => now(), 'settled_at' => null, 'canceled_at' => now(), 'grandtotal' => 20000]);
+        ServiceOrder::factory()->create(['invoiced_at' => now(), 'settled_at' => null, 'canceled_at' => now(), 'grandtotal' => 20000]);
         // Lunas DI LUAR range (bulan lalu) -> tidak ikut terhitung sama sekali.
-        Sale::factory()->create(['invoiced_at' => now()->subMonths(2), 'settled_at' => now()->subMonths(2), 'grandtotal' => 999999]);
+        ServiceOrder::factory()->create(['invoiced_at' => now()->subMonths(2), 'settled_at' => now()->subMonths(2), 'grandtotal' => 999999]);
 
         $response = $this->actingAs($this->superadmin())->get('/reports/finance');
 
@@ -87,26 +87,26 @@ class ReportingTest extends TestCase
     public function test_operations_completed_counts_respect_completed_at_and_solved_at_filter(): void
     {
         $inRangeService = Service::factory()->create();
-        $inRangeSale = Sale::factory()->create(['service_id' => $inRangeService->id]);
+        $inRangeServiceOrder = ServiceOrder::factory()->create(['service_id' => $inRangeService->id]);
         ServiceActivation::create([
             'service_id' => $inRangeService->id,
-            'sale_id' => $inRangeSale->id,
+            'service_order_id' => $inRangeServiceOrder->id,
             'completed_at' => now(),
         ]);
 
         $outOfRangeService = Service::factory()->create();
-        $outOfRangeSale = Sale::factory()->create(['service_id' => $outOfRangeService->id]);
+        $outOfRangeServiceOrder = ServiceOrder::factory()->create(['service_id' => $outOfRangeService->id]);
         ServiceActivation::create([
             'service_id' => $outOfRangeService->id,
-            'sale_id' => $outOfRangeSale->id,
+            'service_order_id' => $outOfRangeServiceOrder->id,
             'completed_at' => now()->subMonths(2),
         ]);
 
         $dismantleService = Service::factory()->create();
-        $dismantleSale = Sale::factory()->create(['service_id' => $dismantleService->id]);
+        $dismantleServiceOrder = ServiceOrder::factory()->create(['service_id' => $dismantleService->id]);
         $dismantleActivation = ServiceActivation::create([
             'service_id' => $dismantleService->id,
-            'sale_id' => $dismantleSale->id,
+            'service_order_id' => $dismantleServiceOrder->id,
         ]);
         ServiceDismantle::create([
             'service_id' => $dismantleService->id,

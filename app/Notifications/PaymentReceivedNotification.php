@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use App\Models\Sale;
+use App\Models\ServiceOrder;
 use App\Notifications\Channels\WhatsappChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,7 +18,7 @@ class PaymentReceivedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(private readonly Sale $sale) {}
+    public function __construct(private readonly ServiceOrder $serviceOrder) {}
 
     public function via(object $notifiable): array
     {
@@ -29,12 +29,12 @@ class PaymentReceivedNotification extends Notification implements ShouldQueue
     {
         return [
             'title' => 'Pembayaran Diterima',
-            'message' => "Pembayaran untuk tagihan {$this->sale->code} sudah kami terima. Teknisi akan segera menghubungi Anda untuk jadwal pemasangan.",
+            'message' => "Pembayaran untuk tagihan {$this->serviceOrder->code} sudah kami terima. Teknisi akan segera menghubungi Anda untuk jadwal pemasangan.",
         ];
     }
 
     public function toWhatsapp(object $notifiable): string
     {
-        return "[NEXA] Pembayaran untuk tagihan {$this->sale->code} sudah kami terima. Terima kasih! Teknisi kami akan segera menghubungi Anda untuk jadwal pemasangan.";
+        return "[NEXA] Pembayaran untuk tagihan {$this->serviceOrder->code} sudah kami terima. Terima kasih! Teknisi kami akan segera menghubungi Anda untuk jadwal pemasangan.";
     }
 }

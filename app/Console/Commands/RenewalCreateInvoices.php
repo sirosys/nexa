@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 #[Signature('renewal:create-invoices')]
-#[Description('Buat tagihan perpanjangan (Sale) otomatis untuk Service yang mendekati masa expired (H-5)')]
+#[Description('Buat tagihan perpanjangan (Order Layanan) otomatis untuk Service yang mendekati masa expired (H-5)')]
 class RenewalCreateInvoices extends Command
 {
     public function handle(RenewalService $renewalService): int

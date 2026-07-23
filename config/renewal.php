@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Berapa hari sebelum services.expired_at masing-masing aksi renewal
-    | terjadi. 'invoice' = kapan Sale+Receipt perpanjangan otomatis dibuat
+    | terjadi. 'invoice' = kapan Order Layanan+Receipt perpanjangan otomatis dibuat
     | (juga jadi notifikasi H-5, lihat InvoiceCreatedNotification — tidak
     | ada notifikasi H-5 terpisah). 'h3'/'h1' = kapan reminder WhatsApp
     | susulan dikirim kalau tagihan itu masih belum dibayar. Lihat
