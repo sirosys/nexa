@@ -15,7 +15,7 @@
         <div x-data="{ sidebarOpen: false, topbarMobileOpen: false }" class="min-h-screen">
             <x-sidebar />
 
-            <div class="flex min-h-screen flex-col lg:pl-[265px]">
+            <div class="flex min-h-screen flex-col transition-[padding] duration-300 md:pl-[70px] lg:pl-[265px]">
                 <x-header />
 
                 <main class="flex-1 p-4 sm:p-6 lg:p-8">

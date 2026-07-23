@@ -1,10 +1,12 @@
 <header class="sticky top-0 z-20">
-    {{-- Bar mobile gelap (55px, warna brand) — HANYA tampil <lg (breakpoint 992px,
-         lihat app.css), meniru #kt_header_mobile Metronic v7.0.0. Header desktop
-         di bawah terlalu sempit ditampilkan penuh di layar kecil, jadi dipecah
-         jadi 2 kontrol: toggle sidebar off-canvas, dan toggle panel
-         search/notifikasi/profil (meniru #kt_header_mobile_topbar_toggle). --}}
-    <div class="flex h-[55px] items-center justify-between bg-brand px-4 lg:hidden">
+    {{-- Bar mobile gelap (55px, warna brand) — HANYA tampil <768px (breakpoint
+         "md", lihat app.css & sidebar.blade.php "Rentang mode responsive"),
+         meniru #kt_header_mobile Metronic v7.0.0. Mulai 768px (tablet/medium)
+         aside sudah selalu ter-pin (rail ikon), jadi tidak perlu lagi toggle
+         buka/tutup sidebar off-canvas di sini — cuma murni phone (<768px)
+         yang masih butuh 2 kontrol: toggle sidebar off-canvas, dan toggle
+         panel search/notifikasi/profil (meniru #kt_header_mobile_topbar_toggle). --}}
+    <div class="flex h-[55px] items-center justify-between bg-brand px-4 md:hidden">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
             <img src="{{ asset('images/logo/logo-black-bg.png') }}" alt="{{ config('app.name', 'NEXA') }}" class="h-8 w-8 rounded-lg">
         </a>
@@ -34,16 +36,17 @@
         </div>
     </div>
 
-    {{-- Topbar: search + tema + notifikasi + profil. SELALU tampil di desktop
-         (lg:flex, di luar kendali topbarMobileOpen), di mobile jadi panel yang
-         cuma muncul kalau tombol di bar gelap di atas diklik — meniru
-         `.topbar-mobile-on .topbar` Metronic v7.0.0 (topbar dipisah dari
-         header-mobile karena ruang sempit). Pola "hidden/flex dinamis + lg:flex
-         statis" (bukan x-show) sengaja dipakai supaya tidak ada inline
-         style="display:none" yang bisa menang lawan lg:flex di layar desktop. --}}
+    {{-- Topbar: search + tema + notifikasi + profil. SELALU tampil mulai 768px
+         ("md" — tablet/medium sudah cukup lebar untuk topbar penuh berdampingan
+         rail ikon 70px, lihat sidebar.blade.php), di luar kendali
+         topbarMobileOpen; cuma di bawah 768px (phone) jadi panel yang muncul
+         kalau tombol di bar gelap di atas diklik — meniru `.topbar-mobile-on
+         .topbar` Metronic v7.0.0. Pola "hidden/flex dinamis + md:flex statis"
+         (bukan x-show) sengaja dipakai supaya tidak ada inline
+         style="display:none" yang bisa menang lawan md:flex di layar lebar. --}}
     <div
         :class="topbarMobileOpen ? 'flex' : 'hidden'"
-        class="lg:flex items-center justify-between gap-4 border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800 sm:px-6 lg:h-16 lg:py-0 lg:px-8"
+        class="md:flex items-center justify-between gap-4 border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800 sm:px-6 md:h-16 md:py-0 md:px-8"
     >
         <div class="flex items-center gap-4">
             <div class="flex items-center rounded-lg bg-gray-100 px-3 py-2.5 dark:bg-gray-700">
