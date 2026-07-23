@@ -80,16 +80,23 @@
         ->filter(fn ($group) => $group['items']->isNotEmpty());
 @endphp
 
+{{-- Overlay dim di belakang aside off-canvas — rgba(0,0,0,0.1) meniru persis
+     `.offcanvas-overlay` Metronic v7.0.0 (jauh lebih tipis dari overlay modal
+     Tailwind pada umumnya yang biasanya 50%), durasi fade 300ms meniru
+     `animation-offcanvas-fade-in .6s`/transisi aside 0.3s di CSS aslinya.
+     `lg:hidden` WAJIB ada di sini (bukan cuma di aside) — mencegah overlay
+     ikut tampil di desktop kalau `sidebarOpen` kebetulan masih `true` dari
+     sesi mobile sebelumnya (mis. resize window tanpa reload). --}}
 <div
     x-show="sidebarOpen"
-    x-transition.opacity
+    x-transition.opacity.duration.300ms
     @click="sidebarOpen = false"
-    class="fixed inset-0 z-30 bg-gray-900/50 lg:hidden"
+    class="fixed inset-0 z-30 bg-black/10 lg:hidden"
     style="display: none;"
 ></div>
 
 <aside
-    class="fixed inset-y-0 left-0 z-40 w-64 transform bg-aside transition-transform duration-200 ease-in-out lg:translate-x-0"
+    class="fixed inset-y-0 left-0 z-40 w-[265px] transform bg-aside transition-transform duration-300 ease-in-out lg:translate-x-0"
     :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
 >
     {{-- "Brand" area — warna sedikit lebih gelap dari badan sidebar (bg-aside),

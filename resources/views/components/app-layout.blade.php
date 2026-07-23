@@ -12,10 +12,10 @@
         @fonts()
     </head>
     <body class="bg-gray-100 font-sans text-gray-900 antialiased dark:bg-gray-900 dark:text-gray-100">
-        <div x-data="{ sidebarOpen: false }" class="min-h-screen">
+        <div x-data="{ sidebarOpen: false, topbarMobileOpen: false }" class="min-h-screen">
             <x-sidebar />
 
-            <div class="flex min-h-screen flex-col lg:pl-64">
+            <div class="flex min-h-screen flex-col lg:pl-[265px]">
                 <x-header />
 
                 <main class="flex-1 p-4 sm:p-6 lg:p-8">

@@ -96,6 +96,21 @@
     --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
+    /* Breakpoint "lg" ditimpa ke 992px (Bootstrap $grid-breakpoints milik
+       Metronic v7.0.0, src/sass/components/_variables.scss) — BUKAN default
+       Tailwind (1024px). Ini breakpoint yang menentukan kapan shell app
+       (sidebar/header) beralih dari mode mobile/off-canvas ke mode desktop
+       ter-pin di Metronic ASLI (media query "max-width: 991.98px" vs
+       "min-width: 992px" di compiled CSS template) — supaya perilaku
+       tablet/mobile NEXA benar-benar cocok dengan breakpoint template, bukan
+       cuma "kira-kira mirip" di angka Tailwind yang beda 32px. Cuma `lg` yang
+       ditimpa (bukan sm/md/xl juga) karena itu satu-satunya breakpoint yang
+       dipakai `sidebar.blade.php`/`header.blade.php`/`app-layout.blade.php`
+       untuk keputusan mobile-vs-desktop; breakpoint lain (sm/md/xl) dipakai
+       modul-modul lain untuk grid/layout internal yang tidak spesifik meniru
+       shell Metronic, jadi sengaja dibiarkan default Tailwind. */
+    --breakpoint-lg: 62rem;
+
     /* Palet Metronic v7.0.0 demo1 (src/sass/components/_variables.scss +
        _variables.custom.scss) — MENGGANTIKAN TOTAL palet v8.1.8 yang dipakai
        sebelumnya (2026-07-23, keputusan eksplisit user saat cloning tampilan
